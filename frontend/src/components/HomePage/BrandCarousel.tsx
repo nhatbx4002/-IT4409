@@ -20,8 +20,8 @@ export function BrandCarousel() {
   const duplicatedBrands = [...brands, ...brands, ...brands];
 
   return (
-    <section className="py-16 bg-white border-y border-black/10">
-      <div className="max-w-7xl mx-auto px-6">
+    <section className="py-16 bg-white border-y border-black/10 .scrollbar-hide">
+      <div className="max-w-full mx-auto px-30">
         <div className="text-center mb-12">
           <h2 
             className="mb-4"
@@ -46,7 +46,7 @@ export function BrandCarousel() {
             {duplicatedBrands.map((brand, index) => (
               <div 
                 key={index}
-                className="flex items-center justify-center p-6 grayscale hover:grayscale-0 transition-all duration-300 cursor-pointer group flex-shrink-0"
+                className="flex items-center justify-center p-6 grayscale hover:grayscale-0 transition-all duration-300 cursor-pointer group shrink-0"
               >
                 <span 
                   className="text-2xl tracking-[0.3em] opacity-40 group-hover:opacity-100 transition-opacity whitespace-nowrap"

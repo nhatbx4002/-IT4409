@@ -119,7 +119,7 @@ export function ShoppingCart({ open, onOpenChange }: ShoppingCartProps) {
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent 
         side="right" 
-        className="w-full sm:max-w-lg p-0 bg-white border-l border-black/10"
+        className="w-full sm:max-w-lg p-0 bg-white border-l border-black/10 transition-all duration-500 ease-in-out"
       >
         {/* Header */}
         <SheetHeader className="px-8 py-6 border-b border-black/10">

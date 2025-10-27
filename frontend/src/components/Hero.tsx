@@ -19,7 +19,7 @@ export function Hero() {
             background: 'radial-gradient(ellipse at center, transparent 0%, rgba(0,0,0,0.3) 70%, rgba(0,0,0,0.6) 100%)'
           }}
         ></div>
-        <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent"></div>
+        <div className="absolute inset-0 bg-linear-to-r from-black/70 via-black/40 to-transparent"></div>
       </div>
 
       {/* Hero Content */}

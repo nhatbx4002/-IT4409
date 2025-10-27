@@ -1,6 +1,9 @@
-import { ShoppingBag, Search, User, Heart, X, LogIn, UserPlus, UserCircle } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import {
+  Search, User, UserPlus, LogIn, LogOut,
+  UserCircle, Package, Heart, Settings, ShoppingBag , X
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { ShoppingCart } from "./HomePage/ShoppingCart";
 import {
@@ -11,9 +14,33 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+
+import { getUser, isAuthenticated, loginMock, logout, type AuthUser } from "@/lib/auth";
+
 export function Navbar() {
   const [showTopBar, setShowTopBar] = useState(true);
   const [cartOpen, setCartOpen] = useState(false);
+
+  const [user,setUser] = useState<AuthUser | null>(null);
+
+  useEffect(() =>{
+    setUser(isAuthenticated() ? getUser() : null);
+  },[]);
+
+  const initials = useMemo(() => {
+    if(!user) return "U";
+    return user.name.split(" ").map(p => p[0]).join("").slice(0,2).toUpperCase();
+  },[user])
+
+  const handleLogout = () => {
+    logout();
+    setUser(null);
+  }
+
+  const handleDemoLogin = () => {
+    loginMock();
+    setUser(getUser());
+  }
 
   return (
     <>
@@ -32,10 +59,10 @@ export function Navbar() {
 
       {/* Main Navigation */}
       <nav className="sticky top-0 z-50 bg-white/98 backdrop-blur-sm border-b border-black/10 shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 py-4">
+        <div className="max-w-full mx-auto px-30 py-4">
           <div className="flex items-center justify-between">
             {/* Logo */}
-            <div className="flex-shrink-0">
+            <div className="shrink-0">
               <h1 
                 className="text-3xl tracking-wider" 
                 style={{ color: '#D4AF37', fontFamily: "'Playfair Display', serif" }}
@@ -154,33 +181,64 @@ export function Navbar() {
                     size="icon" 
                     className="hover:bg-transparent hover:text-[#D4AF37] transition-colors"
                   >
-                    <User className="h-5 w-5" />
+                    {user ? (
+                      user.avatarUrl ? (
+                        <img src={user.avatarUrl} alt={user.name} className="h-8 w-8 rounded-full object-cover"/>
+                      ): (
+                        <div className="h-8 w-8 rounded-full bg-black/80 text-white text-xs flex items-center justify-center">
+                          {initials}
+                        </div>
+                      )
+                    ) : (
+                      <User className="h-5 w-5" />
+                    )}
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent 
-                  align="end" 
-                  className="w-56 bg-white border border-black/10 shadow-lg"
-                >
-                  <DropdownMenuItem 
-                    className="cursor-pointer hover:bg-[#F5F5F5] focus:bg-[#F5F5F5] py-3"
-                  >
-                    <LogIn className="h-4 w-4 mr-3 text-[#D4AF37]" />
-                    <span style={{ fontSize: '14px' }}>Login</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem 
-                    className="cursor-pointer hover:bg-[#F5F5F5] focus:bg-[#F5F5F5] py-3"
-                  >
-                    <UserPlus className="h-4 w-4 mr-3 text-[#D4AF37]" />
-                    <span style={{ fontSize: '14px' }}>Register</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator className="bg-[#D4AF37]/20" />
-                  <DropdownMenuItem 
-                    className="cursor-pointer hover:bg-[#F5F5F5] focus:bg-[#F5F5F5] py-3"
-                  >
-                    <UserCircle className="h-4 w-4 mr-3 text-[#D4AF37]" />
-                    <span style={{ fontSize: '14px' }}>My Profile</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
+                { !user ? (
+                  <DropdownMenuContent align="end" className="w-64 bg-white border border-black/10 shadow-lg">
+                    <DropdownMenuSeparator className="bg-[#D4AF37]/20" />
+                      <DropdownMenuItem
+                          className="cursor-pointer hover:bg-[#F5F5F5] py-3"
+                         // FE-only: chuyển trang login hoặc dùng demo login
+                          onClick={() => handleDemoLogin()}
+                        >
+                        <LogIn className="h-4 w-4 mr-3 text-[#D4AF37]" />
+                        <span className="text-sm">Login (Demo)</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        className="cursor-pointer hover:bg-[#F5F5F5] py-3"
+                        onClick={() => alert("Đi tới /register (frontend-only)")}
+                      >
+                        <UserPlus className="h-4 w-4 mr-3 text-[#D4AF37]" />
+                        <span className="text-sm">Register</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                ) : (
+                   <DropdownMenuContent align="end" className="w-72 bg-white border border-black/10 shadow-lg">
+                    <DropdownMenuItem className="cursor-pointer hover:bg-[#F5F5F5] py-3" onClick={() => alert("Go /account")}>
+                      <UserCircle className="h-4 w-4 mr-3 text-[#D4AF37]" />
+                      <span className="text-sm">My Profile</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="cursor-pointer hover:bg-[#F5F5F5] py-3" onClick={() => alert("Go /orders")}>
+                      <Package className="h-4 w-4 mr-3 text-[#D4AF37]" />
+                      <span className="text-sm">My Orders</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="cursor-pointer hover:bg-[#F5F5F5] py-3" onClick={() => alert("Go /wishlist")}>
+                      <Heart className="h-4 w-4 mr-3 text-[#D4AF37]" />
+                      <span className="text-sm">Wishlist</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="cursor-pointer hover:bg-[#F5F5F5] py-3" onClick={() => alert("Go /account/settings")}>
+                      <Settings className="h-4 w-4 mr-3 text-[#D4AF37]" />
+                      <span className="text-sm">Settings</span>
+                    </DropdownMenuItem>
+
+                    <DropdownMenuSeparator className="bg-[#D4AF37]/20" />
+                    <DropdownMenuItem className="cursor-pointer hover:bg-[#FFF4DB] py-3" onClick={handleLogout}>
+                      <LogOut className="h-4 w-4 mr-3 text-[#D4AF37]" />
+                      <span className="text-sm">Logout</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                )}
               </DropdownMenu>
               <Button 
                 variant="ghost" 

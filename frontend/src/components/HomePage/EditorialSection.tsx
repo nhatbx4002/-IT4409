@@ -3,7 +3,7 @@ import { ImageWithFallback } from "../figma/ImageWithFallback";
 export function EditorialSection() {
   return (
     <section className="py-24 bg-white">
-      <div className="max-w-7xl mx-auto px-6">
+      <div className="max-w-full mx-auto px-30">
         <div className="text-center mb-16">
           <h2 
             className="mb-4"
@@ -21,7 +21,7 @@ export function EditorialSection() {
 
         <div className="grid md:grid-cols-2 gap-12 items-center">
           {/* Left Image */}
-          <div className="relative aspect-[4/5] overflow-hidden rounded-sm">
+          <div className="relative aspect-4/5 overflow-hidden rounded-sm">
             <ImageWithFallback
               src="https://images.unsplash.com/photo-1652281846260-14c1bdd5e9a0?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmYXNoaW9uJTIwbGlmZXN0eWxlJTIwZWRpdG9yaWFsfGVufDF8fHx8MTc2MTQxMTA4OXww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral"
               alt="Fashion Editorial"

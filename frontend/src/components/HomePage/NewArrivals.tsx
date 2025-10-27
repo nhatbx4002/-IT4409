@@ -63,7 +63,7 @@ export function NewArrivals() {
 
   return (
     <section className="py-24 bg-[#F5F5F5]">
-      <div className="max-w-7xl mx-auto px-6">
+      <div className="max-w-full mx-auto px-30">
         <div className="text-center mb-16">
           <h2 
             className="mb-4"
