@@ -14,6 +14,8 @@ export const User = sequelize.define("users", {
   refresh_token: DataTypes.TEXT,
   access_token: DataTypes.TEXT,
   expires_at: DataTypes.DATE,
+  // otp: {type : DataTypes.STRING(20)},
+  // otp_expires: {type : DataTypes.DATE},
   created_at: { type: DataTypes.DATE, defaultValue: DataTypes.NOW },
   updated_at: { type: DataTypes.DATE, defaultValue: DataTypes.NOW },
 });

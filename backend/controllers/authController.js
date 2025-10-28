@@ -1,4 +1,4 @@
-import { registerUser, loginUser, logoutUser } from "../services/authService.js";
+import { registerUser, loginUser, logoutUser, sendOtpService, verifyOtpService, resetPasswordService } from "../services/authService.js";
 
 // dang ky bang tai khoa local
 export const signUp = async (req,res) => {
@@ -61,3 +61,33 @@ export const signOut = async (req,res) => {
         })
     }
 }
+
+//Quen mat khau
+
+export const sendOTPEmail = async (req, res) => {
+  try {
+    const result = await sendOtpService(req.body.email);
+    res.json({ success: true, ...result });
+  } catch (err) {
+    res.status(400).json({ success: false, message: err.message });
+  }
+};
+
+export const verifyOTPEmail = async (req, res) => {
+  try {
+    const result = await verifyOtpService(req.body.email, req.body.otp);
+    res.json({ success: true, ...result });
+  } catch (err) {
+    res.status(400).json({ success: false, message: err.message });
+  }
+};
+
+export const resetPassword = async (req, res) => {
+  try {
+    const { token, newPassword } = req.body;
+    const result = await resetPasswordService(token, newPassword);
+    res.json({ success: true, ...result });
+  } catch (err) {
+    res.status(400).json({ success: false, message: err.message });
+  }
+};

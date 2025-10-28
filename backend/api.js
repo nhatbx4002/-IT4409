@@ -84,7 +84,7 @@ async function initDatabase() {
     await sequelize.authenticate();
     console.log("✅ Database connected!");
 
-    await User.sync();
+    await User.sync({ alter: true });
     console.log("✅ User table ready!");
   } catch (error) {
     console.error("❌ Database initialization failed:", error);
