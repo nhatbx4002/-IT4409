@@ -1,6 +1,10 @@
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
+import passport from "passport";
+import session from "express-session";
+import "./config/google.config.js";
+import "./config/facebook.config.js";
 import { 
   sequelize,
   User,
@@ -43,6 +47,18 @@ app.use((err, req, res, next) => {
   }
   next();
 });
+
+// Cấu hình session cho passport (phải đặt trước routes)
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: true,
+  })
+);
+
+app.use(passport.initialize());
+app.use(passport.session());
 
 // ==============================
 // ROUTES

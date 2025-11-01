@@ -1,7 +1,12 @@
 import { User } from "../models/index.js";
+import { sequelize } from "../config/db.config.js";
+import { Op } from "sequelize";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import nodemailer from "nodemailer";
+import dotenv from "dotenv";
+
+dotenv.config();
 //Dang ky user moi bang local
 export const registerUser = async (data) => {
     const { email, full_name, password, phone, role, provider } = data;
@@ -144,3 +149,154 @@ export const resetPasswordService = async (token, newPassword) => {
     throw new Error("Token không hợp lệ hoặc đã hết hạn");
   }
 }
+
+//Dang nhap bang google
+export const signInGoogle = {
+  /**
+   * Tạo JWT access token cho user
+   */
+  generateAccessToken: (user) => {
+    return jwt.sign(
+      {
+        id: user.id,
+        email: user.email,
+        provider: user.provider,
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "30m" }
+    );
+  },
+
+  /**
+   * Tạo JWT refresh token cho user
+   */
+  generateRefreshToken: (user) => {
+    return jwt.sign(
+      {
+        id: user.id,
+        email: user.email,
+        provider: user.provider,
+      },
+      process.env.JWT_REFRESH_SECRET,
+      { expiresIn: "7d" }
+    );
+  },
+
+  /**
+   * Lưu tokens vào database
+   */
+  saveTokensToDatabase: async (user, accessToken, refreshToken) => {
+    user.access_token = accessToken;
+    user.refresh_token = refreshToken;
+    await user.save();
+  },
+
+  /**
+   * Chuẩn hóa dữ liệu user trả về client
+   */
+  formatUserResponse: (user, accessToken, refreshToken) => ({
+    success: true,
+    message: "Đăng nhập Google thành công",
+    accessToken,
+    refreshToken,
+    user: {
+      id: user.id,
+      email: user.email,
+      full_name: user.full_name,
+      provider: user.provider,
+    },
+  }),
+};
+
+
+//Dang nhap bang facebook
+export const signInFacebook = {
+  /**
+   * Tạo JWT access token cho user
+   */
+  generateAccessToken: (user) => {
+    return jwt.sign(
+      {
+        id: user.id,
+        email: user.email,
+        provider: user.provider,
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "30m" }
+    );
+  },
+
+  /**
+   * Tạo JWT refresh token cho user
+   */
+  generateRefreshToken: (user) => {
+    return jwt.sign(
+      {
+        id: user.id,
+        email: user.email,
+        provider: user.provider,
+      },
+      process.env.JWT_REFRESH_SECRET,
+      { expiresIn: "7d" }
+    );
+  },
+
+  /**
+   * Lưu tokens vào database
+   */
+  saveTokensToDatabase: async (user, accessToken, refreshToken) => {
+    user.access_token = accessToken;
+    user.refresh_token = refreshToken;
+    await user.save();
+  },
+
+  /**
+   * Chuẩn hóa dữ liệu user trả về client
+   */
+  formatUserResponse: (user, accessToken, refreshToken) => ({
+    success: true,
+    message: "Đăng nhập Facebook thành công",
+    accessToken,
+    refreshToken,
+    user: {
+      id: user.id,
+      email: user.email,
+      full_name: user.full_name,
+      phone: user.phone,
+      provider: user.provider,
+    },
+  }),
+};
+
+//Cap nhat thong tin tai khoan
+export const updateUserService = async (userId, newData) => {
+  const user = await User.findByPk(userId);
+  
+  if (!user) {
+    throw new Error("User does not exist!");
+  }
+
+  // Không cho phép chỉnh sửa email và password
+  const { email, password, ...allowedFields } = newData;
+  
+  // Kiểm tra nếu có phone mới và đã tồn tại cho user khác
+  if (allowedFields.phone && allowedFields.phone !== user.phone) {
+    const existingPhone = await User.findOne({ 
+      where: { 
+        phone: allowedFields.phone,
+        id: { [Op.ne]: userId } // Không phải user hiện tại
+      } 
+    });
+    if (existingPhone) {
+      throw new Error("Số điện thoại này đã được sử dụng bởi tài khoản khác");
+    }
+  }
+
+  // Cập nhật các trường được phép (full_name, phone)
+  await user.update(allowedFields);
+
+  // Lấy lại user đã cập nhật
+  await user.reload();
+
+  return user;
+};
