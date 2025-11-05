@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { Fragment, useState, useEffect } from "react";
 import {
   Grid,
   List,
@@ -34,6 +34,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { useParams, useSearchParams } from "react-router-dom";
 import { allProducts } from "../data/products";
 import type {
   Product,
@@ -43,6 +44,28 @@ import type {
 } from "@/types/products";
 
 export function Collections() {
+  const { collection, category } = useParams();
+  const [searchParams] = useSearchParams();
+
+  const isNew = searchParams.get("new") === "1";
+  const pageSize = Number(searchParams.get("pageSize") ?? 12);
+  const sortQ = (searchParams.get("sort") ?? "featured") as SortOption;
+
+  const capitalize = (s?: string) =>
+    s ? s.charAt(0).toUpperCase() + s.slice(1) : "";
+
+  const dynamicTitle =
+    (searchParams.get("title") ??
+      [collection, category].filter(Boolean).join(" / ")) ||
+    "Collection";
+
+  const crumbs = [
+    { label: "Home", href: "/" },
+    ...(collection
+      ? [{ label: capitalize(collection), href: `/collections/${collection}` }]
+      : []),
+    ...(category ? [{ label: category }] : []),
+  ];
   const [filters, setFilters] = useState<FilterState>({
     categories: [],
     sizes: [],
@@ -52,21 +75,30 @@ export function Collections() {
     inStockOnly: false,
   });
 
-  const [sortBy, setSortBy] = useState<SortOption>("featured");
+  const [sortBy, setSortBy] = useState<SortOption>(sortQ);
   const [viewMode, setViewMode] = useState<ViewMode>("grid-4");
   const [currentPage, setCurrentPage] = useState(1);
-  const [isMobileFilterOpen, setIsMobileFilterOpen] =
-    useState(false);
-  const [isDesktopFilterVisible, setIsDesktopFilterVisible] =
-    useState(true);
-  const [selectedProduct, setSelectedProduct] =
-    useState<Product | null>(null);
+  const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
+  const [isDesktopFilterVisible, setIsDesktopFilterVisible] = useState(true);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isQuickViewOpen, setIsQuickViewOpen] = useState(false);
 
-  const itemsPerPage = 12;
+  const itemsPerPage = pageSize;
+
+  useEffect(() => {
+    setSortBy(sortQ);
+  }, [sortQ]);
+
+  // Pre-filter by URL params
+  const source = allProducts.filter(
+    (p) =>
+      (!collection || p.collection === collection) &&
+      (!category || p.category === category) &&
+      (!isNew || p.isNew)
+  );
 
   // Filter products
-  const filteredProducts = allProducts.filter((product) => {
+  const filteredProducts = source.filter((product) => {
     // Category filter
     if (
       filters.categories.length > 0 &&
@@ -78,9 +110,7 @@ export function Collections() {
     // Size filter
     if (
       filters.sizes.length > 0 &&
-      !filters.sizes.some((size) =>
-        product.sizes.includes(size),
-      )
+      !filters.sizes.some((size) => product.sizes.includes(size))
     ) {
       return false;
     }
@@ -89,7 +119,7 @@ export function Collections() {
     if (
       filters.colors.length > 0 &&
       !filters.colors.some((color) =>
-        product.colors.some((pc) => pc.name === color),
+        product.colors.some((pc) => pc.name === color)
       )
     ) {
       return false;
@@ -97,18 +127,12 @@ export function Collections() {
 
     // Price filter
     const price = product.salePrice || product.price;
-    if (
-      price < filters.priceRange[0] ||
-      price > filters.priceRange[1]
-    ) {
+    if (price < filters.priceRange[0] || price > filters.priceRange[1]) {
       return false;
     }
 
     // Brand filter
-    if (
-      filters.brands.length > 0 &&
-      !filters.brands.includes(product.brand)
-    ) {
+    if (filters.brands.length > 0 && !filters.brands.includes(product.brand)) {
       return false;
     }
 
@@ -126,13 +150,9 @@ export function Collections() {
       case "newest":
         return (b.isNew ? 1 : 0) - (a.isNew ? 1 : 0);
       case "price-low":
-        return (
-          (a.salePrice || a.price) - (b.salePrice || b.price)
-        );
+        return (a.salePrice || a.price) - (b.salePrice || b.price);
       case "price-high":
-        return (
-          (b.salePrice || b.price) - (a.salePrice || a.price)
-        );
+        return (b.salePrice || b.price) - (a.salePrice || a.price);
       case "popular":
         return b.reviewCount - a.reviewCount;
       default:
@@ -141,13 +161,11 @@ export function Collections() {
   });
 
   // Paginate products
-  const totalPages = Math.ceil(
-    sortedProducts.length / itemsPerPage,
-  );
+  const totalPages = Math.ceil(sortedProducts.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const paginatedProducts = sortedProducts.slice(
     startIndex,
-    startIndex + itemsPerPage,
+    startIndex + itemsPerPage
   );
 
   // Scroll to top when page changes
@@ -160,6 +178,11 @@ export function Collections() {
     setCurrentPage(1);
   }, [filters, sortBy]);
 
+  // Reset to page 1 when URL params/query change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [collection, category, isNew, pageSize]);
+
   const handleClearFilters = () => {
     setFilters({
       categories: [],
@@ -169,14 +192,11 @@ export function Collections() {
       brands: [],
       inStockOnly: false,
     });
-    setCurrentPage(1); // Reset to first page when clearing filters
+    setCurrentPage(1);
     setIsMobileFilterOpen(false); // Close mobile filter drawer
   };
 
-  const handleRemoveFilter = (
-    type: keyof FilterState,
-    value?: string,
-  ) => {
+  const handleRemoveFilter = (type: keyof FilterState, value?: string) => {
     if (
       type === "categories" ||
       type === "sizes" ||
@@ -185,9 +205,7 @@ export function Collections() {
     ) {
       setFilters({
         ...filters,
-        [type]: filters[type].filter(
-          (item: string) => item !== value,
-        ),
+        [type]: filters[type].filter((item: string) => item !== value),
       });
       setCurrentPage(1); // Reset to first page when removing a filter
     } else if (type === "priceRange") {
@@ -212,10 +230,7 @@ export function Collections() {
       filters.colors.length +
       filters.brands.length +
       (filters.inStockOnly ? 1 : 0) +
-      (filters.priceRange[0] !== 0 ||
-      filters.priceRange[1] !== 500
-        ? 1
-        : 0)
+      (filters.priceRange[0] !== 0 || filters.priceRange[1] !== 500 ? 1 : 0)
     );
   };
 
@@ -242,27 +257,23 @@ export function Collections() {
         {/* Breadcrumb */}
         <Breadcrumb className="mb-6">
           <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink
-                href="/"
-                className="text-[#666666] hover:text-[#D4AF37] transition-colors duration-300"
-              >
-                Home
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbLink
-                href="/men"
-                className="text-[#666666] hover:text-[#D4AF37] transition-colors duration-300"
-              >
-                Men
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage>Shirts</BreadcrumbPage>
-            </BreadcrumbItem>
+            {crumbs.map((c, idx) => (
+              <Fragment key={`${c.label}-${idx}`}>
+                <BreadcrumbItem>
+                  {c.href ? (
+                    <BreadcrumbLink
+                      href={c.href}
+                      className="text-[#666666] hover:text-[#D4AF37] transition-colors duration-300"
+                    >
+                      {c.label}
+                    </BreadcrumbLink>
+                  ) : (
+                    <BreadcrumbPage>{c.label}</BreadcrumbPage>
+                  )}
+                </BreadcrumbItem>
+                {idx < crumbs.length - 1 && <BreadcrumbSeparator />}
+              </Fragment>
+            ))}
           </BreadcrumbList>
         </Breadcrumb>
 
@@ -277,7 +288,7 @@ export function Collections() {
               letterSpacing: "-0.5px",
             }}
           >
-            Men's Shirts
+            {dynamicTitle}
           </h1>
           <p className="text-sm text-[#666666]">
             Showing {sortedProducts.length} products
@@ -319,12 +330,7 @@ export function Collections() {
                       key={category}
                       variant="secondary"
                       className="bg-black/5 text-black border border-black/20 hover:bg-black/10 transition-colors duration-300 cursor-pointer px-3 py-1"
-                      onClick={() =>
-                        handleRemoveFilter(
-                          "categories",
-                          category,
-                        )
-                      }
+                      onClick={() => handleRemoveFilter("categories", category)}
                     >
                       {category}
                       <X className="w-3 h-3 ml-1" />
@@ -336,9 +342,7 @@ export function Collections() {
                       key={size}
                       variant="secondary"
                       className="bg-black/5 text-black border border-black/20 hover:bg-black/10 transition-colors duration-300 cursor-pointer px-3 py-1"
-                      onClick={() =>
-                        handleRemoveFilter("sizes", size)
-                      }
+                      onClick={() => handleRemoveFilter("sizes", size)}
                     >
                       {size}
                       <X className="w-3 h-3 ml-1" />
@@ -350,9 +354,7 @@ export function Collections() {
                       key={color}
                       variant="secondary"
                       className="bg-black/5 text-black border border-black/20 hover:bg-black/10 transition-colors duration-300 cursor-pointer px-3 py-1"
-                      onClick={() =>
-                        handleRemoveFilter("colors", color)
-                      }
+                      onClick={() => handleRemoveFilter("colors", color)}
                     >
                       {color}
                       <X className="w-3 h-3 ml-1" />
@@ -364,9 +366,7 @@ export function Collections() {
                       key={brand}
                       variant="secondary"
                       className="bg-black/5 text-black border border-black/20 hover:bg-black/10 transition-colors duration-300 cursor-pointer px-3 py-1"
-                      onClick={() =>
-                        handleRemoveFilter("brands", brand)
-                      }
+                      onClick={() => handleRemoveFilter("brands", brand)}
                     >
                       {brand}
                       <X className="w-3 h-3 ml-1" />
@@ -378,12 +378,9 @@ export function Collections() {
                     <Badge
                       variant="secondary"
                       className="bg-black/5 text-black border border-black/20 hover:bg-black/10 transition-colors duration-300 cursor-pointer px-3 py-1"
-                      onClick={() =>
-                        handleRemoveFilter("priceRange")
-                      }
+                      onClick={() => handleRemoveFilter("priceRange")}
                     >
-                      ${filters.priceRange[0]} - $
-                      {filters.priceRange[1]}
+                      ${filters.priceRange[0]} - ${filters.priceRange[1]}
                       <X className="w-3 h-3 ml-1" />
                     </Badge>
                   )}
@@ -392,9 +389,7 @@ export function Collections() {
                     <Badge
                       variant="secondary"
                       className="bg-black/5 text-black border border-black/20 hover:bg-black/10 transition-colors duration-300 cursor-pointer px-3 py-1"
-                      onClick={() =>
-                        handleRemoveFilter("inStockOnly")
-                      }
+                      onClick={() => handleRemoveFilter("inStockOnly")}
                     >
                       In Stock
                       <X className="w-3 h-3 ml-1" />
@@ -433,9 +428,7 @@ export function Collections() {
                   {/* Desktop Filter Toggle */}
                   <button
                     onClick={() =>
-                      setIsDesktopFilterVisible(
-                        !isDesktopFilterVisible,
-                      )
+                      setIsDesktopFilterVisible(!isDesktopFilterVisible)
                     }
                     className="hidden lg:flex items-center gap-2 px-4 py-2 border border-black/20 hover:border-[#D4AF37] transition-all duration-300"
                     style={{
@@ -443,42 +436,30 @@ export function Collections() {
                     }}
                   >
                     <SlidersHorizontal className="w-4 h-4" />
-                    {isDesktopFilterVisible
-                      ? "HIDE FILTERS"
-                      : "SHOW FILTERS"}
+                    {isDesktopFilterVisible ? "HIDE FILTERS" : "SHOW FILTERS"}
                   </button>
                 </div>
 
                 {/* Sort Dropdown */}
                 <div className="flex items-center gap-3">
-                  <span className="text-sm text-[#666666]">
-                    Sort by:
-                  </span>
+                  <span className="text-sm text-[#666666]">Sort by:</span>
                   <Select
                     value={sortBy}
-                    onValueChange={(value) =>
-                      setSortBy(value as SortOption)
-                    }
+                    onValueChange={(value) => setSortBy(value as SortOption)}
                   >
                     <SelectTrigger className="w-48 border-black/20 focus:border-[#D4AF37]">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="featured">
-                        Featured
-                      </SelectItem>
-                      <SelectItem value="newest">
-                        Newest
-                      </SelectItem>
+                      <SelectItem value="featured">Featured</SelectItem>
+                      <SelectItem value="newest">Newest</SelectItem>
                       <SelectItem value="price-low">
                         Price: Low to High
                       </SelectItem>
                       <SelectItem value="price-high">
                         Price: High to Low
                       </SelectItem>
-                      <SelectItem value="popular">
-                        Most Popular
-                      </SelectItem>
+                      <SelectItem value="popular">Most Popular</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -505,17 +486,12 @@ export function Collections() {
                     }`}
                     aria-label="Grid 3 columns"
                   >
-                    <Grid
-                      className="w-4 h-4"
-                      strokeWidth={2.5}
-                    />
+                    <Grid className="w-4 h-4" strokeWidth={2.5} />
                   </button>
                   <button
                     onClick={() => setViewMode("list")}
                     className={`p-2 transition-all duration-300 ${
-                      viewMode === "list"
-                        ? "bg-[#D4AF37]"
-                        : "hover:bg-black/5"
+                      viewMode === "list" ? "bg-[#D4AF37]" : "hover:bg-black/5"
                     }`}
                     aria-label="List view"
                   >
@@ -529,8 +505,24 @@ export function Collections() {
             <div
               className={`
                 grid gap-6 mb-12 transition-all duration-500
-                ${viewMode === "grid-4" ? `grid-cols-1 sm:grid-cols-2 ${isDesktopFilterVisible ? "lg:grid-cols-3 xl:grid-cols-4" : "lg:grid-cols-4 xl:grid-cols-5"}` : ""}
-                ${viewMode === "grid-3" ? `grid-cols-1 sm:grid-cols-2 ${isDesktopFilterVisible ? "lg:grid-cols-3" : "lg:grid-cols-4"}` : ""}
+                ${
+                  viewMode === "grid-4"
+                    ? `grid-cols-1 sm:grid-cols-2 ${
+                        isDesktopFilterVisible
+                          ? "lg:grid-cols-3 xl:grid-cols-4"
+                          : "lg:grid-cols-4 xl:grid-cols-5"
+                      }`
+                    : ""
+                }
+                ${
+                  viewMode === "grid-3"
+                    ? `grid-cols-1 sm:grid-cols-2 ${
+                        isDesktopFilterVisible
+                          ? "lg:grid-cols-3"
+                          : "lg:grid-cols-4"
+                      }`
+                    : ""
+                }
                 ${viewMode === "list" ? "grid-cols-1" : ""}
               `}
             >
@@ -550,9 +542,7 @@ export function Collections() {
               <div className="flex items-center justify-center gap-2">
                 <button
                   onClick={() =>
-                    setCurrentPage((prev) =>
-                      Math.max(1, prev - 1),
-                    )
+                    setCurrentPage((prev) => Math.max(1, prev - 1))
                   }
                   disabled={currentPage === 1}
                   className="p-2 border-2 border-black/20 disabled:opacity-50 disabled:cursor-not-allowed hover:border-[#D4AF37] hover:text-[#D4AF37] transition-all duration-300"
@@ -561,25 +551,23 @@ export function Collections() {
                   <ChevronLeft className="w-5 h-5" />
                 </button>
 
-                {Array.from(
-                  { length: Math.min(totalPages, 5) },
-                  (_, i) => {
-                    let pageNum;
-                    if (totalPages <= 5) {
-                      pageNum = i + 1;
-                    } else if (currentPage <= 3) {
-                      pageNum = i + 1;
-                    } else if (currentPage >= totalPages - 2) {
-                      pageNum = totalPages - 4 + i;
-                    } else {
-                      pageNum = currentPage - 2 + i;
-                    }
+                {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                  let pageNum;
+                  if (totalPages <= 5) {
+                    pageNum = i + 1;
+                  } else if (currentPage <= 3) {
+                    pageNum = i + 1;
+                  } else if (currentPage >= totalPages - 2) {
+                    pageNum = totalPages - 4 + i;
+                  } else {
+                    pageNum = currentPage - 2 + i;
+                  }
 
-                    return (
-                      <button
-                        key={pageNum}
-                        onClick={() => setCurrentPage(pageNum)}
-                        className={`
+                  return (
+                    <button
+                      key={pageNum}
+                      onClick={() => setCurrentPage(pageNum)}
+                      className={`
                         w-10 h-10 border-2 transition-all duration-300
                         ${
                           currentPage === pageNum
@@ -587,41 +575,33 @@ export function Collections() {
                             : "border-black/20 text-[#666666] hover:border-[#D4AF37] hover:text-[#D4AF37]"
                         }
                       `}
-                        style={{
-                          fontFamily: "'Poppins', sans-serif",
-                        }}
-                      >
-                        {pageNum}
-                      </button>
-                    );
-                  },
-                )}
+                      style={{
+                        fontFamily: "'Poppins', sans-serif",
+                      }}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
 
-                {totalPages > 5 &&
-                  currentPage < totalPages - 2 && (
-                    <>
-                      <span className="text-[#666666]">
-                        ...
-                      </span>
-                      <button
-                        onClick={() =>
-                          setCurrentPage(totalPages)
-                        }
-                        className="w-10 h-10 border-2 border-black/20 text-[#666666] hover:border-[#D4AF37] hover:text-[#D4AF37] transition-all duration-300"
-                        style={{
-                          fontFamily: "'Poppins', sans-serif",
-                        }}
-                      >
-                        {totalPages}
-                      </button>
-                    </>
-                  )}
+                {totalPages > 5 && currentPage < totalPages - 2 && (
+                  <>
+                    <span className="text-[#666666]">...</span>
+                    <button
+                      onClick={() => setCurrentPage(totalPages)}
+                      className="w-10 h-10 border-2 border-black/20 text-[#666666] hover:border-[#D4AF37] hover:text-[#D4AF37] transition-all duration-300"
+                      style={{
+                        fontFamily: "'Poppins', sans-serif",
+                      }}
+                    >
+                      {totalPages}
+                    </button>
+                  </>
+                )}
 
                 <button
                   onClick={() =>
-                    setCurrentPage((prev) =>
-                      Math.min(totalPages, prev + 1),
-                    )
+                    setCurrentPage((prev) => Math.min(totalPages, prev + 1))
                   }
                   disabled={currentPage === totalPages}
                   className="p-2 border-2 border-black/20 disabled:opacity-50 disabled:cursor-not-allowed hover:border-[#D4AF37] hover:text-[#D4AF37] transition-all duration-300"
@@ -663,10 +643,7 @@ export function Collections() {
       />
 
       {/* Quick View Modal */}
-      <Dialog
-        open={isQuickViewOpen}
-        onOpenChange={setIsQuickViewOpen}
-      >
+      <Dialog open={isQuickViewOpen} onOpenChange={setIsQuickViewOpen}>
         <DialogContent className="max-w-4xl">
           <DialogHeader>
             <DialogTitle
@@ -708,15 +685,12 @@ export function Collections() {
                       fontWeight: 600,
                     }}
                   >
-                    $
-                    {selectedProduct.salePrice ||
-                      selectedProduct.price}
+                    ${selectedProduct.salePrice || selectedProduct.price}
                   </p>
                 </div>
                 <p className="text-[#666666]">
-                  Premium quality shirt crafted with attention
-                  to detail. Perfect for both formal and casual
-                  occasions.
+                  Premium quality shirt crafted with attention to detail.
+                  Perfect for both formal and casual occasions.
                 </p>
                 <button
                   className="w-full py-3 bg-[#D4AF37] text-black hover:bg-black hover:text-white transition-all duration-300"
