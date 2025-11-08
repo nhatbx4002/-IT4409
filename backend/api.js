@@ -5,7 +5,7 @@ import passport from "passport";
 import session from "express-session";
 import "./config/google.config.js";
 import "./config/facebook.config.js";
-import { 
+import {
   sequelize,
   User,
   ShippingAddress,
@@ -38,11 +38,11 @@ app.use((req, res, next) => {
 app.use((err, req, res, next) => {
   if (err instanceof SyntaxError && err.status === 400 && "body" in err) {
     console.error("❌ Invalid JSON:", err.message);
-    return res.status(400).json({ 
+    return res.status(400).json({
       success: false,
       error: "Invalid JSON format",
       message: "Please check your request body",
-      detail: err.message 
+      detail: err.message
     });
   }
   next();
@@ -64,31 +64,31 @@ app.use(passport.session());
 // ROUTES
 // ==============================
 app.get("/", (req, res) => {
-  res.json({ 
+  res.json({
     message: "✅ Server connected with PostgreSQL via Sequelize!",
     timestamp: new Date()
   });
 });
 
 import api from "./routes/api.js";
-app.use("/api", api); 
+app.use("/api", api);
 
 // ← THÊM: 404 handler
 app.use((req, res) => {
-  res.status(404).json({ 
+  res.status(404).json({
     success: false,
     error: "Route not found",
-    path: req.path 
+    path: req.path
   });
 });
 
 // ← THÊM: Global error handler
 app.use((err, req, res, next) => {
   console.error("❌ Server error:", err);
-  res.status(500).json({ 
+  res.status(500).json({
     success: false,
     error: "Internal server error",
-    message: err.message 
+    message: err.message
   });
 });
 
@@ -100,8 +100,9 @@ async function initDatabase() {
     await sequelize.authenticate();
     console.log("✅ Database connected!");
 
-    await User.sync({ alter: true });
-    console.log("✅ User table ready!");
+    await sequelize.sync({ alter: true }); // <-- SỬA THÀNH DÒNG NÀY
+
+    console.log("✅ All tables synced!"); // (Sync TẤT CẢ các bảng)
   } catch (error) {
     console.error("❌ Database initialization failed:", error);
     process.exit(1); // ← Dừng server nếu DB lỗi

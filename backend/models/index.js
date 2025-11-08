@@ -15,34 +15,59 @@ import { Review } from "./reviewModel.js";
 
 // ============================================================
 // 🔹 Thiết lập các mối quan hệ (Associations)
+// (Đây là code đã được cập nhật để thêm 'as' cho Cart)
+// ============================================================
 
-// ===== Associations =====
-User.hasMany(Cart);
-Cart.belongsTo(User);
+// User <-> Cart
+User.hasMany(Cart, { foreignKey: 'user_id' });
+Cart.belongsTo(User, { foreignKey: 'user_id' });
 
-Cart.hasMany(CartItem);
-CartItem.belongsTo(Cart);
+// Cart <-> CartItem
+Cart.hasMany(CartItem, { foreignKey: 'cart_id' });
+CartItem.belongsTo(Cart, { foreignKey: 'cart_id' });
 
-Product.belongsTo(Category);
-Category.hasMany(Product);
+// CartItem <-> ProductVariant (CẬP NHẬT)
+ProductVariant.hasMany(CartItem, { foreignKey: 'product_variant_id' });
+CartItem.belongsTo(ProductVariant, {
+  foreignKey: 'product_variant_id',
+  as: 'product_variant' // Thêm 'as' để service 'include'
+});
 
-Product.hasMany(ProductVariant);
-ProductVariant.belongsTo(Product);
+// Product <-> ProductVariant (CẬP NHẬT)
+Product.hasMany(ProductVariant, {
+  foreignKey: 'product_id',
+  as: 'variants' // Thêm 'as'
+});
+ProductVariant.belongsTo(Product, {
+  foreignKey: 'product_id',
+  as: 'product' // Thêm 'as' để service 'include'
+});
 
-Order.belongsTo(User);
-User.hasMany(Order);
+// Category <-> Product
+Category.hasMany(Product, { foreignKey: 'category_id' });
+Product.belongsTo(Category, { foreignKey: 'category_id' });
 
-Order.hasMany(OrderItem);
-OrderItem.belongsTo(Order);
+// User <-> Order
+User.hasMany(Order, { foreignKey: 'user_id' });
+Order.belongsTo(User, { foreignKey: 'user_id' });
 
-Order.hasOne(Payment);
-Payment.belongsTo(Order);
+// Order <-> OrderItem
+Order.hasMany(OrderItem, { foreignKey: 'order_id' });
+OrderItem.belongsTo(Order, { foreignKey: 'order_id' });
 
-User.hasMany(ShippingAddress);
-ShippingAddress.belongsTo(User);
+// Order <-> Payment
+Order.hasOne(Payment, { foreignKey: 'order_id' });
+Payment.belongsTo(Order, { foreignKey: 'order_id' });
 
-Product.hasMany(Review);
-Review.belongsTo(Product);
+// User <-> ShippingAddress
+User.hasMany(ShippingAddress, { foreignKey: 'user_id' });
+ShippingAddress.belongsTo(User, { foreignKey: 'user_id' });
+
+// Product <-> Review
+Product.hasMany(Review, { foreignKey: 'product_id' });
+Review.belongsTo(Product, { foreignKey: 'product_id' });
+
+// ============================================================
 
 export {
   sequelize,
