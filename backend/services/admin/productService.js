@@ -2,6 +2,23 @@ import { Product, ProductVariant, Category, sequelize } from "../../models/index
 import { Op } from "sequelize";
 import cloudinary from "../../config/cloundinary.config.js";
 
+const sanitizeSlug = (value) => {
+    if (!value) return "";
+    return value
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .replace(/\s+/g, "-")
+        .replace(/[^a-z0-9-]/g, "")
+        .replace(/-+/g, "-")
+        .replace(/^-|-$/g, "");
+};
+
+const resolveCategorySlug = (name, fallback = "uncategorized") => {
+    const slug = sanitizeSlug(name);
+    return slug || fallback;
+};
+
 export const createProductService = async( data, files) => {
     try{
         const imageUrls = [];
@@ -23,7 +40,7 @@ export const createProductService = async( data, files) => {
             if(!existingCategory){
                 // Nếu category_id không tồn tại, tự động tạo category mới
                 const categoryName = data.category_name || data.brand || "Uncategorized";
-                const categorySlug = data.category_slug || categoryName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+                const categorySlug = data.category_slug || resolveCategorySlug(categoryName);
                 
                 const newCategory = await Category.create({
                     name: categoryName,
@@ -36,14 +53,14 @@ export const createProductService = async( data, files) => {
             // Nếu không có category_id nhưng có category_name, tạo category mới
             const newCategory = await Category.create({
                 name: data.category_name,
-                slug: data.category_slug || data.category_name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''),
+                slug: data.category_slug || resolveCategorySlug(data.category_name),
                 parent_id: data.category_parent_id || null,
             });
             categoryId = newCategory.id;
         } else {
             // Nếu không có cả category_id và category_name, tạo category mặc định
             const categoryName = data.brand || "Uncategorized";
-            const categorySlug = categoryName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+            const categorySlug = resolveCategorySlug(categoryName);
             
             const newCategory = await Category.create({
                 name: categoryName,
@@ -208,7 +225,7 @@ export const updateProductService = async (productId, data, files) => {
                     // Tạo category mới
                     const newCategory = await Category.create({
                         name: data.category.name,
-                        slug: data.category.slug || data.category.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''),
+                        slug: data.category.slug || resolveCategorySlug(data.category.name),
                         parent_id: data.category.parent_id || null,
                     }, { transaction });
                     categoryId = newCategory.id;
@@ -220,7 +237,7 @@ export const updateProductService = async (productId, data, files) => {
                 if (!existingCategory) {
                     // Nếu category_id không tồn tại, tự động tạo category mới
                     const categoryName = data.category_name || data.brand || product.brand || "Uncategorized";
-                    const categorySlug = data.category_slug || categoryName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+                    const categorySlug = data.category_slug || resolveCategorySlug(categoryName);
                     
                     const newCategory = await Category.create({
                         name: categoryName,
@@ -235,7 +252,7 @@ export const updateProductService = async (productId, data, files) => {
                 // Nếu không có category_id nhưng có category_name, tạo category mới
                 const newCategory = await Category.create({
                     name: data.category_name,
-                    slug: data.category_slug || data.category_name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''),
+                slug: data.category_slug || resolveCategorySlug(data.category_name),
                     parent_id: data.category_parent_id || null,
                 }, { transaction });
                 categoryId = newCategory.id;
