@@ -17,32 +17,42 @@ import { Review } from "./reviewModel.js";
 // 🔹 Thiết lập các mối quan hệ (Associations)
 
 // ===== Associations =====
-User.hasMany(Cart);
-Cart.belongsTo(User);
+User.hasMany(Cart, { foreignKey: 'user_id' });
+Cart.belongsTo(User, { foreignKey: 'user_id' });
 
-Cart.hasMany(CartItem);
-CartItem.belongsTo(Cart);
+Cart.hasMany(CartItem, { foreignKey: 'cart_id' });
+CartItem.belongsTo(Cart, { foreignKey: 'cart_id' });
 
-Product.belongsTo(Category);
-Category.hasMany(Product);
+Product.belongsTo(Category, { foreignKey: 'category_id' });
+Category.hasMany(Product, { foreignKey: 'category_id' });
 
-Product.hasMany(ProductVariant);
-ProductVariant.belongsTo(Product);
+ProductVariant.belongsTo(Product, { 
+  foreignKey: 'product_id',
+  onDelete: 'CASCADE',
+});
+Product.hasMany(ProductVariant, {
+  foreignKey: 'product_id',
+  as: 'variants',
+  onDelete: 'CASCADE',
+});
 
-Order.belongsTo(User);
-User.hasMany(Order);
+Order.belongsTo(User, { foreignKey: 'user_id' });
+User.hasMany(Order, { foreignKey: 'user_id' });
 
-Order.hasMany(OrderItem);
-OrderItem.belongsTo(Order);
+Order.hasMany(OrderItem, { foreignKey: 'order_id' });
+OrderItem.belongsTo(Order, { foreignKey: 'order_id' });
 
-Order.hasOne(Payment);
-Payment.belongsTo(Order);
+Order.hasOne(Payment, { foreignKey: 'order_id' });
+Payment.belongsTo(Order, { foreignKey: 'order_id' });
 
-User.hasMany(ShippingAddress);
-ShippingAddress.belongsTo(User);
+User.hasMany(ShippingAddress, { foreignKey: 'user_id' });
+ShippingAddress.belongsTo(User, { foreignKey: 'user_id' });
 
-Product.hasMany(Review);
-Review.belongsTo(Product);
+Product.hasMany(Review, { foreignKey: 'product_id' });
+Review.belongsTo(Product, { foreignKey: 'product_id' });
+
+User.hasMany(Review, { foreignKey: 'user_id' });
+Review.belongsTo(User, { foreignKey: 'user_id' });
 
 export {
   sequelize,

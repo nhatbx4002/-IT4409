@@ -11,8 +11,13 @@ import {
   ShippingAddress,
   Category,
   Product,
+  ProductVariant,
+  Cart,
+  CartItem,
   Order,
+  OrderItem,
   Payment,
+  Promotion,
   Review,
 } from "./models/index.js";
 
@@ -100,8 +105,50 @@ async function initDatabase() {
     await sequelize.authenticate();
     console.log("✅ Database connected!");
 
+    // Sync theo thứ tự: Parent trước, Child sau
+    // 1. Base models (không có foreign key)
     await User.sync({ alter: true });
-    console.log("✅ User table ready!");
+    
+    await Category.sync({ alter: true });
+   
+
+    // 2. Models phụ thuộc User
+    await ShippingAddress.sync({ alter: true });
+   
+
+    await Cart.sync({ alter: true });
+   
+
+    await Order.sync({ alter: true });
+   
+
+    // 3. Models phụ thuộc Product
+    await Product.sync({ alter: true });
+    
+
+    await ProductVariant.sync({ alter: true });
+   
+
+    await Review.sync({ alter: true });
+    
+    // 4. Models phụ thuộc Cart và Order
+    await CartItem.sync({ alter: true });
+  
+
+    await OrderItem.sync({ alter: true });
+
+
+    await Payment.sync({ alter: true });
+
+    // 5. Promotion (nếu có)
+    try {
+      await Promotion.sync({ alter: true });
+      console.log("✅ Promotion table synced");
+    } catch (promoError) {
+      console.warn("⚠️ Promotion table sync skipped:", promoError.message);
+    }
+
+    console.log("✅ All tables synced successfully!");
   } catch (error) {
     console.error("❌ Database initialization failed:", error);
     process.exit(1); // ← Dừng server nếu DB lỗi
