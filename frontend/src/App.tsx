@@ -1,7 +1,8 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Home from "./pages/Home";
 import { Collections } from "@/pages/Collections";
-
+import LoginPage from "@/pages/LoginPage";
+import SignUpPage from "@/pages/SignUpPage";
 export default function App() {
   return (
     <BrowserRouter>
@@ -11,6 +12,8 @@ export default function App() {
         <Route path="/collections" element={<Collections />} />
         <Route path="/collections/:collection" element={<Collections />} />
         <Route path="/collections/:collection/:category" element={<Collections />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/signup" element={<SignUpPage />} />
       </Routes>
     </BrowserRouter>
   );
