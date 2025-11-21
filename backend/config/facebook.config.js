@@ -1,52 +1,78 @@
 import passport from "passport";
 import { Strategy as FacebookStrategy } from "passport-facebook";
 import { User } from "../models/index.js";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 passport.use(
     new FacebookStrategy(
     {
       clientID: process.env.FACEBOOK_APP_ID,
       clientSecret: process.env.FACEBOOK_APP_SECRET,
-      callbackURL: "http://localhost:3000/api/facebook/callback",
-      profileFields: ["id", "emails", "name"], // lấy email, tên (Facebook không hỗ trợ phone trong profileFields)
+      callbackURL: process.env.FACEBOOK_CALLBACK_URL || "http://localhost:3000/api/facebook/callback",
+      profileFields: ["id", "emails", "name"],
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
         const email = profile.emails?.[0]?.value;
         const facebookId = profile.id;
-        const fullName = `${profile.name.givenName} ${profile.name.familyName}`;
-        // Facebook không cung cấp số điện thoại trong profileFields cơ bản
-        // User có thể cập nhật số điện thoại sau khi đăng ký
+        
+        // Kiểm tra email có tồn tại không
+        if (!email) {
+          return done(
+            null,
+            false,
+            { message: "Facebook account không có email. Vui lòng cung cấp email trong cài đặt Facebook." }
+          );
+        }
 
-        let user = await User.findOne({ where: { provider_id: facebookId, provider: "facebook" } });
+        // Xử lý fullName an toàn
+        const givenName = profile.name?.givenName || "";
+        const familyName = profile.name?.familyName || "";
+        const fullName = `${givenName} ${familyName}`.trim() || profile.displayName || "Facebook User";
 
-        // Nếu chưa có user -> tạo mới
+        let user = await User.findOne({ 
+          where: { provider_id: facebookId, provider: "facebook" } 
+        });
+
         if (!user) {
-          // Kiểm tra nếu email đã tồn tại cho tài khoản local thì KHÔNG liên kết
-          const existingUser = await User.findOne({ where: { email, provider: "local" } });
+          // Kiểm tra email đã tồn tại
+          const existingUser = await User.findOne({ 
+            where: { email, provider: "local" } 
+          });
+          
           if (existingUser) {
-            return done(null, false, { message: "Email này đã được dùng cho tài khoản local" });
+            return done(
+              null,
+              false,
+              { message: "Email này đã được dùng cho tài khoản local" }
+            );
           }
 
           user = await User.create({
             email,
             full_name: fullName,
-            phone: null, // Số điện thoại sẽ được cập nhật sau khi đăng ký
+            phone: null,
             provider: "facebook",
             provider_id: facebookId,
             access_token: accessToken,
-            refresh_token: refreshToken
+            refresh_token: refreshToken || null
           });
         } else {
-          // Cập nhật lại accessToken nếu cần
+          // Cập nhật cả access_token và refresh_token
           user.access_token = accessToken;
+          if (refreshToken) {
+            user.refresh_token = refreshToken;
+          }
           await user.save();
         }
 
         done(null, user);
       } catch (err) {
+        console.error("Facebook OAuth error:", err);
         done(err, null);
       }
     }
   )
-)
+);

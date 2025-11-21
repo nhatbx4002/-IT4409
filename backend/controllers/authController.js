@@ -42,7 +42,6 @@ export const signIn = async (req,res) => {
 }
 
 //dang xuat tai khoan
-
 export const signOut = async (req,res) => {
     try{
         const email = req.user.email;
@@ -64,7 +63,6 @@ export const signOut = async (req,res) => {
 }
 
 //Quen mat khau
-
 export const sendOTPEmail = async (req, res) => {
   try {
     const result = await sendOtpService(req.body.email);
@@ -95,18 +93,16 @@ export const resetPassword = async (req, res) => {
 
 //Dang nhap bang google
 export const signInGoogleController = {
-  
     //Xử lý callback sau khi Google xác thực thành công
-  
   googleCallback: async (req, res) => {
     try {
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
      
       if (!req.user) {
-        return res.status(400).json({
-          success: false,
-          message:
-            "Email này đã được đăng ký bằng tài khoản local, vui lòng đăng nhập bằng email & mật khẩu.",
-        });
+        const errorMessage = encodeURIComponent(
+          "Email này đã được đăng ký bằng tài khoản local, vui lòng đăng nhập bằng email & mật khẩu."
+        );
+        return res.redirect(`${frontendUrl}/auth/callback?error=true&errorMessage=${errorMessage}`);
       }
 
       const user = req.user;
@@ -118,16 +114,21 @@ export const signInGoogleController = {
       // Lưu tokens vào database
       await signInGoogle.saveTokensToDatabase(user, accessToken, refreshToken);
 
-      // Format dữ liệu trả về
-      const response = signInGoogle.formatUserResponse(user, accessToken, refreshToken);
+      // Redirect về frontend với tokens trong URL params
+      const params = new URLSearchParams({
+        accessToken,
+        refreshToken,
+        userId: user.id.toString(),
+        email: user.email,
+        fullName: user.full_name,
+      });
 
-      return res.status(200).json(response);
+      return res.redirect(`${frontendUrl}/auth/callback?${params.toString()}`);
     } catch (error) {
       console.error(" Lỗi khi đăng nhập Google:", error);
-      return res.status(500).json({
-        success: false,
-        message: "Đăng nhập Google thất bại, vui lòng thử lại sau.",
-      });
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+      const errorMessage = encodeURIComponent("Đăng nhập Google thất bại, vui lòng thử lại sau.");
+      return res.redirect(`${frontendUrl}/auth/callback?error=true&errorMessage=${errorMessage}`);
     }
   },
 };
@@ -139,12 +140,13 @@ export const signInFacebookController = {
   //Xử lý callback sau khi Facebook xác thực thành công
   facebookCallback: async (req, res) => {
     try {
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+      
       if (!req.user) {
-        return res.status(400).json({
-          success: false,
-          message:
-            "Email này đã được đăng ký bằng tài khoản local, vui lòng đăng nhập bằng email & mật khẩu.",
-        });
+        const errorMessage = encodeURIComponent(
+          "Email này đã được đăng ký bằng tài khoản local, vui lòng đăng nhập bằng email & mật khẩu."
+        );
+        return res.redirect(`${frontendUrl}/auth/callback?error=true&errorMessage=${errorMessage}`);
       }
 
       const user = req.user;
@@ -156,16 +158,21 @@ export const signInFacebookController = {
       // Lưu tokens vào database
       await signInFacebook.saveTokensToDatabase(user, accessToken, refreshToken);
 
-      // Format dữ liệu trả về
-      const response = signInFacebook.formatUserResponse(user, accessToken, refreshToken);
+      // Redirect về frontend với tokens trong URL params
+      const params = new URLSearchParams({
+        accessToken,
+        refreshToken,
+        userId: user.id.toString(),
+        email: user.email,
+        fullName: user.full_name,
+      });
 
-      return res.status(200).json(response);
+      return res.redirect(`${frontendUrl}/auth/callback?${params.toString()}`);
     } catch (error) {
       console.error(" Lỗi khi đăng nhập Facebook:", error);
-      return res.status(500).json({
-        success: false,
-        message: "Đăng nhập Facebook thất bại, vui lòng thử lại sau.",
-      });
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+      const errorMessage = encodeURIComponent("Đăng nhập Facebook thất bại, vui lòng thử lại sau.");
+      return res.redirect(`${frontendUrl}/auth/callback?error=true&errorMessage=${errorMessage}`);
     }
   },
 };

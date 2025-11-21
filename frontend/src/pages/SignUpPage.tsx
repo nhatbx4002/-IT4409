@@ -3,7 +3,7 @@ import { Footer } from "@/components/Footer";
 import { Navbar } from "@/components/Navbar";
 import { SignUpForm } from "@/components/SignUpPage/SignUpForm";
 
-export default function App() {
+export default function SignUpPage() {
   return (
     <div>
       <Navbar />

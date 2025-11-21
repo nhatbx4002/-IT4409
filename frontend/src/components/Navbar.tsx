@@ -13,14 +13,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useNavigate } from "react-router-dom";
 
+import { getUser, isAuthenticated, logout, type AuthUser } from "@/lib/auth";
 
-import { getUser, isAuthenticated, loginMock, logout, type AuthUser } from "@/lib/auth";
 
 export function Navbar() {
   const [showTopBar, setShowTopBar] = useState(true);
   const [cartOpen, setCartOpen] = useState(false);
-
+  const navigate = useNavigate();
   const [user,setUser] = useState<AuthUser | null>(null);
 
   useEffect(() =>{
@@ -38,9 +39,8 @@ export function Navbar() {
   }
 
   const handleDemoLogin = () => {
-    loginMock();
-    setUser(getUser());
-  }
+    navigate("/login");
+  };
 
   return (
     <>
@@ -207,7 +207,7 @@ export function Navbar() {
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         className="cursor-pointer hover:bg-[#F5F5F5] py-3"
-                        onClick={() => alert("Đi tới /register (frontend-only)")}
+                        onClick={() => navigate("/signup")}
                       >
                         <UserPlus className="h-4 w-4 mr-3 text-[#D4AF37]" />
                         <span className="text-sm">Register</span>

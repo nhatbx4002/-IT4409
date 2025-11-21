@@ -1,9 +1,61 @@
 import { useState } from "react";
-import { Eye, EyeOff, Mail, Lock } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { useNavigate, Link } from "react-router-dom";
+import { Eye, EyeOff, Mail, Lock, AlertCircle } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
+import { signIn, signInWithGoogle, signInWithFacebook } from "@/lib/api";
+import { setAuth } from "@/lib/auth";
+
+const loginSchema = z.object({
+  email: z.string().email("Please enter a valid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+  remember: z.boolean().optional(),
+});
+
+type LoginFormData = z.infer<typeof loginSchema>;
 
 export function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      remember: false,
+    },
+  });
+
+  const onSubmit = async (data: LoginFormData) => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const response = await signIn(data.email, data.password);
+      
+      // Lưu token và user vào localStorage
+      setAuth(response.accessToken, {
+        id: response.user.id,
+        name: response.user.full_name,
+        email: response.user.email,
+      });
+
+      // Redirect về home
+      navigate("/");
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Login failed. Please try again.";
+      setError(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div
@@ -44,8 +96,30 @@ export function LoginForm() {
         </p>
       </div>
 
+      {/* Error Message */}
+      {error && (
+        <div
+          className="mb-4 p-3 rounded-lg flex items-center gap-2"
+          style={{
+            background: "rgba(239, 68, 68, 0.1)",
+            border: "1px solid rgba(239, 68, 68, 0.3)",
+          }}
+        >
+          <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
+          <p
+            style={{
+              fontFamily: "Poppins",
+              fontSize: "14px",
+              color: "#DC2626",
+            }}
+          >
+            {error}
+          </p>
+        </div>
+      )}
+
       {/* Form */}
-      <form className="space-y-5 sm:space-y-6">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5 sm:space-y-6">
         {/* Email Field */}
         <div>
           <label
@@ -66,7 +140,12 @@ export function LoginForm() {
               id="email"
               type="email"
               placeholder="abc@gmail.com"
-              className="w-full h-[52px] bg-[rgba(243,244,246,0.5)] border border-[#E5E7EB] rounded-lg pl-12 pr-4 transition-all focus:outline-none focus:border-2 focus:border-[#D4AF37] focus:bg-white focus:shadow-[0_0_0_4px_rgba(212,175,55,0.1)]"
+              {...register("email")}
+              className={`w-full h-[52px] bg-[rgba(243,244,246,0.5)] border rounded-lg pl-12 pr-4 transition-all focus:outline-none focus:border-2 focus:bg-white focus:shadow-[0_0_0_4px_rgba(212,175,55,0.1)] ${
+                errors.email
+                  ? "border-red-500 focus:border-red-500"
+                  : "border-[#E5E7EB] focus:border-[#D4AF37]"
+              }`}
               style={{
                 fontFamily: "Poppins",
                 fontSize: "15px",
@@ -74,6 +153,18 @@ export function LoginForm() {
               }}
             />
           </div>
+          {errors.email && (
+            <p
+              className="mt-1"
+              style={{
+                fontFamily: "Poppins",
+                fontSize: "12px",
+                color: "#DC2626",
+              }}
+            >
+              {errors.email.message}
+            </p>
+          )}
         </div>
 
         {/* Password Field */}
@@ -110,7 +201,12 @@ export function LoginForm() {
               id="password"
               type={showPassword ? "text" : "password"}
               placeholder="Enter your password"
-              className="w-full h-[52px] bg-[rgba(243,244,246,0.5)] border border-[#E5E7EB] rounded-lg pl-12 pr-12 transition-all focus:outline-none focus:border-2 focus:border-[#D4AF37] focus:bg-white focus:shadow-[0_0_0_4px_rgba(212,175,55,0.1)]"
+              {...register("password")}
+              className={`w-full h-[52px] bg-[rgba(243,244,246,0.5)] border rounded-lg pl-12 pr-12 transition-all focus:outline-none focus:border-2 focus:bg-white focus:shadow-[0_0_0_4px_rgba(212,175,55,0.1)] ${
+                errors.password
+                  ? "border-red-500 focus:border-red-500"
+                  : "border-[#E5E7EB] focus:border-[#D4AF37]"
+              }`}
               style={{
                 fontFamily: "Poppins",
                 fontSize: "15px",
@@ -129,12 +225,25 @@ export function LoginForm() {
               )}
             </button>
           </div>
+          {errors.password && (
+            <p
+              className="mt-1"
+              style={{
+                fontFamily: "Poppins",
+                fontSize: "12px",
+                color: "#DC2626",
+              }}
+            >
+              {errors.password.message}
+            </p>
+          )}
         </div>
 
         {/* Remember Me */}
         <div className="flex items-center my-5">
           <Checkbox
             id="remember"
+            {...register("remember")}
             className="w-5 h-5 rounded border-2 data-[state=checked]:bg-[#D4AF37] data-[state=checked]:border-[#D4AF37]"
           />
           <label
@@ -154,9 +263,10 @@ export function LoginForm() {
         {/* Sign In Button */}
         <button
           type="submit"
-          className="w-full h-[52px] rounded-lg transition-all hover:-translate-y-0.5"
+          disabled={isLoading}
+          className="w-full h-[52px] rounded-lg transition-all hover:-translate-y-0.5 disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:translate-y-0"
           style={{
-            background: "#D4AF37",
+            background: isLoading ? "#C5A100" : "#D4AF37",
             border: "none",
             fontFamily: "Poppins",
             fontSize: "14px",
@@ -165,16 +275,20 @@ export function LoginForm() {
             letterSpacing: "1px",
             textTransform: "uppercase",
             boxShadow: "0 4px 12px rgba(212,175,55,0.3)",
-            cursor: "pointer",
+            cursor: isLoading ? "not-allowed" : "pointer",
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.background = "#C5A100";
+            if (!isLoading) {
+              e.currentTarget.style.background = "#C5A100";
+            }
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.background = "#D4AF37";
+            if (!isLoading) {
+              e.currentTarget.style.background = "#D4AF37";
+            }
           }}
         >
-          SIGN IN
+          {isLoading ? "SIGNING IN..." : "SIGN IN"}
         </button>
 
         {/* Divider */}
@@ -199,6 +313,7 @@ export function LoginForm() {
         {/* Google SSO Button */}
         <button
           type="button"
+          onClick={() => signInWithGoogle()}
           className="w-full h-[52px] bg-[rgba(255,255,255,0.6)] border-[1.5px] border-[#E5E7EB] rounded-lg flex items-center justify-center gap-3 transition-all hover:bg-white hover:border-[#D4AF37]"
           style={{
             fontFamily: "Poppins",
@@ -237,6 +352,36 @@ export function LoginForm() {
           Continue with Google
         </button>
 
+        {/* Facebook SSO Button */}
+        <button
+          type="button"
+          onClick={() => signInWithFacebook()}
+          className="w-full h-[52px] bg-[rgba(255,255,255,0.6)] border-[1.5px] border-[#E5E7EB] rounded-lg flex items-center justify-center gap-3 transition-all hover:bg-white hover:border-[#D4AF37] mt-3"
+          style={{
+            fontFamily: "Poppins",
+            fontSize: "15px",
+            fontWeight: 500,
+            color: "#111111",
+            cursor: "pointer",
+            backdropFilter: "blur(10px)",
+            WebkitBackdropFilter: "blur(10px)",
+          }}
+        >
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 20 20"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M18.3333 10.0001C18.3333 5.40008 14.6 1.66675 10 1.66675C5.4 1.66675 1.66667 5.40008 1.66667 10.0001C1.66667 13.9834 4.61667 17.3167 8.5 18.1167V12.5001H6.5V10.0001H8.5V8.16675C8.5 6.16675 9.7 5.08341 11.5 5.08341C12.3 5.08341 13.1333 5.25008 13.1333 5.25008V7.33341H12.2C11.2833 7.33341 10.9167 7.90008 10.9167 8.48341V10.0001H13.05L12.6833 12.5001H10.9167V18.1167C14.8 17.3167 18.3333 13.9834 18.3333 10.0001Z"
+              fill="#1877F2"
+            />
+          </svg>
+          Continue with Facebook
+        </button>
+
         {/* Footer */}
         <div className="text-center mt-10">
           <span
@@ -248,8 +393,8 @@ export function LoginForm() {
           >
             Don't have an account?{" "}
           </span>
-          <a
-            href="#"
+          <Link
+            to="/signup"
             style={{
               fontFamily: "Poppins",
               fontSize: "14px",
@@ -260,7 +405,7 @@ export function LoginForm() {
             className="hover:underline"
           >
             Sign Up
-          </a>
+          </Link>
         </div>
       </form>
     </div>
