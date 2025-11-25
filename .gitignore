@@ -7,5 +7,4 @@ node_modules/
 .bmad-infrastructure-devops/
 web-bundles/
 backend/uploads/
-API_TESTING_GUIDE.md
-product.plan.md
+web-bundles/
