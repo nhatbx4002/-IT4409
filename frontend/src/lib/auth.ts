@@ -1,19 +1,11 @@
 import { signOut as apiSignOut } from './api';
+import type { AuthTokens, AuthUser } from '@/types/auth';
 
-export type AuthUser = {
-  id: number;
-  name: string;
-  email: string;
-  avatarUrl?: string;
-};
-
-const TOKEN_KEY = 'access_token';
+const ACCESS_TOKEN_KEY = 'access_token';
+const REFRESH_TOKEN_KEY = 'refresh_token';
 const USER_KEY = 'auth_user';
 
-/**
- * Lấy user từ localStorage
- */
-export const getUser = (): AuthUser | null => {
+export const getStoredUser = (): AuthUser | null => {
   try {
     const raw = localStorage.getItem(USER_KEY);
     if (!raw) return null;
@@ -23,43 +15,43 @@ export const getUser = (): AuthUser | null => {
   }
 };
 
-/**
- * Kiểm tra user đã đăng nhập chưa
- */
+export const getAccessToken = (): string | null => {
+  return localStorage.getItem(ACCESS_TOKEN_KEY);
+};
+
+export const getRefreshToken = (): string | null => {
+  return localStorage.getItem(REFRESH_TOKEN_KEY);
+};
+
 export const isAuthenticated = (): boolean => {
-  return !!localStorage.getItem(TOKEN_KEY) && !!getUser();
+  return !!getAccessToken() && !!getStoredUser();
 };
 
-/**
- * Lấy access token từ localStorage
- */
-export const getToken = (): string | null => {
-  return localStorage.getItem(TOKEN_KEY);
-};
-
-/**
- * Lưu authentication data (token và user) vào localStorage
- */
-export const setAuth = (token: string, user: AuthUser): void => {
-  localStorage.setItem(TOKEN_KEY, token);
+export const setAuthSession = (tokens: AuthTokens, user: AuthUser): void => {
+  if (tokens.accessToken) {
+    localStorage.setItem(ACCESS_TOKEN_KEY, tokens.accessToken);
+  }
+  if (tokens.refreshToken) {
+    localStorage.setItem(REFRESH_TOKEN_KEY, tokens.refreshToken);
+  }
   localStorage.setItem(USER_KEY, JSON.stringify(user));
 };
 
-/**
- * Đăng xuất - gọi API và clear localStorage
- */
+export const clearAuthSession = (): void => {
+  localStorage.removeItem(ACCESS_TOKEN_KEY);
+  localStorage.removeItem(REFRESH_TOKEN_KEY);
+  localStorage.removeItem(USER_KEY);
+};
+
 export const logout = async (): Promise<void> => {
   try {
-    const token = getToken();
-    if (token) {
+    if (getAccessToken()) {
       await apiSignOut();
     }
   } catch (error) {
     console.error('Error during logout:', error);
-    // Continue with clearing localStorage even if API call fails
   } finally {
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(USER_KEY);
+    clearAuthSession();
   }
 };
 

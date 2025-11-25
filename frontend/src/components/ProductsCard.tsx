@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { Heart, Eye, ShoppingBag, Star } from "lucide-react";
-import type { Product, SortOption } from "@/types/products";
+import type { ProductSummary } from "@/types/products";
 import { ImageWithFallback } from "@/components/figma/ImageWithFallback";
 
 interface ProductCardProps {
-  product: Product;
-  onQuickView: (product: Product) => void;
-  onAddToWishlist: (productId: string) => void;
-  onAddToCart: (productId: string) => void;
+  product: ProductSummary;
+  onQuickView: (product: ProductSummary) => void;
+  onAddToWishlist: (productId: number) => void;
+  onAddToCart: (productId: number) => void;
 }
 
 export function ProductCard({
@@ -47,7 +47,7 @@ export function ProductCard({
     >
       {/* Image Container - 320x400px aspect ratio */}
       <div
-        className="relative overflow-hidden bg-[#F8F8F8] flex-shrink-0"
+        className="relative overflow-hidden bg-[#F8F8F8] shrink-0"
         style={{
           width: "100%",
           aspectRatio: "320/400",
@@ -292,54 +292,56 @@ export function ProductCard({
           </div>
 
           {/* Color Selector - "Colors:" label + 3 circular swatches (24px) */}
-          <div className="flex items-center gap-3 pt-2">
-            <span
-              className="text-black"
-              style={{
-                fontSize: "13px",
-                fontFamily: "'Poppins', sans-serif",
-                fontWeight: 500,
-              }}
-            >
-              Colors:
-            </span>
-            <div className="flex items-center gap-2">
-              {product.colors.slice(0, 3).map((color, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => setSelectedColorIndex(idx)}
-                  className="transition-all duration-300 hover:scale-110"
-                  style={{
-                    width: "24px",
-                    height: "24px",
-                    borderRadius: "50%",
-                    backgroundColor: color.hex,
-                    border:
-                      selectedColorIndex === idx
-                        ? "2px solid #D4AF37"
-                        : "2px solid #E0E0E0",
-                    boxShadow:
-                      selectedColorIndex === idx
-                        ? "0 0 0 2px rgba(212, 175, 55, 0.2)"
-                        : "none",
-                  }}
-                  title={color.name}
-                  aria-label={color.name}
-                />
-              ))}
-              {product.colors.length > 3 && (
-                <span
-                  className="text-[#999999]"
-                  style={{
-                    fontSize: "12px",
-                    fontFamily: "'Poppins', sans-serif",
-                  }}
-                >
-                  +{product.colors.length - 3}
-                </span>
-              )}
+          {product.colors.length > 0 && (
+            <div className="flex items-center gap-3 pt-2">
+              <span
+                className="text-black"
+                style={{
+                  fontSize: "13px",
+                  fontFamily: "'Poppins', sans-serif",
+                  fontWeight: 500,
+                }}
+              >
+                Colors:
+              </span>
+              <div className="flex items-center gap-2">
+                {product.colors.slice(0, 3).map((color, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setSelectedColorIndex(idx)}
+                    className="transition-all duration-300 hover:scale-110"
+                    style={{
+                      width: "24px",
+                      height: "24px",
+                      borderRadius: "50%",
+                      backgroundColor: color,
+                      border:
+                        selectedColorIndex === idx
+                          ? "2px solid #D4AF37"
+                          : "2px solid #E0E0E0",
+                      boxShadow:
+                        selectedColorIndex === idx
+                          ? "0 0 0 2px rgba(212, 175, 55, 0.2)"
+                          : "none",
+                    }}
+                    title={color}
+                    aria-label={color}
+                  />
+                ))}
+                {product.colors.length > 3 && (
+                  <span
+                    className="text-[#999999]"
+                    style={{
+                      fontSize: "12px",
+                      fontFamily: "'Poppins', sans-serif",
+                    }}
+                  >
+                    +{product.colors.length - 3}
+                  </span>
+                )}
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Hidden "Add to Cart" Button - Full-width, appears on hover */}
@@ -353,7 +355,7 @@ export function ProductCard({
         >
           <button
             onClick={() => onAddToCart(product.id)}
-            className="w-full bg-black text-white uppercase tracking-widest transition-all duration-300 hover:bg-[#D4AF37] hover:text-black"
+            className="w-full bg-black text-white uppercase tracking-widest transition-all duration-300 hover:bg-[#D4AF37] hover:text-black disabled:opacity-50 disabled:cursor-not-allowed"
             style={{
               padding: "14px 0",
               fontSize: "14px",
@@ -362,8 +364,9 @@ export function ProductCard({
               letterSpacing: "1.5px",
               borderRadius: "4px",
             }}
+            disabled={!product.inStock}
           >
-            ADD TO CART
+            {product.inStock ? "ADD TO CART" : "OUT OF STOCK"}
           </button>
         </div>
       </div>

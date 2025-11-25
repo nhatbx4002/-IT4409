@@ -4,11 +4,13 @@ import { Checkbox } from "./ui/checkbox";
 import { Slider } from "./ui/slider";
 import { Label } from "./ui/label";
 import { Separator } from "./ui/separator";
-import type { FilterState } from "@/types/products";
+import type { ProductFiltersState } from "@/types/products";
+import { CATEGORY_OPTIONS, BRAND_OPTIONS, COLOR_OPTIONS } from "@/data/filter-options";
+import { BRAND_GOLD, FONT_SANS } from "@/theme/constants";
 
 interface FilterSidebarProps {
-  filters: FilterState;
-  onFilterChange: (filters: FilterState) => void;
+  filters: ProductFiltersState;
+  onFilterChange: (filters: ProductFiltersState) => void;
   onClearFilters: () => void;
   isMobileOpen?: boolean;
   onMobileClose?: () => void;
@@ -22,7 +24,7 @@ export function FilterSidebar({
   onMobileClose
 }: FilterSidebarProps) {
   // Pending filters for "Apply" mode
-  const [pendingFilters, setPendingFilters] = useState<FilterState>(filters);
+  const [pendingFilters, setPendingFilters] = useState<ProductFiltersState>(filters);
   
   const [expandedSections, setExpandedSections] = useState<string[]>([
     'category', 'size', 'color', 'price', 'brand'
@@ -41,19 +43,7 @@ export function FilterSidebar({
     );
   };
 
-  const categories = ['Shirts', 'Trousers', 'Suits', 'Outerwear'];
   const sizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
-  const colors = [
-    { name: 'White', hex: '#FFFFFF' },
-    { name: 'Black', hex: '#000000' },
-    { name: 'Navy', hex: '#000080' },
-    { name: 'Light Blue', hex: '#ADD8E6' },
-    { name: 'Gray', hex: '#808080' },
-    { name: 'Beige', hex: '#F5F5DC' },
-    { name: 'Pink', hex: '#FFB6C1' },
-    { name: 'Olive', hex: '#808000' }
-  ];
-  const brands = ['ARISTINO', 'Premium Line', 'Classic Collection'];
 
   const handleApplyFilters = () => {
     onFilterChange(pendingFilters);
@@ -109,7 +99,7 @@ export function FilterSidebar({
             <span 
               className="text-black"
               style={{ 
-                fontFamily: "'Poppins', sans-serif",
+                fontFamily: FONT_SANS,
                 fontWeight: 500
               }}
             >
@@ -119,8 +109,8 @@ export function FilterSidebar({
               <span 
                 className="px-2 py-0.5 rounded-full text-xs text-black"
                 style={{ 
-                  backgroundColor: '#D4AF37',
-                  fontFamily: "'Poppins', sans-serif"
+                  backgroundColor: BRAND_GOLD,
+                  fontFamily: FONT_SANS
                 }}
               >
                 {activeCount}
@@ -154,26 +144,26 @@ export function FilterSidebar({
       {/* Category Filter */}
       <FilterSection title="Category" id="category">
         <div className="space-y-3">
-          {categories.map((category) => (
-            <div key={category} className="flex items-center space-x-2">
+          {CATEGORY_OPTIONS.map((category) => (
+            <div key={category.slug} className="flex items-center space-x-2">
               <Checkbox
-                id={`category-${category}`}
-                checked={pendingFilters.categories.includes(category)}
+                id={`category-${category.slug}`}
+                checked={pendingFilters.categories.includes(category.slug)}
                 onCheckedChange={(checked) => {
                   setPendingFilters({
                     ...pendingFilters,
                     categories: checked
-                      ? [...pendingFilters.categories, category]
-                      : pendingFilters.categories.filter(c => c !== category)
+                      ? [...pendingFilters.categories, category.slug]
+                      : pendingFilters.categories.filter(c => c !== category.slug)
                   });
                 }}
                 className="border-2 border-black/20 data-[state=checked]:bg-[#D4AF37] data-[state=checked]:border-[#D4AF37]"
               />
               <Label
-                htmlFor={`category-${category}`}
+                htmlFor={`category-${category.slug}`}
                 className="cursor-pointer text-sm text-[#666666] hover:text-black transition-colors duration-300"
               >
-                {category}
+                {category.label}
               </Label>
             </div>
           ))}
@@ -203,7 +193,7 @@ export function FilterSidebar({
                   : 'border-black/20 text-[#666666] hover:border-[#D4AF37]'
                 }
               `}
-              style={{ fontFamily: "'Poppins', sans-serif" }}
+              style={{ fontFamily: FONT_SANS }}
             >
               {size}
             </button>
@@ -216,7 +206,7 @@ export function FilterSidebar({
       {/* Color Filter */}
       <FilterSection title="Color" id="color">
         <div className="flex gap-3 flex-wrap">
-          {colors.map((color) => (
+          {COLOR_OPTIONS.map((color) => (
             <button
               key={color.name}
               onClick={() => {
@@ -272,7 +262,7 @@ export function FilterSidebar({
       {/* Brand Filter */}
       <FilterSection title="Brand" id="brand">
         <div className="space-y-3">
-          {brands.map((brand) => (
+          {BRAND_OPTIONS.map((brand) => (
             <div key={brand} className="flex items-center space-x-2">
               <Checkbox
                 id={`brand-${brand}`}
@@ -304,9 +294,9 @@ export function FilterSidebar({
           onClick={handleApplyFilters}
           className="w-full py-3 transition-all duration-300 hover:opacity-90"
           style={{
-            backgroundColor: '#D4AF37',
+            backgroundColor: BRAND_GOLD,
             color: '#000',
-            fontFamily: "'Poppins', sans-serif",
+            fontFamily: FONT_SANS,
             fontWeight: 600
           }}
         >
@@ -316,7 +306,7 @@ export function FilterSidebar({
           onClick={handleCancel}
           className="w-full py-3 border-2 border-black/20 transition-all duration-300 hover:border-black hover:bg-black/5"
           style={{
-            fontFamily: "'Poppins', sans-serif"
+            fontFamily: FONT_SANS
           }}
         >
           Cancel

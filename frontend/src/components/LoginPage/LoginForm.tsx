@@ -6,7 +6,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { Eye, EyeOff, Mail, Lock, AlertCircle } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { signIn, signInWithGoogle, signInWithFacebook } from "@/lib/api";
-import { setAuth } from "@/lib/auth";
+import { setAuthSession } from "@/lib/auth";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -38,14 +38,16 @@ export function LoginForm() {
     setError(null);
 
     try {
-      const response = await signIn(data.email, data.password);
+      const response = await signIn({ email: data.email, password: data.password });
       
       // Lưu token và user vào localStorage
-      setAuth(response.accessToken, {
-        id: response.user.id,
-        name: response.user.full_name,
-        email: response.user.email,
-      });
+      setAuthSession(
+        {
+          accessToken: response.accessToken,
+          refreshToken: response.refreshToken,
+        },
+        response.user
+      );
 
       // Redirect về home
       navigate("/");
@@ -105,7 +107,7 @@ export function LoginForm() {
             border: "1px solid rgba(239, 68, 68, 0.3)",
           }}
         >
-          <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
+          <AlertCircle className="w-5 h-5 text-red-600 shrink-0" />
           <p
             style={{
               fontFamily: "Poppins",

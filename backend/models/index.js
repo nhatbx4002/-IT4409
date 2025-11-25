@@ -23,8 +23,14 @@ Cart.belongsTo(User, { foreignKey: 'user_id' });
 Cart.hasMany(CartItem, { foreignKey: 'cart_id' });
 CartItem.belongsTo(Cart, { foreignKey: 'cart_id' });
 
-Product.belongsTo(Category, { foreignKey: 'category_id' });
-Category.hasMany(Product, { foreignKey: 'category_id' });
+Product.belongsTo(Category, {
+  foreignKey: "category_id",
+  as: "category",         
+});
+Category.hasMany(Product, {
+  foreignKey: "category_id",
+  as: "products",          
+})
 
 ProductVariant.belongsTo(Product, { 
   foreignKey: 'product_id',
@@ -35,6 +41,17 @@ Product.hasMany(ProductVariant, {
   as: 'variants',
   onDelete: 'CASCADE',
 });
+
+Category.belongsTo(Category, {
+  foreignKey: "parent_id",
+  as: "parent",
+});
+Category.hasMany(Category, {
+  foreignKey: "parent_id",
+  as: "children",
+});
+
+
 
 Order.belongsTo(User, { foreignKey: 'user_id' });
 User.hasMany(Order, { foreignKey: 'user_id' });

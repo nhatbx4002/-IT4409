@@ -1,8 +1,8 @@
 // server.js
-import dotenv from "dotenv";
+import { loadEnv } from "./config/env.js";
 import app, { startServer } from "./api.js";
 
-dotenv.config();
+loadEnv();
 
 const PORT = process.env.PORT || 3000;
 

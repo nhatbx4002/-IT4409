@@ -6,12 +6,57 @@ export const getProductsByCategoryController = async (req, res) => {
     const { name } = req.query;
     const includeDescendants = req.query.includeDescendants !== "false";
 
+    // Parse filter params
+    const collection = req.query.collection;
+    const sizes = req.query.sizes
+        ? (Array.isArray(req.query.sizes) ? req.query.sizes : req.query.sizes.split(',').filter(Boolean))
+        : undefined;
+    const colors = req.query.colors
+        ? (Array.isArray(req.query.colors) ? req.query.colors : req.query.colors.split(',').filter(Boolean))
+        : undefined;
+    const priceMin = req.query.priceMin ? parseFloat(req.query.priceMin) : undefined;
+    const priceMax = req.query.priceMax ? parseFloat(req.query.priceMax) : undefined;
+    const brands = req.query.brands
+        ? (Array.isArray(req.query.brands) ? req.query.brands : req.query.brands.split(',').filter(Boolean))
+        : undefined;
+    const inStockOnly = req.query.inStockOnly === 'true' || req.query.inStockOnly === true;
+    const sort = req.query.sort || 'featured';
+    const page = req.query.page ? Math.max(1, parseInt(req.query.page, 10)) : 1;
+    const pageSize = req.query.pageSize ? Math.max(1, parseInt(req.query.pageSize, 10)) : 12;
+
+    // Validate collection
+    if (collection && !['men', 'women', 'accessories'].includes(collection)) {
+        return res.status(400).json({
+            success: false,
+            message: "Invalid collection. Must be 'men', 'women', or 'accessories'",
+        });
+    }
+
+    // Validate sort
+    const validSorts = ['featured', 'newest', 'price-low', 'price-high', 'popular'];
+    if (!validSorts.includes(sort)) {
+        return res.status(400).json({
+            success: false,
+            message: `Invalid sort. Must be one of: ${validSorts.join(', ')}`,
+        });
+    }
+
     try {
         const result = await getProductsByCategoryService({
             categoryId: categoryId ? Number(categoryId) : undefined,
             categorySlug: slug,
             categoryName: name,
             includeDescendants,
+            collection,
+            sizes,
+            colors,
+            priceMin,
+            priceMax,
+            brands,
+            inStockOnly,
+            sort,
+            page,
+            pageSize,
         });
 
         return res.status(200).json({
@@ -51,10 +96,62 @@ export const getProductDetailController = async (req, res) => {
 export const searchProductsController = async (req, res) => {
     const { q, name, brand } = req.query;
 
+    // Parse filter params
+    const collection = req.query.collection;
+    const categorySlug = req.query.categorySlug;
+    const categorySlugs = req.query.categorySlugs
+        ? (Array.isArray(req.query.categorySlugs) ? req.query.categorySlugs : req.query.categorySlugs.split(',').filter(Boolean))
+        : undefined;
+    const sizes = req.query.sizes
+        ? (Array.isArray(req.query.sizes) ? req.query.sizes : req.query.sizes.split(',').filter(Boolean))
+        : undefined;
+    const colors = req.query.colors
+        ? (Array.isArray(req.query.colors) ? req.query.colors : req.query.colors.split(',').filter(Boolean))
+        : undefined;
+    const priceMin = req.query.priceMin ? parseFloat(req.query.priceMin) : undefined;
+    const priceMax = req.query.priceMax ? parseFloat(req.query.priceMax) : undefined;
+    const brands = req.query.brands
+        ? (Array.isArray(req.query.brands) ? req.query.brands : req.query.brands.split(',').filter(Boolean))
+        : undefined;
+    const inStockOnly = req.query.inStockOnly === 'true' || req.query.inStockOnly === true;
+    const sort = req.query.sort || 'featured';
+    const page = req.query.page ? Math.max(1, parseInt(req.query.page, 10)) : 1;
+    const pageSize = req.query.pageSize ? Math.max(1, parseInt(req.query.pageSize, 10)) : 12;
+
+    // Validate collection
+    if (collection && !['men', 'women', 'accessories'].includes(collection)) {
+        return res.status(400).json({
+            success: false,
+            message: "Invalid collection. Must be 'men', 'women', or 'accessories'",
+        });
+    }
+
+    // Validate sort
+    const validSorts = ['featured', 'newest', 'price-low', 'price-high', 'popular'];
+    if (!validSorts.includes(sort)) {
+        return res.status(400).json({
+            success: false,
+            message: `Invalid sort. Must be one of: ${validSorts.join(', ')}`,
+        });
+    }
+
     try {
         const result = await searchProductsService({
-            name: name || q || undefined,
-            brand: brand || q || undefined,
+            q: q || undefined,
+            name: name || undefined,
+            brand: brand || undefined,
+            collection,
+            categorySlug,
+            categorySlugs,
+            sizes,
+            colors,
+            priceMin,
+            priceMax,
+            brands,
+            inStockOnly,
+            sort,
+            page,
+            pageSize,
         });
 
         return res.status(200).json({

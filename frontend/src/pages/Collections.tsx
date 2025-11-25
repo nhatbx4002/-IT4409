@@ -1,4 +1,4 @@
-import { Fragment, useState, useEffect } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import {
   Grid,
   List,
@@ -35,13 +35,18 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { useParams, useSearchParams } from "react-router-dom";
-import { allProducts } from "../data/products";
-import type {
-  Product,
-  FilterState,
-  SortOption,
-  ViewMode,
-} from "@/types/products";
+import { getProducts, getProductsByCategory } from "@/lib/api";
+import type { ProductSummary, SortOption, ViewMode } from "@/types/products";
+import { useProductFilters } from "@/hooks/useProductFilters";
+import { useQuickView } from "@/hooks/useQuickView";
+import { EmptyState, ErrorState, LoadingState } from "@/components/feedback/AsyncStates";
+import {
+  BRAND_GOLD,
+  CATEGORY_LABEL_MAP,
+  FONT_SANS,
+  FONT_SERIF,
+  TEXT_MUTED,
+} from "@/theme/constants";
 
 export function Collections() {
   const { collection, category } = useParams();
@@ -49,7 +54,7 @@ export function Collections() {
 
   const isNew = searchParams.get("new") === "1";
   const pageSize = Number(searchParams.get("pageSize") ?? 12);
-  const sortQ = (searchParams.get("sort") ?? "featured") as SortOption;
+  const sortParam = (searchParams.get("sort") ?? "featured") as SortOption;
 
   const capitalize = (s?: string) =>
     s ? s.charAt(0).toUpperCase() + s.slice(1) : "";
@@ -66,195 +71,110 @@ export function Collections() {
       : []),
     ...(category ? [{ label: category }] : []),
   ];
-  const [filters, setFilters] = useState<FilterState>({
-    categories: [],
-    sizes: [],
-    colors: [],
-    priceRange: [0, 500],
-    brands: [],
-    inStockOnly: false,
+
+  const {
+    filters,
+    setFilters,
+    resetFilters,
+    removeFilter,
+    activeFilterCount,
+    buildFilterParams,
+  } = useProductFilters({
+    collection: collection as "men" | "women" | "accessories" | undefined,
+    categoryFromUrl: category,
+    initialSort: sortParam,
   });
 
-  const [sortBy, setSortBy] = useState<SortOption>(sortQ);
   const [viewMode, setViewMode] = useState<ViewMode>("grid-4");
   const [currentPage, setCurrentPage] = useState(1);
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
   const [isDesktopFilterVisible, setIsDesktopFilterVisible] = useState(true);
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [isQuickViewOpen, setIsQuickViewOpen] = useState(false);
 
+  const { selectedProduct, isQuickViewOpen, openQuickView, closeQuickView } = useQuickView();
+
+  const [products, setProducts] = useState<ProductSummary[]>([]);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const currentSort = (filters.sortBy ?? sortParam) as SortOption;
   const itemsPerPage = pageSize;
 
+  const fetchProducts = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const params = buildFilterParams({
+        sort: currentSort,
+        page: currentPage,
+        pageSize: itemsPerPage,
+      });
+
+      const response =
+        category && !params.categorySlugs
+          ? await getProductsByCategory(category, params)
+          : await getProducts(params);
+
+      setProducts(response.products);
+      setTotal(response.total);
+      setTotalPages(response.totalPages);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to fetch products");
+      console.error("Error fetching products:", err);
+      setProducts([]);
+      setTotal(0);
+      setTotalPages(0);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [buildFilterParams, category, currentPage, currentSort, itemsPerPage]);
+
   useEffect(() => {
-    setSortBy(sortQ);
-  }, [sortQ]);
+    fetchProducts();
+  }, [
+    fetchProducts,
+    filters.sizes,
+    filters.colors,
+    filters.priceRange,
+    filters.brands,
+    filters.inStockOnly,
+    filters.categories,
+  ]);
 
-  // Pre-filter by URL params
-  const source = allProducts.filter(
-    (p) =>
-      (!collection || p.collection === collection) &&
-      (!category || p.category === category) &&
-      (!isNew || p.isNew)
-  );
-
-  // Filter products
-  const filteredProducts = source.filter((product) => {
-    // Category filter
-    if (
-      filters.categories.length > 0 &&
-      !filters.categories.includes(product.category)
-    ) {
-      return false;
-    }
-
-    // Size filter
-    if (
-      filters.sizes.length > 0 &&
-      !filters.sizes.some((size) => product.sizes.includes(size))
-    ) {
-      return false;
-    }
-
-    // Color filter
-    if (
-      filters.colors.length > 0 &&
-      !filters.colors.some((color) =>
-        product.colors.some((pc) => pc.name === color)
-      )
-    ) {
-      return false;
-    }
-
-    // Price filter
-    const price = product.salePrice || product.price;
-    if (price < filters.priceRange[0] || price > filters.priceRange[1]) {
-      return false;
-    }
-
-    // Brand filter
-    if (filters.brands.length > 0 && !filters.brands.includes(product.brand)) {
-      return false;
-    }
-
-    // In stock filter
-    if (filters.inStockOnly && !product.inStock) {
-      return false;
-    }
-
-    return true;
-  });
-
-  // Sort products
-  const sortedProducts = [...filteredProducts].sort((a, b) => {
-    switch (sortBy) {
-      case "newest":
-        return (b.isNew ? 1 : 0) - (a.isNew ? 1 : 0);
-      case "price-low":
-        return (a.salePrice || a.price) - (b.salePrice || b.price);
-      case "price-high":
-        return (b.salePrice || b.price) - (a.salePrice || a.price);
-      case "popular":
-        return b.reviewCount - a.reviewCount;
-      default:
-        return 0;
-    }
-  });
-
-  // Paginate products
-  const totalPages = Math.ceil(sortedProducts.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedProducts = sortedProducts.slice(
-    startIndex,
-    startIndex + itemsPerPage
-  );
-
-  // Scroll to top when page changes
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [currentPage]);
 
-  // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [filters, sortBy]);
-
-  // Reset to page 1 when URL params/query change
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [collection, category, isNew, pageSize]);
+  }, [filters, collection, category, isNew, pageSize]);
 
   const handleClearFilters = () => {
-    setFilters({
-      categories: [],
-      sizes: [],
-      colors: [],
-      priceRange: [0, 500],
-      brands: [],
-      inStockOnly: false,
-    });
+    resetFilters();
     setCurrentPage(1);
-    setIsMobileFilterOpen(false); // Close mobile filter drawer
+    setIsMobileFilterOpen(false);
   };
 
-  const handleRemoveFilter = (type: keyof FilterState, value?: string) => {
-    if (
-      type === "categories" ||
-      type === "sizes" ||
-      type === "colors" ||
-      type === "brands"
-    ) {
-      setFilters({
-        ...filters,
-        [type]: filters[type].filter((item: string) => item !== value),
-      });
-      setCurrentPage(1); // Reset to first page when removing a filter
-    } else if (type === "priceRange") {
-      setFilters({
-        ...filters,
-        priceRange: [0, 500],
-      });
-      setCurrentPage(1);
-    } else if (type === "inStockOnly") {
-      setFilters({
-        ...filters,
-        inStockOnly: false,
-      });
-      setCurrentPage(1);
-    }
+  const handleRemoveFilter = (type: keyof typeof filters, value?: string) => {
+    removeFilter(type, value);
+    setCurrentPage(1);
   };
 
-  const getActiveFilterCount = () => {
-    return (
-      filters.categories.length +
-      filters.sizes.length +
-      filters.colors.length +
-      filters.brands.length +
-      (filters.inStockOnly ? 1 : 0) +
-      (filters.priceRange[0] !== 0 || filters.priceRange[1] !== 500 ? 1 : 0)
-    );
+  const handleQuickView = (product: ProductSummary) => {
+    openQuickView(product);
   };
 
-  const handleQuickView = (product: Product) => {
-    setSelectedProduct(product);
-    setIsQuickViewOpen(true);
-  };
+  const paginatedProducts = useMemo(() => products, [products]);
 
-  const handleAddToWishlist = (productId: string) => {
-    console.log("Add to wishlist:", productId);
-    // Implement wishlist logic
-  };
-
-  const handleAddToCart = (productId: string) => {
-    console.log("Add to cart:", productId);
-    // Implement cart logic
-  };
+  const hasNoResults = !isLoading && !error && paginatedProducts.length === 0;
 
   return (
     <div className="min-h-screen bg-white">
       <Navbar />
 
       <div className="container mx-auto px-4 py-8">
-        {/* Breadcrumb */}
         <Breadcrumb className="mb-6">
           <BreadcrumbList>
             {crumbs.map((c, idx) => (
@@ -277,12 +197,11 @@ export function Collections() {
           </BreadcrumbList>
         </Breadcrumb>
 
-        {/* Page Header */}
         <div className="mb-6">
           <h1
             className="mb-4"
             style={{
-              fontFamily: "'Playfair Display', serif",
+              fontFamily: FONT_SERIF,
               fontSize: "36px",
               fontWeight: 600,
               letterSpacing: "-0.5px",
@@ -290,13 +209,18 @@ export function Collections() {
           >
             {dynamicTitle}
           </h1>
-          <p className="text-sm text-[#666666]">
-            Showing {sortedProducts.length} products
+          <p
+            className="text-sm"
+            style={{
+              color: TEXT_MUTED,
+              fontFamily: FONT_SANS,
+            }}
+          >
+            {isLoading ? "Loading..." : `Showing ${total} products`}
           </p>
         </div>
 
         <div className="flex gap-8">
-          {/* Sidebar - Desktop Only */}
           {isDesktopFilterVisible && (
             <aside className="hidden lg:block w-1/4 transition-all duration-500 ease-in-out">
               <div className="sticky top-4">
@@ -309,30 +233,27 @@ export function Collections() {
             </aside>
           )}
 
-          {/* Main Content */}
           <main className="flex-1">
-            {/* Sort & Filter Bar */}
             <div className="mb-6">
-              {/* Active Filters Row */}
-              {getActiveFilterCount() > 0 && (
+              {activeFilterCount > 0 && (
                 <div className="flex flex-wrap items-center gap-2 mb-4 pb-4 border-b border-black/10">
                   <span
                     className="text-sm"
                     style={{
-                      fontFamily: "'Poppins', sans-serif",
+                      fontFamily: FONT_SANS,
                     }}
                   >
                     Active Filters:
                   </span>
 
-                  {filters.categories.map((category) => (
+                  {filters.categories.map((categorySlug) => (
                     <Badge
-                      key={category}
+                      key={categorySlug}
                       variant="secondary"
                       className="bg-black/5 text-black border border-black/20 hover:bg-black/10 transition-colors duration-300 cursor-pointer px-3 py-1"
-                      onClick={() => handleRemoveFilter("categories", category)}
+                      onClick={() => handleRemoveFilter("categories", categorySlug)}
                     >
-                      {category}
+                      {CATEGORY_LABEL_MAP[categorySlug] ?? categorySlug}
                       <X className="w-3 h-3 ml-1" />
                     </Badge>
                   ))}
@@ -400,8 +321,8 @@ export function Collections() {
                     onClick={handleClearFilters}
                     className="text-sm underline transition-all duration-300"
                     style={{
-                      color: "#D4AF37",
-                      fontFamily: "'Poppins', sans-serif",
+                      color: BRAND_GOLD,
+                      fontFamily: FONT_SANS,
                     }}
                   >
                     Clear All
@@ -409,30 +330,26 @@ export function Collections() {
                 </div>
               )}
 
-              {/* Top Bar */}
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                {/* Filter Toggle Buttons */}
                 <div className="flex items-center gap-3">
-                  {/* Mobile Filter Button */}
                   <button
                     onClick={() => setIsMobileFilterOpen(true)}
                     className="lg:hidden flex items-center gap-2 px-4 py-2 border border-black/20 hover:border-[#D4AF37] transition-all duration-300"
                     style={{
-                      fontFamily: "'Poppins', sans-serif",
+                      fontFamily: FONT_SANS,
                     }}
                   >
                     <SlidersHorizontal className="w-4 h-4" />
                     FILTERS
                   </button>
 
-                  {/* Desktop Filter Toggle */}
                   <button
                     onClick={() =>
                       setIsDesktopFilterVisible(!isDesktopFilterVisible)
                     }
                     className="hidden lg:flex items-center gap-2 px-4 py-2 border border-black/20 hover:border-[#D4AF37] transition-all duration-300"
                     style={{
-                      fontFamily: "'Poppins', sans-serif",
+                      fontFamily: FONT_SANS,
                     }}
                   >
                     <SlidersHorizontal className="w-4 h-4" />
@@ -440,12 +357,13 @@ export function Collections() {
                   </button>
                 </div>
 
-                {/* Sort Dropdown */}
                 <div className="flex items-center gap-3">
                   <span className="text-sm text-[#666666]">Sort by:</span>
                   <Select
-                    value={sortBy}
-                    onValueChange={(value) => setSortBy(value as SortOption)}
+                    value={currentSort}
+                    onValueChange={(value) =>
+                      setFilters((prev) => ({ ...prev, sortBy: value as SortOption }))
+                    }
                   >
                     <SelectTrigger className="w-48 border-black/20 focus:border-[#D4AF37]">
                       <SelectValue />
@@ -464,7 +382,6 @@ export function Collections() {
                   </Select>
                 </div>
 
-                {/* View Toggle */}
                 <div className="flex items-center gap-1 border border-black/20 p-1">
                   <button
                     onClick={() => setViewMode("grid-4")}
@@ -501,43 +418,53 @@ export function Collections() {
               </div>
             </div>
 
-            {/* Product Grid */}
-            <div
-              className={`
-                grid gap-6 mb-12 transition-all duration-500
-                ${
-                  viewMode === "grid-4"
-                    ? `grid-cols-1 sm:grid-cols-2 ${
-                        isDesktopFilterVisible
-                          ? "lg:grid-cols-3 xl:grid-cols-4"
-                          : "lg:grid-cols-4 xl:grid-cols-5"
-                      }`
-                    : ""
-                }
-                ${
-                  viewMode === "grid-3"
-                    ? `grid-cols-1 sm:grid-cols-2 ${
-                        isDesktopFilterVisible
-                          ? "lg:grid-cols-3"
-                          : "lg:grid-cols-4"
-                      }`
-                    : ""
-                }
-                ${viewMode === "list" ? "grid-cols-1" : ""}
-              `}
-            >
-              {paginatedProducts.map((product) => (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  onQuickView={handleQuickView}
-                  onAddToWishlist={handleAddToWishlist}
-                  onAddToCart={handleAddToCart}
-                />
-              ))}
-            </div>
+            {isLoading && <LoadingState message="Loading products..." />}
 
-            {/* Pagination */}
+            {error && !isLoading && (
+              <ErrorState message={error} onRetry={fetchProducts} />
+            )}
+
+            {!isLoading && !error && (
+              <div
+                className={`
+                  grid gap-6 mb-12 transition-all duration-500
+                  ${
+                    viewMode === "grid-4"
+                      ? `grid-cols-1 sm:grid-cols-2 ${
+                          isDesktopFilterVisible
+                            ? "lg:grid-cols-3 xl:grid-cols-4"
+                            : "lg:grid-cols-4 xl:grid-cols-5"
+                        }`
+                      : ""
+                  }
+                  ${
+                    viewMode === "grid-3"
+                      ? `grid-cols-1 sm:grid-cols-2 ${
+                          isDesktopFilterVisible
+                            ? "lg:grid-cols-3"
+                            : "lg:grid-cols-4"
+                        }`
+                      : ""
+                  }
+                  ${viewMode === "list" ? "grid-cols-1" : ""}
+                `}
+              >
+                {paginatedProducts.map((product) => (
+                  <ProductCard
+                    key={product.id}
+                    product={product}
+                    onQuickView={handleQuickView}
+                    onAddToWishlist={(productId) =>
+                      console.log("Add to wishlist:", productId)
+                    }
+                    onAddToCart={(productId) =>
+                      console.log("Add to cart:", productId)
+                    }
+                  />
+                ))}
+              </div>
+            )}
+
             {totalPages > 1 && (
               <div className="flex items-center justify-center gap-2">
                 <button
@@ -576,7 +503,7 @@ export function Collections() {
                         }
                       `}
                       style={{
-                        fontFamily: "'Poppins', sans-serif",
+                        fontFamily: FONT_SANS,
                       }}
                     >
                       {pageNum}
@@ -591,7 +518,7 @@ export function Collections() {
                       onClick={() => setCurrentPage(totalPages)}
                       className="w-10 h-10 border-2 border-black/20 text-[#666666] hover:border-[#D4AF37] hover:text-[#D4AF37] transition-all duration-300"
                       style={{
-                        fontFamily: "'Poppins', sans-serif",
+                        fontFamily: FONT_SANS,
                       }}
                     >
                       {totalPages}
@@ -612,28 +539,17 @@ export function Collections() {
               </div>
             )}
 
-            {/* No Results */}
-            {sortedProducts.length === 0 && (
-              <div className="text-center py-16">
-                <p className="text-xl text-[#666666] mb-4">
-                  No products found matching your filters
-                </p>
-                <button
-                  onClick={handleClearFilters}
-                  className="px-6 py-3 border-2 border-[#D4AF37] text-[#D4AF37] hover:bg-[#D4AF37] hover:text-black transition-all duration-300"
-                  style={{
-                    fontFamily: "'Poppins', sans-serif",
-                  }}
-                >
-                  Clear All Filters
-                </button>
-              </div>
+            {hasNoResults && (
+              <EmptyState
+                title="No products found matching your filters"
+                actionLabel="Clear All Filters"
+                onAction={handleClearFilters}
+              />
             )}
           </main>
         </div>
       </div>
 
-      {/* Mobile Filter Sidebar */}
       <FilterSidebar
         filters={filters}
         onFilterChange={setFilters}
@@ -642,13 +558,17 @@ export function Collections() {
         onMobileClose={() => setIsMobileFilterOpen(false)}
       />
 
-      {/* Quick View Modal */}
-      <Dialog open={isQuickViewOpen} onOpenChange={setIsQuickViewOpen}>
+      <Dialog
+        open={isQuickViewOpen}
+        onOpenChange={(open) => {
+          if (!open) closeQuickView();
+        }}
+      >
         <DialogContent className="max-w-4xl">
           <DialogHeader>
             <DialogTitle
               style={{
-                fontFamily: "'Playfair Display', serif",
+                fontFamily: FONT_SERIF,
                 fontSize: "28px",
               }}
             >
@@ -659,7 +579,7 @@ export function Collections() {
             <div className="grid md:grid-cols-2 gap-8">
               <div className="aspect-[3/4] bg-gray-soft">
                 <img
-                  src={selectedProduct.images[0]}
+                  src={selectedProduct.images[0] || ""}
                   alt={selectedProduct.name}
                   className="w-full h-full object-cover"
                 />
@@ -672,7 +592,7 @@ export function Collections() {
                   <h3
                     className="mb-4"
                     style={{
-                      fontFamily: "'Playfair Display', serif",
+                      fontFamily: FONT_SERIF,
                       fontSize: "24px",
                     }}
                   >
@@ -689,16 +609,17 @@ export function Collections() {
                   </p>
                 </div>
                 <p className="text-[#666666]">
-                  Premium quality shirt crafted with attention to detail.
-                  Perfect for both formal and casual occasions.
+                  {selectedProduct.category?.name ||
+                    "Premium quality product crafted with attention to detail."}
                 </p>
                 <button
-                  className="w-full py-3 bg-[#D4AF37] text-black hover:bg-black hover:text-white transition-all duration-300"
+                  className="w-full py-3 bg-[#D4AF37] text-black hover:bg-black hover:text-white transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{
-                    fontFamily: "'Poppins', sans-serif",
+                    fontFamily: FONT_SANS,
                   }}
+                  disabled={!selectedProduct.inStock}
                 >
-                  Add to Cart
+                  {selectedProduct.inStock ? "Add to Cart" : "Out of Stock"}
                 </button>
               </div>
             </div>
@@ -711,3 +632,4 @@ export function Collections() {
     </div>
   );
 }
+

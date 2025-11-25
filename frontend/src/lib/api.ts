@@ -1,78 +1,109 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
+import axios, { type AxiosError, type AxiosRequestConfig, type AxiosRequestHeaders } from 'axios';
+import type {
+  ProductDetail,
+  ProductFilterParams,
+  ProductsListResponse,
+} from '@/types/products';
+import type { ApiErrorResponse, ApiResponse } from '@/types/api';
+import type {
+  AuthResponse,
+  AuthUser,
+} from '@/types/auth';
+import { clearAuthSession, getAccessToken } from './auth';
 
-interface ApiError {
-  success: false;
-  message: string;
-  error?: string;
-}
+const getApiBaseUrl = (): string => {
+  const envUrl = import.meta.env.VITE_API_BASE_URL;
+  if (!envUrl || typeof envUrl !== 'string' || envUrl.trim() === '') {
+    return 'http://localhost:3000/api';
+  }
+  return envUrl.trim();
+};
 
-interface ApiResponse {
-  success: boolean;
-  message?: string;
-}
+const API_BASE_URL = getApiBaseUrl();
+const normalizeBaseUrl = (url: string): string => url.replace(/\/+$/, '');
+const API_BASE_URL_NORMALIZED = normalizeBaseUrl(API_BASE_URL);
 
-/**
- * API Client function với error handling
- */
-async function apiClient<T extends ApiResponse>(
-  endpoint: string,
-  options: RequestInit = {}
-): Promise<T> {
-  const url = `${API_BASE_URL}${endpoint}`;
-  
-  const config: RequestInit = {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
+const redirectToLogin = () => {
+  clearAuthSession();
+  window.location.href = '/login';
+};
+
+export const apiClient = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+apiClient.interceptors.request.use((config) => {
+  const token = getAccessToken();
+  if (token) {
+    const headers = (config.headers ?? {}) as AxiosRequestHeaders;
+
+    if (typeof (headers as { set?: (key: string, value: string) => void }).set === 'function') {
+      (headers as { set: (key: string, value: string) => void }).set('Authorization', `Bearer ${token}`);
+    } else {
+      headers.Authorization = `Bearer ${token}`;
+    }
+
+    config.headers = headers;
+  }
+  return config;
+});
+
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error: AxiosError<ApiErrorResponse>) => {
+    const status = error.response?.status;
+    if (status === 401) {
+      redirectToLogin();
+    }
+
+    const message =
+      error.response?.data?.message ||
+      error.response?.data?.error ||
+      error.message ||
+      'Network error';
+
+    return Promise.reject(new Error(message));
+  }
+);
+
+const unwrapResponse = <T>(payload: ApiResponse<T> | T): T => {
+  if (payload && typeof payload === 'object' && 'success' in (payload as ApiResponse<T>)) {
+    const typed = payload as ApiResponse<T>;
+    if (typed.success === false) {
+      throw new Error(typed.message || 'Request failed');
+    }
+    return (typed as { data?: T }).data ?? (typed as unknown as T);
+  }
+  return payload as T;
+};
+
+const buildFilterParams = (filters: ProductFilterParams = {}) => {
+  const {
+    sizes,
+    colors,
+    brands,
+    categorySlugs,
+    page = 1,
+    pageSize = 12,
+    ...rest
+  } = filters;
+
+  return {
+    ...rest,
+    sizes: sizes?.join(','),
+    colors: colors?.join(','),
+    brands: brands?.join(','),
+    categorySlugs: categorySlugs?.join(','),
+    page,
+    pageSize,
   };
-
-  try {
-    const response = await fetch(url, config);
-    const data: T | ApiError = await response.json();
-
-    if (!response.ok) {
-      const errorMessage = 
-        (data as ApiError).message || 
-        (data as ApiError).error || 
-        `Request failed with status ${response.status}`;
-      throw new Error(errorMessage);
-    }
-
-    return data as T;
-  } catch (error) {
-    if (error instanceof Error) {
-      throw error;
-    }
-    throw new Error('Network error, please try again');
-  }
-}
-
-/**
- * API Client với authentication token
- */
-async function authenticatedApiClient<T extends ApiResponse>(
-  endpoint: string,
-  options: RequestInit = {}
-): Promise<T> {
-  const token = localStorage.getItem('access_token');
-  
-  if (!token) {
-    throw new Error('No authentication token found');
-  }
-
-  return apiClient<T>(endpoint, {
-    ...options,
-    headers: {
-      ...options.headers,
-      Authorization: `Bearer ${token}`,
-    },
-  });
-}
+};
 
 // ==============================
-// AUTH API FUNCTIONS
+// AUTH API
 // ==============================
 
 export interface SignUpData {
@@ -83,16 +114,8 @@ export interface SignUpData {
 }
 
 export interface SignUpResponse {
-  success: true;
-  message: string;
-  user: {
-    id: number;
-    email: string;
-    full_name: string;
-    phone?: string;
-    role: string;
-    provider: string;
-  };
+  user: AuthUser;
+  message?: string;
 }
 
 export interface SignInData {
@@ -100,109 +123,129 @@ export interface SignInData {
   password: string;
 }
 
-export interface SignInResponse {
-  success: true;
-  message: string;
-  accessToken: string;
-  refreshToken: string;
-  user: {
-    id: number;
-    email: string;
-    full_name: string;
-  };
+export interface SignOutResponse {
+  success: boolean;
+  message?: string;
 }
 
 export interface SendOTPResponse {
-  success: true;
+  success: boolean;
   message: string;
 }
 
 export interface VerifyOTPResponse {
-  success: true;
-  message: string;
   token: string;
+  message: string;
 }
 
 export interface ResetPasswordResponse {
-  success: true;
+  success: boolean;
   message: string;
 }
 
-export interface SignOutResponse {
-  success: true;
-  message: string;
-}
-
-/**
- * Đăng ký tài khoản mới
- */
 export async function signUp(data: SignUpData): Promise<SignUpResponse> {
-  return apiClient<SignUpResponse>('/signUp', {
-    method: 'POST',
-    body: JSON.stringify(data),
-  });
+  const response = await apiClient.post<ApiResponse<SignUpResponse>>('/auth/signUp', data);
+  return unwrapResponse(response.data);
 }
 
-/**
- * Đăng nhập
- */
-export async function signIn(email: string, password: string): Promise<SignInResponse> {
-  return apiClient<SignInResponse>('/signIn', {
-    method: 'POST',
-    body: JSON.stringify({ email, password }),
-  });
+export async function signIn(credentials: SignInData): Promise<AuthResponse> {
+  const response = await apiClient.post<ApiResponse<AuthResponse>>('/auth/signIn', credentials);
+  return unwrapResponse(response.data);
 }
 
-/**
- * Đăng xuất
- */
 export async function signOut(): Promise<SignOutResponse> {
-  return authenticatedApiClient<SignOutResponse>('/signOut', {
-    method: 'GET',
-  });
+  const response = await apiClient.get<ApiResponse<SignOutResponse>>('/auth/signOut');
+  return unwrapResponse(response.data);
 }
 
-/**
- * Gửi OTP để reset password
- */
 export async function sendOTP(email: string): Promise<SendOTPResponse> {
-  return apiClient<SendOTPResponse>('/send-otp', {
-    method: 'POST',
-    body: JSON.stringify({ email }),
-  });
+  const response = await apiClient.post<ApiResponse<SendOTPResponse>>('/auth/send-otp', { email });
+  return unwrapResponse(response.data);
 }
 
-/**
- * Xác thực OTP
- */
 export async function verifyOTP(email: string, otp: string): Promise<VerifyOTPResponse> {
-  return apiClient<VerifyOTPResponse>('/verify-otp', {
-    method: 'POST',
-    body: JSON.stringify({ email, otp }),
-  });
+  const response = await apiClient.post<ApiResponse<VerifyOTPResponse>>('/auth/verify-otp', { email, otp });
+  return unwrapResponse(response.data);
 }
 
-/**
- * Reset password với token từ verifyOTP
- */
 export async function resetPassword(token: string, newPassword: string): Promise<ResetPasswordResponse> {
-  return apiClient<ResetPasswordResponse>('/reset-password', {
-    method: 'POST',
-    body: JSON.stringify({ token, newPassword }),
+  const response = await apiClient.post<ApiResponse<ResetPasswordResponse>>('/auth/reset-password', {
+    token,
+    newPassword,
+  });
+  return unwrapResponse(response.data);
+}
+
+const buildOAuthStateParam = (redirectPath: string): string | null => {
+  if (typeof window === 'undefined') return null;
+
+  try {
+    return window.btoa(JSON.stringify({ redirectTo: redirectPath }));
+  } catch {
+    return null;
+  }
+};
+
+export function signInWithGoogle(redirectTo?: string): void {
+  if (typeof window === 'undefined') {
+    throw new Error('Google sign-in is only available in the browser');
+  }
+
+  const fallbackRedirect = window.location.pathname + window.location.search;
+  const safeRedirect =
+    redirectTo && redirectTo.startsWith('/') ? redirectTo : fallbackRedirect;
+
+  const stateValue = buildOAuthStateParam(safeRedirect);
+  const googleAuthUrl = `${API_BASE_URL_NORMALIZED}/auth/google`;
+
+  if (stateValue) {
+    const params = new URLSearchParams({ state: stateValue });
+    window.location.href = `${googleAuthUrl}?${params.toString()}`;
+    return;
+  }
+
+  window.location.href = googleAuthUrl;
+}
+
+export function signInWithFacebook(): void {
+  window.location.href = `${API_BASE_URL}/auth/facebook`;
+}
+
+// ==============================
+// PRODUCTS API
+// ==============================
+
+const getRequest = async <T>(url: string, config?: AxiosRequestConfig) => {
+  const response = await apiClient.get<ApiResponse<T>>(url, config);
+  return unwrapResponse(response.data);
+};
+
+export async function getProducts(
+  filters: ProductFilterParams = {}
+): Promise<ProductsListResponse> {
+  return getRequest<ProductsListResponse>('/user/products/search', {
+    params: buildFilterParams(filters),
   });
 }
 
-/**
- * Đăng nhập bằng Google - redirect đến OAuth endpoint
- */
-export function signInWithGoogle(): void {
-  window.location.href = `${API_BASE_URL}/google`;
+export async function getProductsByCategory(
+  categorySlug: string,
+  filters?: Omit<ProductFilterParams, 'categorySlug'>
+): Promise<ProductsListResponse> {
+  return getRequest<ProductsListResponse>(`/user/products/category/${categorySlug}`, {
+    params: buildFilterParams(filters),
+  });
 }
 
-/**
- * Đăng nhập bằng Facebook - redirect đến OAuth endpoint
- */
-export function signInWithFacebook(): void {
-  window.location.href = `${API_BASE_URL}/facebook`;
+export async function getProductById(productId: number): Promise<ProductDetail> {
+  return getRequest<ProductDetail>(`/user/products/${productId}`);
 }
 
+export async function searchProducts(
+  query: string,
+  filters?: Omit<ProductFilterParams, 'q'>
+): Promise<ProductsListResponse> {
+  return getRequest<ProductsListResponse>('/user/products/search', {
+    params: buildFilterParams({ ...filters, q: query }),
+  });
+}

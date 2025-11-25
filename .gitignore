@@ -1,1 +1,11 @@
 .cursor/
+AGENTS.md
+node_modules/
+.vscode/
+.bmad-core/
+.bmad-creative-writing/
+.bmad-infrastructure-devops/
+web-bundles/
+backend/uploads/
+API_TESTING_GUIDE.md
+product.plan.md

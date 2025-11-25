@@ -1,10 +1,13 @@
 import express from "express";
-import dotenv from "dotenv";
 import cors from "cors";
 import passport from "passport";
 import session from "express-session";
+import { buildCorsOptions } from "./config/cors.js";
+import { loadEnv } from "./config/env.js";
 import "./config/google.config.js";
 import "./config/facebook.config.js";
+import { requestLogger } from "./middlewares/logger.js";
+import { sessionConfig } from "./services/authService.js";
 import { 
   sequelize,
   User,
@@ -21,25 +24,18 @@ import {
   Review,
 } from "./models/index.js";
 
-dotenv.config();
+loadEnv();
 
 const app = express();
 
 // ==============================
 // MIDDLEWARE
 // ==============================
-app.use(cors());
-app.use(express.json()); // Parse JSON
 
-// ← THÊM: Log requests để debug
-app.use((req, res, next) => {
-  console.log(`\n📨 ${req.method} ${req.path}`);
-  console.log("Content-Type:", req.headers["content-type"]);
-  console.log("Body:", JSON.stringify(req.body, null, 2));
-  next();
-});
+app.use(cors(buildCorsOptions()));
+app.use(express.json());
+app.use(requestLogger());
 
-// ← THÊM: Error handler cho JSON parsing
 app.use((err, req, res, next) => {
   if (err instanceof SyntaxError && err.status === 400 && "body" in err) {
     console.error("❌ Invalid JSON:", err.message);
@@ -54,13 +50,7 @@ app.use((err, req, res, next) => {
 });
 
 // Cấu hình session cho passport (phải đặt trước routes)
-app.use(
-  session({
-    secret: process.env.SESSION_SECRET,
-    resave: false,
-    saveUninitialized: true,
-  })
-);
+app.use(session(sessionConfig));
 
 app.use(passport.initialize());
 app.use(passport.session());
