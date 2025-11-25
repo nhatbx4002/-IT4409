@@ -15,7 +15,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useNavigate } from "react-router-dom";
 
-import { getUser, isAuthenticated, logout, type AuthUser } from "@/lib/auth";
+import { getStoredUser, isAuthenticated, logout } from "@/lib/auth";
+import type { AuthUser } from "@/types/auth";
 
 
 export function Navbar() {
@@ -25,12 +26,12 @@ export function Navbar() {
   const [user,setUser] = useState<AuthUser | null>(null);
 
   useEffect(() =>{
-    setUser(isAuthenticated() ? getUser() : null);
+    setUser(isAuthenticated() ? getStoredUser() : null);
   },[]);
 
   const initials = useMemo(() => {
     if(!user) return "U";
-    return user.name.split(" ").map(p => p[0]).join("").slice(0,2).toUpperCase();
+    return (user.full_name || '').split(" ").map(p => p[0]).join("").slice(0,2).toUpperCase();
   },[user])
 
   const handleLogout = () => {
@@ -183,7 +184,7 @@ export function Navbar() {
                   >
                     {user ? (
                       user.avatarUrl ? (
-                        <img src={user.avatarUrl} alt={user.name} className="h-8 w-8 rounded-full object-cover"/>
+                        <img src={user.avatarUrl} alt={user.full_name} className="h-8 w-8 rounded-full object-cover"/>
                       ): (
                         <div className="h-8 w-8 rounded-full bg-black/80 text-white text-xs flex items-center justify-center">
                           {initials}

@@ -5,7 +5,7 @@ import userProductRoutes from "./user/productRoute.js";
 const api = express.Router();
 
 api.use("/", authRoutes);
-api.use("/admin/product", adminProductRoutes);
-api.use("/user/product", userProductRoutes);
+api.use("/admin/products", adminProductRoutes);
+api.use("/user/products", userProductRoutes);
 
 export default api;

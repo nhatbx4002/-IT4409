@@ -1,5 +1,6 @@
 import { registerUser, loginUser, logoutUser, sendOtpService, verifyOtpService, resetPasswordService, signInGoogle, signInFacebook, updateUserService } from "../services/authService.js";
 import passport  from "passport";
+import { buildOAuthCallbackUrl, redirectOAuthError } from "../utils/oauth.js";
 
 // dang ky bang tai khoa local
 export const signUp = async (req,res) => {
@@ -96,13 +97,12 @@ export const signInGoogleController = {
     //Xử lý callback sau khi Google xác thực thành công
   googleCallback: async (req, res) => {
     try {
-      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-     
       if (!req.user) {
-        const errorMessage = encodeURIComponent(
-          "Email này đã được đăng ký bằng tài khoản local, vui lòng đăng nhập bằng email & mật khẩu."
+        return redirectOAuthError(
+          res,
+          "Email này đã được đăng ký bằng tài khoản local, vui lòng đăng nhập bằng email & mật khẩu.",
+          typeof req.query?.state === "string" ? req.query.state : undefined
         );
-        return res.redirect(`${frontendUrl}/auth/callback?error=true&errorMessage=${errorMessage}`);
       }
 
       const user = req.user;
@@ -115,20 +115,26 @@ export const signInGoogleController = {
       await signInGoogle.saveTokensToDatabase(user, accessToken, refreshToken);
 
       // Redirect về frontend với tokens trong URL params
-      const params = new URLSearchParams({
+      const params = {
         accessToken,
         refreshToken,
         userId: user.id.toString(),
         email: user.email,
         fullName: user.full_name,
-      });
+      };
 
-      return res.redirect(`${frontendUrl}/auth/callback?${params.toString()}`);
+      if (typeof req.query?.state === "string" && req.query.state.length > 0) {
+        params.state = req.query.state;
+      }
+
+      return res.redirect(buildOAuthCallbackUrl(params));
     } catch (error) {
       console.error(" Lỗi khi đăng nhập Google:", error);
-      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-      const errorMessage = encodeURIComponent("Đăng nhập Google thất bại, vui lòng thử lại sau.");
-      return res.redirect(`${frontendUrl}/auth/callback?error=true&errorMessage=${errorMessage}`);
+      return redirectOAuthError(
+        res,
+        "Đăng nhập Google thất bại, vui lòng thử lại sau.",
+        typeof req.query?.state === "string" ? req.query.state : undefined
+      );
     }
   },
 };

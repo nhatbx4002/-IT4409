@@ -1,15 +1,37 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { setAuth } from '@/lib/auth';
+import { setAuthSession } from '@/lib/auth';
 import { AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
+
+const decodeRedirectState = (stateParam: string | null): string | null => {
+  if (!stateParam || typeof window === 'undefined') {
+    return null;
+  }
+
+  try {
+    const decoded = JSON.parse(window.atob(stateParam));
+    if (decoded && typeof decoded.redirectTo === 'string' && decoded.redirectTo.startsWith('/')) {
+      return decoded.redirectTo;
+    }
+  } catch (error) {
+    console.error('Invalid OAuth state payload', error);
+  }
+
+  return null;
+};
 
 export default function OAuthCallbackPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [errorMessage, setErrorMessage] = useState<string>('');
+  const [redirectPath, setRedirectPath] = useState<string | null>(null);
 
   useEffect(() => {
+    const stateParam = searchParams.get('state');
+    const decodedRedirect = decodeRedirectState(stateParam);
+    setRedirectPath(decodedRedirect);
+
     const processCallback = () => {
       try {
         const accessToken = searchParams.get('accessToken') || searchParams.get('token');
@@ -32,16 +54,22 @@ export default function OAuthCallbackPage() {
           return;
         }
 
-        setAuth(accessToken, {
-          id: parseInt(userId),
-          name: fullName,
-          email: email,
-        });
+        setAuthSession(
+          {
+            accessToken,
+            refreshToken: refreshToken ?? undefined,
+          },
+          {
+            id: parseInt(userId),
+            full_name: fullName,
+            email,
+          }
+        );
 
         setStatus('success');
         
         setTimeout(() => {
-          navigate('/');
+          navigate(decodedRedirect || '/', { replace: true });
         }, 1500);
       } catch (error) {
         setStatus('error');
@@ -146,7 +174,7 @@ export default function OAuthCallbackPage() {
               {errorMessage}
             </p>
             <button
-              onClick={() => navigate('/login')}
+              onClick={() => navigate(redirectPath || '/login')}
               className="px-6 py-2 rounded-lg transition-all"
               style={{
                 background: '#D4AF37',
@@ -164,4 +192,3 @@ export default function OAuthCallbackPage() {
     </div>
   );
 }
-

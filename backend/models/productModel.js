@@ -11,6 +11,27 @@ export const Product = sequelize.define("products", {
   category_id: DataTypes.INTEGER,
   images: { type: DataTypes.JSONB, defaultValue: [] },
   status: { type: DataTypes.STRING(20), defaultValue: "active" },
+  collection: {
+    type: DataTypes.ENUM('men', 'women', 'accessories'),
+    allowNull: true,
+  },
+  slug: {
+    type: DataTypes.STRING(255),
+    unique: true,
+    allowNull: true,
+  },
+  sale_price: {
+    type: DataTypes.DECIMAL(12,2),
+    allowNull: true,
+  },
+  is_new: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+  },
+  tags: {
+    type: DataTypes.JSONB,
+    defaultValue: [],
+  },
   created_at: { type: DataTypes.DATE, defaultValue: DataTypes.NOW },
   updated_at: { type: DataTypes.DATE, defaultValue: DataTypes.NOW },
 });
