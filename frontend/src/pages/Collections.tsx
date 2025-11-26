@@ -27,18 +27,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { useParams, useSearchParams } from "react-router-dom";
 import { getProducts, getProductsByCategory } from "@/lib/api";
 import type { ProductSummary, SortOption, ViewMode } from "@/types/products";
 import { useProductFilters } from "@/hooks/useProductFilters";
-import { useQuickView } from "@/hooks/useQuickView";
 import { EmptyState, ErrorState, LoadingState } from "@/components/feedback/AsyncStates";
 import {
   BRAND_GOLD,
@@ -90,7 +83,6 @@ export function Collections() {
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
   const [isDesktopFilterVisible, setIsDesktopFilterVisible] = useState(true);
 
-  const { selectedProduct, isQuickViewOpen, openQuickView, closeQuickView } = useQuickView();
 
   const [products, setProducts] = useState<ProductSummary[]>([]);
   const [total, setTotal] = useState(0);
@@ -162,9 +154,6 @@ export function Collections() {
     setCurrentPage(1);
   };
 
-  const handleQuickView = (product: ProductSummary) => {
-    openQuickView(product);
-  };
 
   const paginatedProducts = useMemo(() => products, [products]);
 
@@ -453,7 +442,6 @@ export function Collections() {
                   <ProductCard
                     key={product.id}
                     product={product}
-                    onQuickView={handleQuickView}
                     onAddToWishlist={(productId) =>
                       console.log("Add to wishlist:", productId)
                     }
@@ -557,75 +545,6 @@ export function Collections() {
         isMobileOpen={isMobileFilterOpen}
         onMobileClose={() => setIsMobileFilterOpen(false)}
       />
-
-      <Dialog
-        open={isQuickViewOpen}
-        onOpenChange={(open) => {
-          if (!open) closeQuickView();
-        }}
-      >
-        <DialogContent className="max-w-4xl">
-          <DialogHeader>
-            <DialogTitle
-              style={{
-                fontFamily: FONT_SERIF,
-                fontSize: "28px",
-              }}
-            >
-              Quick View
-            </DialogTitle>
-          </DialogHeader>
-          {selectedProduct && (
-            <div className="grid md:grid-cols-2 gap-8">
-              <div className="aspect-[3/4] bg-gray-soft">
-                <img
-                  src={selectedProduct.images[0] || ""}
-                  alt={selectedProduct.name}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <div className="space-y-4">
-                <div>
-                  <p className="text-sm text-[#666666] mb-2">
-                    {selectedProduct.brand}
-                  </p>
-                  <h3
-                    className="mb-4"
-                    style={{
-                      fontFamily: FONT_SERIF,
-                      fontSize: "24px",
-                    }}
-                  >
-                    {selectedProduct.name}
-                  </h3>
-                  <p
-                    className="text-black"
-                    style={{
-                      fontSize: "28px",
-                      fontWeight: 600,
-                    }}
-                  >
-                    ${selectedProduct.salePrice || selectedProduct.price}
-                  </p>
-                </div>
-                <p className="text-[#666666]">
-                  {selectedProduct.category?.name ||
-                    "Premium quality product crafted with attention to detail."}
-                </p>
-                <button
-                  className="w-full py-3 bg-[#D4AF37] text-black hover:bg-black hover:text-white transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                  style={{
-                    fontFamily: FONT_SANS,
-                  }}
-                  disabled={!selectedProduct.inStock}
-                >
-                  {selectedProduct.inStock ? "Add to Cart" : "Out of Stock"}
-                </button>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
 
       <Footer />
       <BackToTop />

@@ -1,21 +1,21 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Heart, Eye, ShoppingBag, Star } from "lucide-react";
 import type { ProductSummary } from "@/types/products";
 import { ImageWithFallback } from "@/components/figma/ImageWithFallback";
 
 interface ProductCardProps {
   product: ProductSummary;
-  onQuickView: (product: ProductSummary) => void;
   onAddToWishlist: (productId: number) => void;
   onAddToCart: (productId: number) => void;
 }
 
 export function ProductCard({
   product,
-  onQuickView,
   onAddToWishlist,
   onAddToCart,
 }: ProductCardProps) {
+  const navigate = useNavigate();
   const [isHovered, setIsHovered] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [selectedColorIndex, setSelectedColorIndex] = useState(0);
@@ -115,7 +115,7 @@ export function ProductCard({
 
         {/* Circular Action Buttons - Centered Horizontally */}
         <div
-          className="absolute left-50 top-35 -translate-x-1/2 -translate-y-1/2 z-10 flex gap-3 transition-all duration-500"
+          className="absolute left-1/2 top-1/2 z-20 flex gap-3 transition-all duration-500  "
           style={{
             opacity: isHovered ? 1 : 0,
             transform: isHovered
@@ -125,7 +125,7 @@ export function ProductCard({
         >
           {/* Quick View Button */}
           <button
-            onClick={() => onQuickView(product)}
+            onClick={() => navigate(`/products/${product.id}`)}
             className="flex items-center justify-center bg-white transition-all duration-300 hover:scale-110 group/btn"
             style={{
               width: "40px",
@@ -139,7 +139,7 @@ export function ProductCard({
             onMouseLeave={(e) => {
               e.currentTarget.style.backgroundColor = "#FFF";
             }}
-            aria-label="Quick View"
+            aria-label="View Product Details"
           >
             <Eye className="w-4 h-4 text-black" />
           </button>

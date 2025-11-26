@@ -92,46 +92,62 @@ app.use((err, req, res, next) => {
 // ==============================
 async function initDatabase() {
   try {
+    console.log("🔄 Connecting to database...");
     await sequelize.authenticate();
     console.log("✅ Database connected!");
 
     // Sync theo thứ tự: Parent trước, Child sau
     // 1. Base models (không có foreign key)
+    console.log("🔄 Syncing User table...");
     await User.sync({ alter: true });
+    console.log("✅ User table synced");
     
+    console.log("🔄 Syncing Category table...");
     await Category.sync({ alter: true });
-   
+    console.log("✅ Category table synced");
 
     // 2. Models phụ thuộc User
+    console.log("🔄 Syncing ShippingAddress table...");
     await ShippingAddress.sync({ alter: true });
-   
+    console.log("✅ ShippingAddress table synced");
 
+    console.log("🔄 Syncing Cart table...");
     await Cart.sync({ alter: true });
-   
+    console.log("✅ Cart table synced");
 
+    console.log("🔄 Syncing Order table...");
     await Order.sync({ alter: true });
-   
+    console.log("✅ Order table synced");
 
     // 3. Models phụ thuộc Product
+    console.log("🔄 Syncing Product table...");
     await Product.sync({ alter: true });
-    
+    console.log("✅ Product table synced");
 
+    console.log("🔄 Syncing ProductVariant table...");
     await ProductVariant.sync({ alter: true });
-   
+    console.log("✅ ProductVariant table synced");
 
+    console.log("🔄 Syncing Review table...");
     await Review.sync({ alter: true });
+    console.log("✅ Review table synced");
     
     // 4. Models phụ thuộc Cart và Order
+    console.log("🔄 Syncing CartItem table...");
     await CartItem.sync({ alter: true });
-  
+    console.log("✅ CartItem table synced");
 
+    console.log("🔄 Syncing OrderItem table...");
     await OrderItem.sync({ alter: true });
+    console.log("✅ OrderItem table synced");
 
-
+    console.log("🔄 Syncing Payment table...");
     await Payment.sync({ alter: true });
+    console.log("✅ Payment table synced");
 
     // 5. Promotion (nếu có)
     try {
+      console.log("🔄 Syncing Promotion table...");
       await Promotion.sync({ alter: true });
       console.log("✅ Promotion table synced");
     } catch (promoError) {
@@ -141,6 +157,8 @@ async function initDatabase() {
     console.log("✅ All tables synced successfully!");
   } catch (error) {
     console.error("❌ Database initialization failed:", error);
+    console.error("Error details:", error.message);
+    console.error("Stack trace:", error.stack);
     process.exit(1); // ← Dừng server nếu DB lỗi
   }
 }

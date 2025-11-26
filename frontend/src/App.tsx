@@ -4,6 +4,7 @@ import { Collections } from "@/pages/Collections";
 import LoginPage from "@/pages/LoginPage";
 import SignUpPage from "@/pages/SignUpPage";
 import OAuthCallbackPage from "@/pages/OAuthCallbackPage";
+import ProductDetail from "@/pages/ProductDetail";
 
 export default function App() {
   return (
@@ -14,6 +15,7 @@ export default function App() {
         <Route path="/collections" element={<Collections />} />
         <Route path="/collections/:collection" element={<Collections />} />
         <Route path="/collections/:collection/:category" element={<Collections />} />
+        <Route path="/products/:productId" element={<ProductDetail />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignUpPage />} />
         <Route path="/auth/callback" element={<OAuthCallbackPage />} />

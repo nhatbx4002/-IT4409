@@ -11,11 +11,18 @@ export const sequelize = new Sequelize(
     port: process.env.DB_PORT || 5432,
     dialect: "postgres",
     logging: false,
+    pool: {
+      max: 5,
+      min: 0,
+      acquire: 30000, // 30 seconds timeout để acquire connection
+      idle: 10000, // 10 seconds idle timeout
+    },
     dialectOptions: {
       ssl: {
         require: true,
         rejectUnauthorized: false, // bắt buộc với Supabase
       },
+      connectTimeout: 30000, // 30 seconds connection timeout
     },
   }
 );
