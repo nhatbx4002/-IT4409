@@ -6,21 +6,21 @@ import { redirectOAuthError } from "../utils/oauth.js";
 
 const router = express.Router();
 
-router.post('/signUp', signUp); //dang ky
-router.post('/signIn', signIn); //dang nhap
-router.get('/signOut', authenticateToken, signOut); //dang xuat
+router.post('/auth/signUp', signUp); //dang ky
+router.post('/auth/signIn', signIn); //dang nhap
+router.get('/auth/signOut', authenticateToken, signOut); //dang xuat
 
 //quen mat khau
-router.post('/send-otp', sendOTPEmail);
-router.post('/verify-otp', verifyOTPEmail);
-router.post('/reset-password', resetPassword);
+router.post('/auth/send-otp', sendOTPEmail);
+router.post('/auth/verify-otp', verifyOTPEmail);
+router.post('/auth/reset-password', resetPassword);
 
 //dang nhap bang google
 router.get("/auth/google", passport.authenticate("google", { scope: ["profile", "email"] }));
 
 // Callback sau khi Google xác thực
 router.get(
-  "/google/callback",
+  "/auth/google/callback",
   (req, res, next) => {
     passport.authenticate("google", (err, user, info) => {
       const stateParam = typeof req.query?.state === "string" ? req.query.state : undefined;
@@ -57,16 +57,16 @@ router.get(
 );
 
 //dang nhap bang facebook
-router.get("/facebook", facebookAuth);
+router.get("/auth/facebook", facebookAuth);
 
 // Callback sau khi Facebook xác thực
 router.get(
-  "/facebook/callback",
+  "/auth/facebook/callback",
   passport.authenticate("facebook", { failureRedirect: "/login" }),
   facebookAuthCallback
 );
 
 //Cap nhat thong tin tai khoan
-router.put("/profile/:id", authenticateToken, updateUser);
+router.put("/auth/profile/:id", authenticateToken, updateUser);
 
 export default router;
