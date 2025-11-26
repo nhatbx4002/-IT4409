@@ -20,6 +20,60 @@ const getOrCreateCart = async (userId) => {
 };
 
 /**
+ * Parse số nguyên cho quantity, đảm bảo là số nguyên không âm/dương theo cấu hình
+ */
+const parseIntegerQuantity = (value, options = {}) => {
+    const { allowZero = false } = options;
+    const num = Number(value);
+
+    if (!Number.isInteger(num)) {
+        const err = new Error("Số lượng phải là số nguyên");
+        err.statusCode = 400;
+        throw err;
+    }
+
+    if (allowZero) {
+        if (num < 0) {
+            const err = new Error("Số lượng không được nhỏ hơn 0");
+            err.statusCode = 400;
+            throw err;
+        }
+    } else if (num <= 0) {
+        const err = new Error("Số lượng phải là một số nguyên dương");
+        err.statusCode = 400;
+        throw err;
+    }
+
+    return num;
+};
+
+/**
+ * Parse số thập phân an toàn cho các field giá/khuyến mãi
+ */
+const parseDecimal = (value, fieldName, options = {}) => {
+    const { defaultValue } = options;
+
+    if (value === null || value === undefined || value === "") {
+        if (defaultValue !== undefined) {
+            return defaultValue;
+        }
+        const err = new Error(`${fieldName} đang không hợp lệ`);
+        err.statusCode = 500;
+        throw err;
+    }
+
+    const num = Number(value);
+
+    if (!Number.isFinite(num)) {
+        const err = new Error(`${fieldName} đang không hợp lệ`);
+        err.statusCode = 500;
+        throw err;
+    }
+
+    return num;
+};
+
+/**
  * 1. Thêm sản phẩm vào giỏ hàng
  */
 export const addProductToCart = async (
@@ -27,26 +81,28 @@ export const addProductToCart = async (
     productVariantId,
     quantity
 ) => {
-    // --- Validations ---
     if (!productVariantId) {
-        throw new Error("Vui lòng chọn sản phẩm");
-    }
-    const addQuantity = parseInt(quantity, 10);
-    if (isNaN(addQuantity) || addQuantity <= 0) {
-        throw new Error("Số lượng phải là một số dương");
+        const err = new Error("Vui lòng chọn sản phẩm");
+        err.statusCode = 400;
+        throw err;
     }
 
-    // --- Tìm giỏ hàng & sản phẩm ---
+    const addQuantity = parseIntegerQuantity(quantity);
+
     const cart = await getOrCreateCart(userId);
-    const variant = await ProductVariant.findByPk(productVariantId);
 
-    if (!variant) {
-        throw new Error("Sản phẩm không tồn tại");
-    }
-
-    // --- Xử lý logic (trong 1 transaction) ---
     const result = await sequelize.transaction(async (t) => {
-        // Kiểm tra xem item đã có trong giỏ chưa
+        const variant = await ProductVariant.findByPk(productVariantId, {
+            transaction: t,
+            lock: t.LOCK.UPDATE,
+        });
+
+        if (!variant) {
+            const err = new Error("Sản phẩm không tồn tại");
+            err.statusCode = 404;
+            throw err;
+        }
+
         let cartItem = await CartItem.findOne({
             where: {
                 cart_id: cart.id,
@@ -57,11 +113,9 @@ export const addProductToCart = async (
 
         let newQuantity;
         if (cartItem) {
-            // Đã có -> Cập nhật số lượng
             newQuantity = cartItem.quantity + addQuantity;
             cartItem.quantity = newQuantity;
         } else {
-            // Chưa có -> Tạo mới
             newQuantity = addQuantity;
             cartItem = await CartItem.create(
                 {
@@ -73,11 +127,12 @@ export const addProductToCart = async (
             );
         }
 
-        // Kiểm tra tồn kho
         if (newQuantity > variant.stock_quantity) {
-            throw new Error(
+            const err = new Error(
                 `Số lượng trong kho không đủ (Chỉ còn ${variant.stock_quantity} sản phẩm)`
             );
+            err.statusCode = 400;
+            throw err;
         }
 
         await cartItem.save({ transaction: t });
@@ -91,45 +146,45 @@ export const addProductToCart = async (
  * 2. Cập nhật số lượng sản phẩm trong giỏ
  */
 export const updateItemQuantity = async (userId, cartItemId, quantity) => {
-    const newQuantity = parseInt(quantity, 10);
-    if (isNaN(newQuantity) || newQuantity < 0) {
-        throw new Error("Số lượng không hợp lệ");
-    }
+    const newQuantity = parseIntegerQuantity(quantity, { allowZero: true });
 
-    // Nếu số lượng là 0, gọi hàm xóa
     if (newQuantity === 0) {
         return await removeItemFromCart(userId, cartItemId);
     }
 
-    // --- Tìm giỏ hàng & item ---
     const cart = await getOrCreateCart(userId);
     const cartItem = await CartItem.findByPk(cartItemId);
 
     if (!cartItem) {
-        throw new Error("Sản phẩm không có trong giỏ hàng");
-    }
-    // --- Security check: Đảm bảo item này thuộc giỏ hàng của user ---
-    if (cartItem.cart_id !== cart.id) {
-        throw new Error("Bạn không có quyền cập nhật sản phẩm này");
+        const err = new Error("Sản phẩm không có trong giỏ hàng");
+        err.statusCode = 404;
+        throw err;
     }
 
-    // --- Kiểm tra tồn kho ---
+    if (cartItem.cart_id !== cart.id) {
+        const err = new Error("Bạn không có quyền cập nhật sản phẩm này");
+        err.statusCode = 403;
+        throw err;
+    }
+
     const variant = await ProductVariant.findByPk(cartItem.product_variant_id);
     if (!variant) {
-        // Nếu sản phẩm đã bị xóa, cũng xóa nó khỏi giỏ
         await cartItem.destroy();
-        throw new Error(
+        const err = new Error(
             "Sản phẩm không còn tồn tại và đã được xóa khỏi giỏ hàng"
         );
+        err.statusCode = 404;
+        throw err;
     }
 
     if (newQuantity > variant.stock_quantity) {
-        throw new Error(
+        const err = new Error(
             `Số lượng trong kho không đủ (Chỉ còn ${variant.stock_quantity} sản phẩm)`
         );
+        err.statusCode = 400;
+        throw err;
     }
 
-    // --- Cập nhật ---
     cartItem.quantity = newQuantity;
     await cartItem.save();
     return cartItem;
@@ -143,14 +198,17 @@ export const removeItemFromCart = async (userId, cartItemId) => {
     const cartItem = await CartItem.findByPk(cartItemId);
 
     if (!cartItem) {
-        throw new Error("Sản phẩm không có trong giỏ hàng");
-    }
-    // --- Security check: Đảm bảo item này thuộc giỏ hàng của user ---
-    if (cartItem.cart_id !== cart.id) {
-        throw new Error("Bạn không có quyền xóa sản phẩm này");
+        const err = new Error("Sản phẩm không có trong giỏ hàng");
+        err.statusCode = 404;
+        throw err;
     }
 
-    // --- Xóa ---
+    if (cartItem.cart_id !== cart.id) {
+        const err = new Error("Bạn không có quyền xóa sản phẩm này");
+        err.statusCode = 403;
+        throw err;
+    }
+
     await cartItem.destroy();
     return { message: "Đã xóa sản phẩm khỏi giỏ hàng" };
 };
@@ -161,50 +219,47 @@ export const removeItemFromCart = async (userId, cartItemId) => {
 export const getCartDetails = async (userId) => {
     const cart = await getOrCreateCart(userId);
 
-    // Lấy tất cả item trong giỏ, đồng thời lấy thông tin của
-    // ProductVariant (biến thể) và Product (sản phẩm gốc)
     const cartItems = await CartItem.findAll({
         where: { cart_id: cart.id },
         include: [
             {
                 model: ProductVariant,
-                as: "product_variant", // (Yêu cầu 'as' trong models/index.js)
+                as: "product_variant",
                 include: [
                     {
                         model: Product,
-                        as: "product", // (Yêu cầu 'as' trong models/index.js)
+                        as: "product",
                     },
                 ],
             },
         ],
-        order: [["added_at", "DESC"]], // Sắp xếp theo ngày thêm
+        order: [["added_at", "DESC"]],
     });
 
     let subtotal_amount = 0;
-    let items = [];
+    const items = [];
 
     for (const item of cartItems) {
         const variant = item.product_variant;
-        // Nếu vì lý do nào đó sản phẩm/biến thể không còn, bỏ qua
         if (!variant || !variant.product) {
             continue;
         }
 
         const product = variant.product;
 
-        // Tính giá cuối cùng của 1 sản phẩm
-        // (Giá gốc + điều chỉnh giá của biến thể)
-        const final_price =
-            parseFloat(product.base_price) +
-            parseFloat(variant.price_adjustment);
+        const basePrice = parseDecimal(product.base_price, "Giá sản phẩm");
+        const adjustment = parseDecimal(
+            variant.price_adjustment ?? 0,
+            "Điều chỉnh giá biến thể",
+            { defaultValue: 0 }
+        );
 
-        // Tính tổng tiền của dòng này
+        const final_price = basePrice + adjustment;
+
         const line_total = final_price * item.quantity;
 
-        // Cộng dồn vào tổng tạm tính
         subtotal_amount += line_total;
 
-        // Thêm vào mảng items để trả về
         items.push({
             cart_item_id: item.id,
             quantity: item.quantity,
@@ -213,33 +268,36 @@ export const getCartDetails = async (userId) => {
             product_name: product.name,
             color: variant.color,
             size: variant.size,
-            image_url: variant.image_url, // Ảnh của biến thể
+            image_url: variant.image_url,
             unit_price: final_price,
             line_total: line_total,
-            stock_quantity: variant.stock_quantity, // Gửi về để frontend kiểm tra
+            stock_quantity: variant.stock_quantity,
         });
     }
 
-    // === 4. TÍNH TỔNG GIÁ TẠM TÍNH (áp dụng khuyến mãi) ===
     const activePromotion = await Promotion.findOne({
         where: {
-            start_date: { [Op.lte]: new Date() }, // Bắt đầu <= hôm nay
-            end_date: { [Op.gte]: new Date() }, // Kết thúc >= hôm nay
+            start_date: { [Op.lte]: new Date() },
+            end_date: { [Op.gte]: new Date() },
         },
-        // Tạm lấy cái đầu tiên
     });
 
     let discount_amount = 0;
+
     if (activePromotion) {
+        const discountValue = parseDecimal(
+            activePromotion.discount_value,
+            "Giá trị khuyến mãi"
+        );
+
         if (activePromotion.discount_type === "percentage") {
-            discount_amount =
-                subtotal_amount * (parseFloat(activePromotion.discount_value) / 100);
+            const percentage = Math.min(Math.max(discountValue, 0), 100);
+            discount_amount = subtotal_amount * (percentage / 100);
         } else if (activePromotion.discount_type === "fixed") {
-            discount_amount = parseFloat(activePromotion.discount_value);
+            discount_amount = discountValue;
         }
     }
 
-    // Đảm bảo giảm giá không lớn hơn tổng tiền
     if (discount_amount > subtotal_amount) {
         discount_amount = subtotal_amount;
     }
