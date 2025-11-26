@@ -55,10 +55,10 @@ const ensureTokenVersion = async (user) => {
   return user.token_version;
 };
 
-const persistLoginState = async (user, refreshToken) => {
+const persistLoginState = async (user, accessToken, refreshToken) => {
   await ensureTokenVersion(user);
+  user.access_token = accessToken;
   user.refresh_token = refreshToken;
-  user.access_token = null;
   await user.save();
 };
 
@@ -73,7 +73,7 @@ export const issueTokens = async (user) => {
   await ensureTokenVersion(user);
   const accessToken = createAccessToken(user);
   const refreshToken = createRefreshToken(user);
-  await persistLoginState(user, refreshToken);
+  await persistLoginState(user, accessToken, refreshToken);
   return { accessToken, refreshToken };
 };
 
@@ -199,8 +199,8 @@ export const resetPasswordService = async (token, newPassword) => {
 const socialAuthFactory = (providerLabel) => ({
   generateAccessToken: (user) => createAccessToken(user),
   generateRefreshToken: (user) => createRefreshToken(user),
-  saveTokensToDatabase: async (user, _accessToken, refreshToken) => {
-    await persistLoginState(user, refreshToken);
+  saveTokensToDatabase: async (user, accessToken, refreshToken) => {
+    await persistLoginState(user, accessToken, refreshToken);
   },
   formatUserResponse: (user, accessToken, refreshToken) => ({
     success: true,
