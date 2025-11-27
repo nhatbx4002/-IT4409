@@ -12,6 +12,9 @@ import { OrderItem } from "./orderItemModel.js";
 import { Payment } from "./paymentModel.js";
 import { Promotion } from "./promotionModel.js";
 import { Review } from "./reviewModel.js";
+// Sửa lại import Wishlist cho đồng bộ (có ngoặc nhọn nếu export const, không ngoặc nếu export default)
+// Dựa trên code cũ của bạn là 'export default Wishlist', nên import thế này là đúng:
+import Wishlist from "./wishlistModel.js"; 
 
 // ============================================================
 // 🔹 Thiết lập các mối quan hệ (Associations)
@@ -23,8 +26,15 @@ Cart.belongsTo(User);
 Cart.hasMany(CartItem);
 CartItem.belongsTo(Cart);
 
-Product.belongsTo(Category);
-Category.hasMany(Product);
+// --- ĐÃ SỬA ĐOẠN XUNG ĐỘT TẠI ĐÂY ---
+// Giữ lại đoạn có foreignKey rõ ràng và có Wishlist
+Product.belongsTo(Category, { foreignKey: 'category_id' });
+Category.hasMany(Product, { foreignKey: 'category_id' });
+
+// Quan hệ Wishlist (Bắt buộc phải có để tính năng Wishlist chạy)
+Wishlist.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+Wishlist.belongsTo(Product, { foreignKey: 'product_id', as: 'product' });
+// ------------------------------------
 
 Product.hasMany(ProductVariant);
 ProductVariant.belongsTo(Product);
@@ -56,6 +66,7 @@ export {
   Order,
   OrderItem,
   Payment,
-  Promotion,
+  Promotion, // Đã có Promotion
   Review,
+  Wishlist   // Đã có Wishlist
 };

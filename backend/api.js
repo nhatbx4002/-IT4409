@@ -14,6 +14,7 @@ import {
   Order,
   Payment,
   Review,
+  Wishlist
 } from "./models/index.js";
 
 dotenv.config();
@@ -106,6 +107,9 @@ async function initDatabase() {
     console.error("❌ Database initialization failed:", error);
     process.exit(1); // ← Dừng server nếu DB lỗi
   }
+  //wishlist
+  await Wishlist.sync({ alter: true }); 
+    console.log("✅ Wishlist table ready!");
 }
 
 // ==============================

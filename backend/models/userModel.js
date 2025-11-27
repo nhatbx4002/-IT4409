@@ -9,6 +9,7 @@ export const User = sequelize.define("users", {
   full_name: DataTypes.STRING(100),
   phone: DataTypes.STRING(20),
   role: { type: DataTypes.STRING(20), defaultValue: "customer" },
+  is_locked: { type: DataTypes.BOOLEAN, defaultValue: false }, //lock account
   provider: DataTypes.STRING(50),
   provider_id: DataTypes.STRING(100),
   refresh_token: DataTypes.TEXT,
