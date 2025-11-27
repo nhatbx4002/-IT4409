@@ -170,3 +170,5 @@ export const searchProductsService = async ({ name, brand }) => {
 
     return products.map(summarizeProduct);
 };
+
+
