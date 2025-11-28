@@ -8,7 +8,7 @@ import "./config/google.config.js";
 import "./config/facebook.config.js";
 import { requestLogger } from "./middlewares/logger.js";
 import { sessionConfig } from "./services/authService.js";
-import { 
+import {
   sequelize,
   User,
   ShippingAddress,
@@ -40,11 +40,11 @@ app.use(requestLogger());
 app.use((err, req, res, next) => {
   if (err instanceof SyntaxError && err.status === 400 && "body" in err) {
     console.error("❌ Invalid JSON:", err.message);
-    return res.status(400).json({ 
+    return res.status(400).json({
       success: false,
       error: "Invalid JSON format",
       message: "Please check your request body",
-      detail: err.message 
+      detail: err.message
     });
   }
   next();
@@ -60,31 +60,31 @@ app.use(passport.session());
 // ROUTES
 // ==============================
 app.get("/", (req, res) => {
-  res.json({ 
+  res.json({
     message: "✅ Server connected with PostgreSQL via Sequelize!",
     timestamp: new Date()
   });
 });
 
 import api from "./routes/api.js";
-app.use("/api", api); 
+app.use("/api", api);
 
 // ← THÊM: 404 handler
 app.use((req, res) => {
-  res.status(404).json({ 
+  res.status(404).json({
     success: false,
     error: "Route not found",
-    path: req.path 
+    path: req.path
   });
 });
 
 // ← THÊM: Global error handler
 app.use((err, req, res, next) => {
   console.error("❌ Server error:", err);
-  res.status(500).json({ 
+  res.status(500).json({
     success: false,
     error: "Internal server error",
-    message: err.message 
+    message: err.message
   });
 });
 
