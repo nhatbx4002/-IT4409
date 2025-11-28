@@ -1,6 +1,5 @@
 import express from "express";
 import authRoutes from "./authRoute.js";
-import adminProductRoutes from "./admin/productRoute.js";
 import wishlistRoutes from "./user/wishlistRoutes.js";
 import userRoutes from "./admin/userRoutes.js";
 import promotionRoutes from "./promotionRoutes.js";
@@ -9,9 +8,6 @@ const api = express.Router();
 
 // 1. Auth (Đăng nhập/Đăng ký)
 api.use("/", authRoutes);
-
-// 2. Quản lý sản phẩm (Admin)
-api.use("/admin/product", adminProductRoutes);
 
 // 3. Wishlist (Người dùng)
 api.use("/wishlist", wishlistRoutes);
