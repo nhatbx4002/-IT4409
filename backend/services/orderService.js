@@ -9,7 +9,9 @@ import {
     Product,
     ShippingAddress,
     Promotion,
+    User
 } from "../models/index.js";
+import { sendOrderStatusEmail } from "./emailService.js";
 import { Op } from "sequelize";
 import crypto from "crypto";
 import querystring from "qs";
@@ -321,6 +323,8 @@ export const createOrder = async (userId, shippingAddressId, paymentMethod, note
 
     return result;
 };
+// ... (Các import giữ nguyên)
+
 /**
  * 3. Hủy đơn hàng (User tự hủy)
  */
@@ -329,8 +333,7 @@ export const cancelOrder = async (userId, orderId) => {
         where: { id: orderId, user_id: userId },
         include: [
             {
-                model: OrderItem,
-                as: 'orderItems'
+                model: OrderItem, // <--- ĐÃ SỬA: Bỏ dòng as: 'orderItems'
             }
         ]
     });
@@ -338,8 +341,7 @@ export const cancelOrder = async (userId, orderId) => {
     if (!order) {
         throw new Error("Đơn hàng không tồn tại");
     }
-    // Quy tắc nghiệp vụ: Chỉ được hủy khi đang 'pending'
-    // (Nếu đã 'confirmed' hoặc 'shipping' thì phải gọi tổng đài)
+
     if (order.status !== 'pending') {
         throw new Error("Không thể hủy đơn hàng này (Đã được xác nhận hoặc đang giao).");
     }
@@ -351,13 +353,16 @@ export const cancelOrder = async (userId, orderId) => {
         await order.save({ transaction: t });
 
         // 2. Hoàn lại tồn kho (Back stock)
-        for (const item of order.orderItems) {
-            const variant = await ProductVariant.findByPk(item.product_variant_id);
-            if (variant) {
-                await variant.increment('stock_quantity', {
-                    by: item.quantity,
-                    transaction: t
-                });
+        // <--- ĐÃ SỬA: Dùng order.OrderItems (Viết hoa chữ O)
+        if (order.OrderItems) {
+            for (const item of order.OrderItems) {
+                const variant = await ProductVariant.findByPk(item.product_variant_id);
+                if (variant) {
+                    await variant.increment('stock_quantity', {
+                        by: item.quantity,
+                        transaction: t
+                    });
+                }
             }
         }
     });
@@ -366,11 +371,90 @@ export const cancelOrder = async (userId, orderId) => {
 };
 
 export const getUserOrders = async (userId) => {
-    return await Order.findAll({ where: { user_id: userId }, order: [['created_at', 'DESC']], include: [{ model: Payment }, { model: OrderItem }] });
+    // Không dùng as nên include giữ nguyên gọn gàng
+    return await Order.findAll({
+        where: { user_id: userId },
+        order: [['created_at', 'DESC']],
+        include: [{ model: Payment }, { model: OrderItem }]
+    });
 };
 
 export const getOrderById = async (userId, orderId) => {
-    const order = await Order.findOne({ where: { id: orderId, user_id: userId }, include: [{ model: ShippingAddress }, { model: Payment }, { model: OrderItem }] });
+    // Không dùng as nên include giữ nguyên gọn gàng
+    const order = await Order.findOne({
+        where: { id: orderId, user_id: userId },
+        include: [{ model: ShippingAddress }, { model: Payment }, { model: OrderItem }]
+    });
     if (!order) throw new Error("Đơn hàng không tìm thấy");
+    return order;
+};
+
+/**
+ * Admin: Lấy danh sách toàn bộ đơn hàng
+ */
+export const getAllOrdersAdmin = async () => {
+    return await Order.findAll({
+        order: [['created_at', 'DESC']],
+        include: [
+            {
+                model: User,
+                attributes: ['id', 'full_name', 'email', 'phone']
+            },
+            { model: Payment },
+            { model: OrderItem } // <--- ĐÃ SỬA: Bỏ as (nếu có), mặc định ok
+        ]
+    });
+};
+
+/**
+ * Admin: Cập nhật trạng thái đơn hàng
+ */
+export const updateOrderStatusAdmin = async (orderId, newStatus) => {
+    const validStatuses = ['pending', 'confirmed', 'shipping', 'completed', 'canceled'];
+    if (!validStatuses.includes(newStatus)) {
+        throw new Error("Trạng thái không hợp lệ");
+    }
+
+    const order = await Order.findByPk(orderId, {
+        include: [
+            { model: User },
+            { model: OrderItem }  // <--- ĐÃ SỬA: Bỏ as (nếu có)
+        ]
+    });
+
+    if (!order) {
+        throw new Error("Đơn hàng không tồn tại");
+    }
+
+    if (order.status === newStatus) return order;
+
+    // LOGIC HOÀN KHO: Nếu Admin HỦY đơn
+    if (newStatus === 'canceled' && order.status !== 'canceled') {
+        await sequelize.transaction(async (t) => {
+            // <--- ĐÃ SỬA: Dùng order.OrderItems (Viết hoa chữ O)
+            const items = order.OrderItems;
+
+            if (items) {
+                for (const item of items) {
+                    const variant = await ProductVariant.findByPk(item.product_variant_id);
+                    if (variant) {
+                        await variant.increment('stock_quantity', { by: item.quantity, transaction: t });
+                    }
+                }
+            }
+
+            order.status = newStatus;
+            await order.save({ transaction: t });
+        });
+    } else {
+        order.status = newStatus;
+        await order.save();
+    }
+
+    // GỬI EMAIL THÔNG BÁO
+    if (order.User && order.User.email) {
+        sendOrderStatusEmail(order.User.email, order.id, newStatus);
+    }
+
     return order;
 };

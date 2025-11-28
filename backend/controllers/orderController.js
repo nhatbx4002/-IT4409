@@ -119,3 +119,33 @@ export const cancelMyOrder = async (req, res) => {
         });
     }
 };
+// === ADMIN CONTROLLERS ===
+
+export const getAllOrders = async (req, res) => {
+    try {
+        const orders = await orderService.getAllOrdersAdmin();
+        res.status(200).json({ success: true, data: orders });
+    } catch (error) {
+        res.status(400).json({ success: false, message: error.message });
+    }
+};
+
+export const updateStatus = async (req, res) => {
+    try {
+        const { id } = req.params;   // Order ID
+        const { status } = req.body; // Trạng thái mới (VD: "confirmed")
+
+        const order = await orderService.updateOrderStatusAdmin(id, status);
+
+        res.status(200).json({
+            success: true,
+            message: "Cập nhật trạng thái thành công",
+            data: {
+                orderId: order.id,
+                status: order.status
+            }
+        });
+    } catch (error) {
+        res.status(400).json({ success: false, message: error.message });
+    }
+};

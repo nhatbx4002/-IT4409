@@ -1,11 +1,13 @@
 import express from 'express';
 import { authenticateToken } from '../middlewares/auth.js';
+import { isAdmin } from '../middlewares/authMiddleware.js';
 import {
     createOrder,
     getMyOrders,
     getOrderDetails,
     getShippingFee,
-    cancelMyOrder
+    cancelMyOrder,
+    getAllOrders, updateStatus
 } from '../controllers/orderController.js';
 
 const router = express.Router();
@@ -32,5 +34,16 @@ router.get('/:id', getOrderDetails);
 // API: Hủy đơn hàng
 // PUT /api/orders/:id/cancel
 router.put('/:id/cancel', cancelMyOrder);
+
+// === ADMIN ROUTES ===
+// Chỉ Admin mới được truy cập các đường dẫn này
+
+// 1. Xem danh sách tất cả đơn hàng
+// GET /api/orders/admin/all
+router.get('/admin/all', isAdmin, getAllOrders);
+
+// 2. Cập nhật trạng thái đơn hàng
+// PUT /api/orders/admin/:id/status
+router.put('/admin/:id/status', isAdmin, updateStatus);
 
 export default router;

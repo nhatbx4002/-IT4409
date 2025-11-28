@@ -52,8 +52,8 @@ User.hasMany(Order, { foreignKey: 'user_id' });
 Order.belongsTo(User, { foreignKey: 'user_id' });
 
 // Order <-> OrderItem
-Order.hasMany(OrderItem, { foreignKey: 'order_id', as: 'orderItems' });
-OrderItem.belongsTo(Order, { foreignKey: 'order_id', as: 'order' });
+Order.hasMany(OrderItem, { foreignKey: 'order_id' });
+OrderItem.belongsTo(Order, { foreignKey: 'order_id' });
 
 // Order <-> Payment
 Order.hasOne(Payment, { foreignKey: 'order_id' });
