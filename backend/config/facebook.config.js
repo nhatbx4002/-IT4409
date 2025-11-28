@@ -1,16 +1,17 @@
 import passport from "passport";
 import { Strategy as FacebookStrategy } from "passport-facebook";
 import { User } from "../models/index.js";
-import dotenv from "dotenv";
+import { loadEnv } from "./env.js";
+import { APP_CONSTANTS } from "./constants.js";
 
-dotenv.config();
+const env = loadEnv();
 
 passport.use(
     new FacebookStrategy(
     {
-      clientID: process.env.FACEBOOK_APP_ID,
-      clientSecret: process.env.FACEBOOK_APP_SECRET,
-      callbackURL: process.env.FACEBOOK_CALLBACK_URL || "http://localhost:3000/api/auth/facebook/callback",
+      clientID: env.FACEBOOK_APP_ID,
+      clientSecret: env.FACEBOOK_APP_SECRET,
+      callbackURL: APP_CONSTANTS.oauth.facebookCallbackUrl,
       profileFields: ["id", "emails", "name"],
     },
     async (accessToken, refreshToken, profile, done) => {

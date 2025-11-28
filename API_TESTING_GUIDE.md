@@ -1,5 +1,16 @@
 # Hướng dẫn Test API
 
+## 0. Smoke Test Tự Động
+
+Trước khi test thủ công, có thể chạy bộ smoke test để bảo đảm router + middleware hoạt động:
+
+```bash
+cd backend
+npm run test:server
+```
+
+Lệnh trên sử dụng Node Test Runner + Supertest để kiểm tra root route (`/`) và middleware 404/500 mới. Bộ test này không yêu cầu kết nối database.
+
 ## 1. Kiểm tra Backend Server
 
 Đảm bảo backend server đang chạy:
@@ -8,6 +19,8 @@ cd backend
 npm run dev
 # Hoặc
 npm start
+# Hoặc (alias mới)
+npm run dev:server
 ```
 
 Server sẽ chạy tại: `http://localhost:3000`
@@ -16,6 +29,18 @@ Test server đang hoạt động:
 ```bash
 curl http://localhost:3000/
 ```
+
+## 1.1 Route map (đã nhóm theo domain)
+
+| Prefix | Mô tả | Định nghĩa |
+| --- | --- | --- |
+| `/` | Auth routes (`login`, `signup`, OAuth) | `routes/authRoute.js` |
+| `/admin/*` | Quản trị sản phẩm, người dùng, thống kê | `routes/admin/index.js` |
+| `/user/products` | API sản phẩm cho khách hàng | `routes/user/index.js` |
+| `/wishlist` | Wishlist người dùng | `routes/user/index.js` |
+| `/cart`, `/orders`, `/addresses`, `/promotions` | Các module chức năng | `routes/*.js` |
+
+Các router con được gộp lại trong `routes/admin/index.js` và `routes/user/index.js` giúp quản lý dễ hơn khi test.
 
 ---
 

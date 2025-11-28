@@ -3,9 +3,11 @@ import { Op } from "sequelize";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import nodemailer from "nodemailer";
-import dotenv from "dotenv";
+import { loadEnv } from "../config/env.js";
+import { DOCIFY_SUPPORT_SENDER } from "../config/constants.js";
 
-dotenv.config();
+const env = loadEnv();
+const isProduction = env.NODE_ENV === "production";
 
 const ACCESS_TOKEN_TTL = "30m";
 const REFRESH_TOKEN_TTL = "7d";
@@ -21,29 +23,29 @@ const signToken = (payload, secret, expiresIn) =>
   jwt.sign(payload, secret, { expiresIn });
 
 export const createAccessToken = (user) =>
-  signToken(buildTokenPayload(user), process.env.JWT_SECRET, ACCESS_TOKEN_TTL);
+  signToken(buildTokenPayload(user), env.JWT_SECRET, ACCESS_TOKEN_TTL);
 
 export const createRefreshToken = (user) =>
   signToken(
     buildTokenPayload(user),
-    process.env.JWT_REFRESH_SECRET,
+    env.JWT_REFRESH_SECRET,
     REFRESH_TOKEN_TTL
   );
 
 export const verifyAccessToken = (token) =>
-  jwt.verify(token, process.env.JWT_SECRET);
+  jwt.verify(token, env.JWT_SECRET);
 
 export const verifyRefreshToken = (token) =>
-  jwt.verify(token, process.env.JWT_REFRESH_SECRET);
+  jwt.verify(token, env.JWT_REFRESH_SECRET);
 
 export const sessionConfig = {
-  secret: process.env.SESSION_SECRET,
+  secret: env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
   cookie: {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    secure: isProduction,
+    sameSite: isProduction ? "none" : "lax",
   },
 };
 
@@ -135,14 +137,14 @@ export const logoutUser = async (email) => {
 export const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
+    user: env.EMAIL_USER,
+    pass: env.EMAIL_PASS,
   },
 });
 
 export const sendEmail = async (to, subject, text) => {
   const mailOptions = {
-    from: `"Docify Support" <${process.env.EMAIL_USER}>`,
+    from: DOCIFY_SUPPORT_SENDER,
     to,
     subject,
     text,
@@ -170,7 +172,7 @@ export const sendOtpService = async (email) => {
 export const verifyOtpService = async (email, otp) => {
   if (otpStore[email] !== otp) throw new Error("Invalid or expired OTP");
 
-  const token = jwt.sign({ email }, process.env.JWT_RESET_SECRET, {
+  const token = jwt.sign({ email }, env.JWT_RESET_SECRET, {
     expiresIn: "10m",
   });
 
@@ -181,7 +183,7 @@ export const verifyOtpService = async (email, otp) => {
 
 export const resetPasswordService = async (token, newPassword) => {
   try {
-    const decoded = jwt.verify(token, process.env.JWT_RESET_SECRET);
+    const decoded = jwt.verify(token, env.JWT_RESET_SECRET);
     const user = await User.findOne({ where: { email: decoded.email } });
 
     if (!user) throw new Error("Không tìm thấy người dùng");

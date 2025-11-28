@@ -1,12 +1,14 @@
 // server.js
 import { loadEnv } from "./config/env.js";
-import app, { startServer } from "./api.js";
+import { APP_CONSTANTS } from "./config/constants.js";
+import app from "./app.js";
+import { startServer } from "./bootstrap.js";
 
 console.log("🔄 Loading environment variables...");
 loadEnv();
 console.log("✅ Environment variables loaded");
 
-const PORT = process.env.PORT || 3000;
+const PORT = APP_CONSTANTS.port;
 
 (async () => {
   try {

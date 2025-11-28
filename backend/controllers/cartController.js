@@ -1,4 +1,5 @@
 import * as cartService from '../services/cartService.js';
+import { sendError, sendSuccess } from "./controllerUtils.js";
 
 /**
  * Lấy chi tiết giỏ hàng
@@ -8,16 +9,12 @@ export const getCart = async (req, res) => {
         const userId = req.user.id; // Lấy từ middleware authenticateToken
         const cart = await cartService.getCartDetails(userId);
 
-        res.status(200).json({
-            success: true,
+        sendSuccess(res, {
             message: "Lấy giỏ hàng thành công",
-            cart: cart
+            cart,
         });
     } catch (error) {
-        res.status(400).json({
-            success: false,
-            message: error.message
-        });
+        sendError(res, error);
     }
 };
 
@@ -31,16 +28,13 @@ export const addItem = async (req, res) => {
 
         const item = await cartService.addProductToCart(userId, productVariantId, quantity);
 
-        res.status(201).json({ // 201 = Created
-            success: true,
+        sendSuccess(res, {
+            status: 201, // Created
             message: "Thêm sản phẩm thành công",
-            item: item
+            item,
         });
     } catch (error) {
-        res.status(400).json({
-            success: false,
-            message: error.message
-        });
+        sendError(res, error);
     }
 };
 
@@ -55,16 +49,12 @@ export const updateItem = async (req, res) => {
 
         const updatedItem = await cartService.updateItemQuantity(userId, cartItemId, quantity);
 
-        res.status(200).json({
-            success: true,
+        sendSuccess(res, {
             message: "Cập nhật số lượng thành công",
-            item: updatedItem
+            item: updatedItem,
         });
     } catch (error) {
-        res.status(400).json({
-            success: false,
-            message: error.message
-        });
+        sendError(res, error);
     }
 };
 
@@ -78,14 +68,8 @@ export const removeItem = async (req, res) => {
 
         await cartService.removeItemFromCart(userId, cartItemId);
 
-        res.status(200).json({
-            success: true,
-            message: "Xóa sản phẩm thành công",
-        });
+        sendSuccess(res, { message: "Xóa sản phẩm thành công" });
     } catch (error) {
-        res.status(400).json({
-            success: false,
-            message: error.message
-        });
+        sendError(res, error);
     }
 };

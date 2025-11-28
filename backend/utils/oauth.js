@@ -1,9 +1,10 @@
-const FRONTEND_FALLBACK = "http://localhost:5173";
+import { APP_CONSTANTS } from "../config/constants.js";
 
-const normalizeBaseUrl = (url = FRONTEND_FALLBACK) => url.replace(/\/+$/, "");
+const normalizeBaseUrl = (url = APP_CONSTANTS.frontendUrl) =>
+  url.replace(/\/+$/, "");
 
 export const getFrontendBaseUrl = () =>
-  normalizeBaseUrl(process.env.FRONTEND_URL || FRONTEND_FALLBACK);
+  normalizeBaseUrl(APP_CONSTANTS.frontendUrl);
 
 export const buildOAuthCallbackUrl = (params = {}) => {
   const callbackBase = `${getFrontendBaseUrl()}/auth/callback`;

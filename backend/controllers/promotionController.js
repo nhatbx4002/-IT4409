@@ -1,12 +1,13 @@
 import * as promotionService from "../services/promotionService.js";
+import { sendError, sendSuccess } from "./controllerUtils.js";
 
 // [GET] Lấy danh sách Flash Sale
 export const getPromotions = async (req, res) => {
   try {
     const data = await promotionService.getActivePromotions();
-    res.json({ success: true, data });
+    sendSuccess(res, { data });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    sendError(res, error, 500);
   }
 };
 
@@ -15,9 +16,9 @@ export const applyCoupon = async (req, res) => {
   try {
     const { code, cartItems } = req.body;
     const result = await promotionService.calculateDiscount(code, cartItems);
-    res.json({ success: true, data: result });
+    sendSuccess(res, { data: result });
   } catch (error) {
-    res.status(400).json({ success: false, message: error.message });
+    sendError(res, error);
   }
 };
 
@@ -25,9 +26,9 @@ export const applyCoupon = async (req, res) => {
 export const createPromotion = async (req, res) => {
   try {
     const data = await promotionService.createPromotion(req.body);
-    res.status(201).json({ success: true, message: "Tạo thành công", data });
+    sendSuccess(res, { status: 201, message: "Tạo thành công", data });
   } catch (error) {
-    res.status(400).json({ success: false, message: error.message });
+    sendError(res, error);
   }
 };
 
@@ -35,8 +36,8 @@ export const createPromotion = async (req, res) => {
 export const deletePromotion = async (req, res) => {
   try {
     await promotionService.deletePromotion(req.params.id);
-    res.json({ success: true, message: "Đã xóa thành công" });
+    sendSuccess(res, { message: "Đã xóa thành công" });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    sendError(res, error, 500);
   }
 };

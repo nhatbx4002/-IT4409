@@ -1,13 +1,15 @@
 import nodemailer from "nodemailer";
-import dotenv from "dotenv";
-dotenv.config();
+import { loadEnv } from "../config/env.js";
+import { EMAIL_SENDER } from "../config/constants.js";
+
+const env = loadEnv();
 
 // Cấu hình Transporter
 const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
+        user: env.EMAIL_USER,
+        pass: env.EMAIL_PASS,
     },
 });
 
@@ -46,7 +48,7 @@ export const sendOrderStatusEmail = async (to, orderId, newStatus) => {
 
     try {
         await transporter.sendMail({
-            from: `"Shop Quần Áo" <${process.env.EMAIL_USER}>`,
+            from: EMAIL_SENDER,
             to,
             subject,
             text,

@@ -1,4 +1,5 @@
 import * as orderService from '../services/orderService.js';
+import { sendError, sendSuccess } from "./controllerUtils.js";
 
 /**
  * Tính phí ship (API riêng để Frontend gọi khi chọn xong địa chỉ)
@@ -11,16 +12,12 @@ export const getShippingFee = async (req, res) => {
 
         const result = await orderService.previewShippingFee(userId, locationData);
 
-        res.status(200).json({
-            success: true,
+        sendSuccess(res, {
             message: "Tính phí ship thành công",
-            data: result
+            data: result,
         });
     } catch (error) {
-        res.status(400).json({
-            success: false,
-            message: error.message
-        });
+        sendError(res, error);
     }
 };
 
@@ -35,8 +32,8 @@ export const createOrder = async (req, res) => {
 
         const result = await orderService.createOrder(userId, shippingAddressId, paymentMethod, notes);
 
-        res.status(201).json({
-            success: true,
+        sendSuccess(res, {
+            status: 201,
             message: "Đặt hàng thành công",
             data: {
                 orderId: result.order.id,
@@ -46,10 +43,7 @@ export const createOrder = async (req, res) => {
             }
         });
     } catch (error) {
-        res.status(400).json({
-            success: false,
-            message: error.message
-        });
+        sendError(res, error);
     }
 };
 
@@ -61,15 +55,9 @@ export const getMyOrders = async (req, res) => {
         const userId = req.user.id;
         const orders = await orderService.getUserOrders(userId);
 
-        res.status(200).json({
-            success: true,
-            data: orders
-        });
+        sendSuccess(res, { data: orders });
     } catch (error) {
-        res.status(400).json({
-            success: false,
-            message: error.message
-        });
+        sendError(res, error);
     }
 };
 
@@ -83,15 +71,9 @@ export const getOrderDetails = async (req, res) => {
 
         const order = await orderService.getOrderById(userId, id);
 
-        res.status(200).json({
-            success: true,
-            data: order
-        });
+        sendSuccess(res, { data: order });
     } catch (error) {
-        res.status(400).json({
-            success: false,
-            message: error.message
-        });
+        sendError(res, error);
     }
 };
 /**
@@ -104,8 +86,7 @@ export const cancelMyOrder = async (req, res) => {
 
         const result = await orderService.cancelOrder(userId, orderId);
 
-        res.status(200).json({
-            success: true,
+        sendSuccess(res, {
             message: "Đã hủy đơn hàng thành công",
             data: {
                 orderId: result.id,
@@ -113,10 +94,7 @@ export const cancelMyOrder = async (req, res) => {
             }
         });
     } catch (error) {
-        res.status(400).json({
-            success: false,
-            message: error.message
-        });
+        sendError(res, error);
     }
 };
 // === ADMIN CONTROLLERS ===
@@ -124,9 +102,9 @@ export const cancelMyOrder = async (req, res) => {
 export const getAllOrders = async (req, res) => {
     try {
         const orders = await orderService.getAllOrdersAdmin();
-        res.status(200).json({ success: true, data: orders });
+        sendSuccess(res, { data: orders });
     } catch (error) {
-        res.status(400).json({ success: false, message: error.message });
+        sendError(res, error);
     }
 };
 
@@ -137,8 +115,7 @@ export const updateStatus = async (req, res) => {
 
         const order = await orderService.updateOrderStatusAdmin(id, status);
 
-        res.status(200).json({
-            success: true,
+        sendSuccess(res, {
             message: "Cập nhật trạng thái thành công",
             data: {
                 orderId: order.id,
@@ -146,6 +123,6 @@ export const updateStatus = async (req, res) => {
             }
         });
     } catch (error) {
-        res.status(400).json({ success: false, message: error.message });
+        sendError(res, error);
     }
 };

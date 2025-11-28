@@ -1,6 +1,7 @@
 import { registerUser, loginUser, logoutUser, sendOtpService, verifyOtpService, resetPasswordService, signInGoogle, signInFacebook, updateUserService } from "../services/authService.js";
 import passport  from "passport";
 import { buildOAuthCallbackUrl, redirectOAuthError } from "../utils/oauth.js";
+import { APP_CONSTANTS } from "../config/constants.js";
 
 // dang ky bang tai khoa local
 export const signUp = async (req,res) => {
@@ -146,7 +147,7 @@ export const signInFacebookController = {
   //Xử lý callback sau khi Facebook xác thực thành công
   facebookCallback: async (req, res) => {
     try {
-      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+      const frontendUrl = APP_CONSTANTS.frontendUrl;
       
       if (!req.user) {
         const errorMessage = encodeURIComponent(
@@ -176,7 +177,7 @@ export const signInFacebookController = {
       return res.redirect(`${frontendUrl}/auth/callback?${params.toString()}`);
     } catch (error) {
       console.error(" Lỗi khi đăng nhập Facebook:", error);
-      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+      const frontendUrl = APP_CONSTANTS.frontendUrl;
       const errorMessage = encodeURIComponent("Đăng nhập Facebook thất bại, vui lòng thử lại sau.");
       return res.redirect(`${frontendUrl}/auth/callback?error=true&errorMessage=${errorMessage}`);
     }

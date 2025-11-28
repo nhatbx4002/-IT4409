@@ -1,15 +1,19 @@
+import { APP_CONSTANTS } from "./constants.js";
+
 export const buildCorsOptions = () => {
-  const allowedOrigins = [
-    "http://localhost:5173",
-    "http://localhost:5174",
-    process.env.FRONTEND_URL,
-  ].filter(Boolean);
+  const allowedOrigins = Array.from(
+    new Set([
+      "http://localhost:5173",
+      "http://localhost:5174",
+      APP_CONSTANTS.frontendUrl,
+    ].filter(Boolean))
+  );
 
   return {
     origin(origin, callback) {
       if (!origin) return callback(null, true);
 
-      const isDev = process.env.NODE_ENV === "development";
+      const isDev = !APP_CONSTANTS.isProduction;
       const isAllowed = allowedOrigins.includes(origin);
 
       if (isDev || isAllowed) {

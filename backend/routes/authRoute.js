@@ -20,7 +20,7 @@ router.get("/auth/google", passport.authenticate("google", { scope: ["profile", 
 
 // Callback sau khi Google xác thực
 router.get(
-  "/auth/google/callback",
+  "/google/callback",
   (req, res, next) => {
     passport.authenticate("google", (err, user, info) => {
       const stateParam = typeof req.query?.state === "string" ? req.query.state : undefined;

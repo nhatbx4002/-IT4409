@@ -1,10 +1,9 @@
-// 🔹 Load .env TRƯỚC khi import sequelize
-// Mặc định dotenv sẽ đọc file .env ở thư mục bạn chạy lệnh `node ...`
-// (thường là root project)
-import "dotenv/config";
 
+import { loadEnv } from "../config/env.js";
 import { sequelize } from "../config/db.config.js";
 import { QueryTypes, DataTypes } from "sequelize";
+
+loadEnv();
 
 /**
  * Migration: Add new fields to products table
@@ -187,21 +186,6 @@ const isMainModule =
 if (isMainModule) {
   (async () => {
     try {
-      // Kiểm tra biến môi trường bắt buộc
-      if (
-        !process.env.DB_NAME ||
-        !process.env.DB_USER ||
-        !process.env.DB_PASSWORD ||
-        !process.env.DB_HOST
-      ) {
-        console.error("❌ Database environment variables not found!");
-        console.error("Please check your .env file in the project root.");
-        console.error(
-          "Required variables: DB_NAME, DB_USER, DB_PASSWORD, DB_HOST"
-        );
-        process.exit(1);
-      }
-
       console.log("🔄 Connecting to database...");
       await sequelize.authenticate();
       console.log("✅ Database connected!");

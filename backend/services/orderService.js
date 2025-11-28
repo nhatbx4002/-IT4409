@@ -1,27 +1,29 @@
-import {
-    sequelize,
-    Order,
-    OrderItem,
-    Payment,
-    Cart,
-    CartItem,
-    ProductVariant,
-    Product,
-    ShippingAddress,
-    Promotion,
-    User
-} from "../models/index.js";
+import { Promotion, ProductVariant } from "../models/index.js";
 import { sendOrderStatusEmail } from "./emailService.js";
 import { Op } from "sequelize";
 import crypto from "crypto";
 import querystring from "qs";
 import moment from "moment";
-import dotenv from "dotenv";
-dotenv.config();
+import { loadEnv } from "../config/env.js";
+import {
+    findCartWithItems,
+    findShippingAddress,
+    createOrderRecord,
+    bulkCreateOrderItems,
+    createPaymentRecord,
+    clearCartItems,
+    findOrdersForUser,
+    findOrderForUser,
+    findAllOrders,
+    findOrderWithRelations
+} from "../repositories/orderRepository.js";
+import { withTransaction } from "../utils/transactions.js";
+
+const env = loadEnv();
 
 // === CẤU HÌNH ===
-const SHOP_PROVINCE_ID = parseInt(process.env.SHOP_PROVINCE_ID || "1");
-const SHOP_CITY_NAME = process.env.SHOP_CITY || "Hà Nội";
+const SHOP_PROVINCE_ID = parseInt(env.SHOP_PROVINCE_ID || "1", 10);
+const SHOP_CITY_NAME = env.SHOP_CITY || "Hà Nội";
 
 /**
  * Hàm tính phí ship cơ bản (Theo địa chỉ)
@@ -116,10 +118,10 @@ const calculateDiscount = async (promotionCode, subtotal, shippingFee) => {
  * Tạo URL VNPay (Giữ nguyên)
  */
 const createVnPayUrl = (orderId, amount, ipAddr = '127.0.0.1') => {
-    const tmnCode = (process.env.VNP_TMN_CODE || "").trim();
-    const secretKey = (process.env.VNP_HASH_SECRET || "").trim();
-    const vnpUrl = (process.env.VNP_URL || "").trim();
-    const returnUrl = (process.env.VNP_RETURN_URL || "").trim();
+    const tmnCode = (env.VNP_TMN_CODE || "").trim();
+    const secretKey = (env.VNP_HASH_SECRET || "").trim();
+    const vnpUrl = (env.VNP_URL || "").trim();
+    const returnUrl = (env.VNP_RETURN_URL || "").trim();
 
     const date = new Date();
     const createDate = moment(date).format("YYYYMMDDHHmmss");
@@ -161,10 +163,7 @@ const createVnPayUrl = (orderId, amount, ipAddr = '127.0.0.1') => {
 
 // 1. Xem trước chi phí (Preview)
 export const previewShippingFee = async (userId, locationData, promotionCode) => {
-    const cart = await Cart.findOne({
-        where: { user_id: userId },
-        include: [{ model: CartItem, include: [{ model: ProductVariant, as: 'product_variant', include: [{ model: Product, as: 'product' }] }] }]
-    });
+    const cart = await findCartWithItems(userId);
 
     let subtotal = 0;
     if (cart && cart.cart_items) {
@@ -216,19 +215,14 @@ export const createOrder = async (userId, shippingAddressId, paymentMethod, note
         throw new Error("Phương thức thanh toán không hợp lệ");
     }
 
-    const address = await ShippingAddress.findOne({
-        where: { id: shippingAddressId, user_id: userId }
-    });
+    const address = await findShippingAddress(userId, shippingAddressId);
     if (!address) throw new Error("Địa chỉ giao hàng không tồn tại");
 
-    const cart = await Cart.findOne({
-        where: { user_id: userId },
-        include: [{ model: CartItem, include: [{ model: ProductVariant, as: 'product_variant', include: [{ model: Product, as: 'product' }] }] }]
-    });
+    const cart = await findCartWithItems(userId);
 
     if (!cart || !cart.cart_items.length) throw new Error("Giỏ hàng trống");
 
-    const result = await sequelize.transaction(async (t) => {
+    const result = await withTransaction(async (transaction) => {
         let subtotal = 0;
         const orderItemsData = [];
 
@@ -253,7 +247,7 @@ export const createOrder = async (userId, shippingAddressId, paymentMethod, note
                 line_total: lineTotal
             });
 
-            await variant.decrement('stock_quantity', { by: item.quantity, transaction: t });
+            await variant.decrement('stock_quantity', { by: item.quantity, transaction });
         }
 
         // Tính toán tiền
@@ -281,7 +275,7 @@ export const createOrder = async (userId, shippingAddressId, paymentMethod, note
         const finalNotes = (notes ? notes : "") + ` | Ship: ${shippingFee}đ` + promoNote;
 
         // Tạo Order
-        const newOrder = await Order.create({
+        const newOrder = await createOrderRecord({
             user_id: userId,
             shipping_address_id: shippingAddressId,
             subtotal_amount: subtotal,
@@ -290,10 +284,10 @@ export const createOrder = async (userId, shippingAddressId, paymentMethod, note
             total_amount: totalAmount,
             status: 'pending',
             notes: finalNotes,
-        }, { transaction: t });
+        }, transaction);
 
         const itemsWithOrderId = orderItemsData.map(item => ({ ...item, order_id: newOrder.id }));
-        await OrderItem.bulkCreate(itemsWithOrderId, { transaction: t });
+        await bulkCreateOrderItems(itemsWithOrderId, transaction);
 
         // Thanh toán
         let paymentUrl = null;
@@ -303,16 +297,16 @@ export const createOrder = async (userId, shippingAddressId, paymentMethod, note
             paymentUrl = createVnPayUrl(newOrder.id, totalAmount);
         }
 
-        await Payment.create({
+        await createPaymentRecord({
             order_id: newOrder.id,
             provider: paymentMethod.toUpperCase(),
             amount: totalAmount,
             currency: 'VND',
             status: paymentStatus,
             raw_payload: paymentUrl ? { paymentUrl } : null
-        }, { transaction: t });
+        }, transaction);
 
-        await CartItem.destroy({ where: { cart_id: cart.id }, transaction: t });
+        await clearCartItems(cart.id, transaction);
 
         return {
             order: newOrder,
@@ -329,14 +323,7 @@ export const createOrder = async (userId, shippingAddressId, paymentMethod, note
  * 3. Hủy đơn hàng (User tự hủy)
  */
 export const cancelOrder = async (userId, orderId) => {
-    const order = await Order.findOne({
-        where: { id: orderId, user_id: userId },
-        include: [
-            {
-                model: OrderItem, // <--- ĐÃ SỬA: Bỏ dòng as: 'orderItems'
-            }
-        ]
-    });
+    const order = await findOrderForUser(userId, orderId);
 
     if (!order) {
         throw new Error("Đơn hàng không tồn tại");
@@ -346,21 +333,19 @@ export const cancelOrder = async (userId, orderId) => {
         throw new Error("Không thể hủy đơn hàng này (Đã được xác nhận hoặc đang giao).");
     }
 
-    // --- TRANSACTION: Cập nhật trạng thái & Hoàn kho ---
-    await sequelize.transaction(async (t) => {
+    await withTransaction(async (transaction) => {
         // 1. Đổi trạng thái
         order.status = 'canceled';
-        await order.save({ transaction: t });
+        await order.save({ transaction });
 
         // 2. Hoàn lại tồn kho (Back stock)
-        // <--- ĐÃ SỬA: Dùng order.OrderItems (Viết hoa chữ O)
         if (order.OrderItems) {
             for (const item of order.OrderItems) {
                 const variant = await ProductVariant.findByPk(item.product_variant_id);
                 if (variant) {
                     await variant.increment('stock_quantity', {
                         by: item.quantity,
-                        transaction: t
+                        transaction
                     });
                 }
             }
@@ -370,21 +355,10 @@ export const cancelOrder = async (userId, orderId) => {
     return order;
 };
 
-export const getUserOrders = async (userId) => {
-    // Không dùng as nên include giữ nguyên gọn gàng
-    return await Order.findAll({
-        where: { user_id: userId },
-        order: [['created_at', 'DESC']],
-        include: [{ model: Payment }, { model: OrderItem }]
-    });
-};
+export const getUserOrders = async (userId) => findOrdersForUser(userId);
 
 export const getOrderById = async (userId, orderId) => {
-    // Không dùng as nên include giữ nguyên gọn gàng
-    const order = await Order.findOne({
-        where: { id: orderId, user_id: userId },
-        include: [{ model: ShippingAddress }, { model: Payment }, { model: OrderItem }]
-    });
+    const order = await findOrderForUser(userId, orderId);
     if (!order) throw new Error("Đơn hàng không tìm thấy");
     return order;
 };
@@ -392,19 +366,7 @@ export const getOrderById = async (userId, orderId) => {
 /**
  * Admin: Lấy danh sách toàn bộ đơn hàng
  */
-export const getAllOrdersAdmin = async () => {
-    return await Order.findAll({
-        order: [['created_at', 'DESC']],
-        include: [
-            {
-                model: User,
-                attributes: ['id', 'full_name', 'email', 'phone']
-            },
-            { model: Payment },
-            { model: OrderItem } // <--- ĐÃ SỬA: Bỏ as (nếu có), mặc định ok
-        ]
-    });
-};
+export const getAllOrdersAdmin = async () => findAllOrders();
 
 /**
  * Admin: Cập nhật trạng thái đơn hàng
@@ -415,12 +377,7 @@ export const updateOrderStatusAdmin = async (orderId, newStatus) => {
         throw new Error("Trạng thái không hợp lệ");
     }
 
-    const order = await Order.findByPk(orderId, {
-        include: [
-            { model: User },
-            { model: OrderItem }  // <--- ĐÃ SỬA: Bỏ as (nếu có)
-        ]
-    });
+    const order = await findOrderWithRelations(orderId);
 
     if (!order) {
         throw new Error("Đơn hàng không tồn tại");
@@ -430,21 +387,20 @@ export const updateOrderStatusAdmin = async (orderId, newStatus) => {
 
     // LOGIC HOÀN KHO: Nếu Admin HỦY đơn
     if (newStatus === 'canceled' && order.status !== 'canceled') {
-        await sequelize.transaction(async (t) => {
-            // <--- ĐÃ SỬA: Dùng order.OrderItems (Viết hoa chữ O)
+        await withTransaction(async (transaction) => {
             const items = order.OrderItems;
 
             if (items) {
                 for (const item of items) {
                     const variant = await ProductVariant.findByPk(item.product_variant_id);
                     if (variant) {
-                        await variant.increment('stock_quantity', { by: item.quantity, transaction: t });
+                        await variant.increment('stock_quantity', { by: item.quantity, transaction });
                     }
                 }
             }
 
             order.status = newStatus;
-            await order.save({ transaction: t });
+            await order.save({ transaction });
         });
     } else {
         order.status = newStatus;
