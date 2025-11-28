@@ -94,3 +94,28 @@ export const getOrderDetails = async (req, res) => {
         });
     }
 };
+/**
+ * Hủy đơn hàng
+ */
+export const cancelMyOrder = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const orderId = req.params.id; // Lấy ID từ URL
+
+        const result = await orderService.cancelOrder(userId, orderId);
+
+        res.status(200).json({
+            success: true,
+            message: "Đã hủy đơn hàng thành công",
+            data: {
+                orderId: result.id,
+                status: result.status
+            }
+        });
+    } catch (error) {
+        res.status(400).json({
+            success: false,
+            message: error.message
+        });
+    }
+};

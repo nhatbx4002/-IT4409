@@ -321,8 +321,50 @@ export const createOrder = async (userId, shippingAddressId, paymentMethod, note
 
     return result;
 };
+/**
+ * 3. Hủy đơn hàng (User tự hủy)
+ */
+export const cancelOrder = async (userId, orderId) => {
+    const order = await Order.findOne({
+        where: { id: orderId, user_id: userId },
+        include: [
+            {
+                model: OrderItem,
+                as: 'orderItems'
+            }
+        ]
+    });
 
-// ... (Các hàm Get Order giữ nguyên)
+    if (!order) {
+        throw new Error("Đơn hàng không tồn tại");
+    }
+    // Quy tắc nghiệp vụ: Chỉ được hủy khi đang 'pending'
+    // (Nếu đã 'confirmed' hoặc 'shipping' thì phải gọi tổng đài)
+    if (order.status !== 'pending') {
+        throw new Error("Không thể hủy đơn hàng này (Đã được xác nhận hoặc đang giao).");
+    }
+
+    // --- TRANSACTION: Cập nhật trạng thái & Hoàn kho ---
+    await sequelize.transaction(async (t) => {
+        // 1. Đổi trạng thái
+        order.status = 'canceled';
+        await order.save({ transaction: t });
+
+        // 2. Hoàn lại tồn kho (Back stock)
+        for (const item of order.orderItems) {
+            const variant = await ProductVariant.findByPk(item.product_variant_id);
+            if (variant) {
+                await variant.increment('stock_quantity', {
+                    by: item.quantity,
+                    transaction: t
+                });
+            }
+        }
+    });
+
+    return order;
+};
+
 export const getUserOrders = async (userId) => {
     return await Order.findAll({ where: { user_id: userId }, order: [['created_at', 'DESC']], include: [{ model: Payment }, { model: OrderItem }] });
 };

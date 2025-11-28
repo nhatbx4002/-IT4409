@@ -4,7 +4,8 @@ import {
     createOrder,
     getMyOrders,
     getOrderDetails,
-    getShippingFee
+    getShippingFee,
+    cancelMyOrder
 } from '../controllers/orderController.js';
 
 const router = express.Router();
@@ -27,5 +28,9 @@ router.get('/', getMyOrders);
 // API: Xem chi tiết đơn hàng
 // GET /api/orders/:id
 router.get('/:id', getOrderDetails);
+
+// API: Hủy đơn hàng
+// PUT /api/orders/:id/cancel
+router.put('/:id/cancel', cancelMyOrder);
 
 export default router;
