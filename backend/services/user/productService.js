@@ -305,3 +305,5 @@ export const searchProductsService = async ({
     totalPages,
   };
 };
+
+
