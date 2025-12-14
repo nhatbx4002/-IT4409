@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
-import { ShoppingBag } from "lucide-react";
+import { ShoppingBag, Loader2 } from "lucide-react";
 import type { ProductDetail } from "@/types/products";
+import { addToCart } from "@/lib/api";
+import { toast } from "sonner";
 
 interface MobileStickyCartProps {
   product: ProductDetail;
@@ -8,6 +10,7 @@ interface MobileStickyCartProps {
 
 export function MobileStickyCart({ product }: MobileStickyCartProps) {
   const [isVisible, setIsVisible] = useState(false);
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -21,12 +24,36 @@ export function MobileStickyCart({ product }: MobileStickyCartProps) {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const handleAddToCart = () => {
-    // TODO: Implement add to cart
-    console.log("Add to cart from mobile sticky button", product.id);
+  const handleAddToCart = async () => {
+    // Find the first available variant (in stock)
+    const availableVariant = product.variants.find(
+      (v) => v.stockQuantity > 0
+    );
+
+    if (!availableVariant) {
+      toast.error("Product is out of stock");
+      return;
+    }
+
+    if (!availableVariant.id) {
+      toast.error("Invalid product variant");
+      return;
+    }
+
+    try {
+      setIsAddingToCart(true);
+      await addToCart(availableVariant.id, 1);
+      toast.success("Product added to cart successfully!");
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Failed to add product to cart";
+      toast.error(errorMessage);
+    } finally {
+      setIsAddingToCart(false);
+    }
   };
 
   const displayPrice = product.salePrice || product.price;
+  const hasAvailableVariant = product.variants.some((v) => v.stockQuantity > 0);
 
   return (
     <div
@@ -60,12 +87,16 @@ export function MobileStickyCart({ product }: MobileStickyCartProps) {
           {/* Add to Cart Button */}
           <button
             onClick={handleAddToCart}
-            disabled={!product.inStock}
+            disabled={!hasAvailableVariant || isAddingToCart}
             className="flex-1 bg-[#C2A26F] text-black uppercase tracking-widest py-3 px-6 text-sm font-bold hover:bg-[#B8945F] transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             style={{ fontFamily: "'Poppins', sans-serif", letterSpacing: "1.5px" }}
           >
-            <ShoppingBag className="w-5 h-5" />
-            {product.inStock ? "ADD TO CART" : "OUT OF STOCK"}
+            {isAddingToCart ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : (
+              <ShoppingBag className="w-5 h-5" />
+            )}
+            {isAddingToCart ? "ADDING..." : hasAvailableVariant ? "ADD TO CART" : "OUT OF STOCK"}
           </button>
         </div>
       </div>

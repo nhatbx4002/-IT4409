@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { ImageWithFallback } from "@/components/figma/ImageWithFallback";
 import { ShoppingBag, Minus, Plus, X } from "lucide-react";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface CartItem {
@@ -25,6 +26,7 @@ interface ShoppingCartProps {
 }
 
 export function ShoppingCart({ open, onOpenChange }: ShoppingCartProps) {
+  const navigate = useNavigate();
   const [cartItems, setCartItems] = useState<CartItem[]>([
     {
       id: 1,
@@ -115,14 +117,19 @@ export function ShoppingCart({ open, onOpenChange }: ShoppingCartProps) {
   const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const isEmpty = cartItems.length === 0;
 
+  const handleViewCart = () => {
+    onOpenChange(false);
+    navigate("/cart");
+  };
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent 
-        side="right" 
-        className="w-full sm:max-w-lg p-0 bg-white border-l border-black/10 transition-all duration-500 ease-in-out"
+      <SheetContent
+        side="right"
+        className="w-full border-l border-black/10 bg-white/95 p-0 backdrop-blur-xl transition-all duration-500 ease-in-out sm:max-w-lg"
       >
         {/* Header */}
-        <SheetHeader className="px-8 py-6 border-b border-black/10">
+        <SheetHeader className="border-b border-black/10 bg-white/80 px-8 py-6 backdrop-blur">
           <div className="flex items-center justify-between">
             <div>
               <SheetTitle 
@@ -156,13 +163,12 @@ export function ShoppingCart({ open, onOpenChange }: ShoppingCartProps) {
         </SheetHeader>
 
         {/* Cart Content */}
-        <div className="flex flex-col h-[calc(100vh-120px)]">
+        <div className="flex h-[calc(100vh-120px)] flex-col">
           {isEmpty ? (
             // Empty State
-            <div className="flex-1 flex flex-col items-center justify-center px-8 text-center">
-              <div 
-                className="w-24 h-24 rounded-full mb-6 flex items-center justify-center"
-                style={{ backgroundColor: '#F5F5F5' }}
+            <div className="flex flex-1 flex-col items-center justify-center px-8 text-center">
+              <div
+                className="mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-[#F5F5F5]"
               >
                 <ShoppingBag className="h-12 w-12 text-[#666666]" />
               </div>
@@ -176,14 +182,13 @@ export function ShoppingCart({ open, onOpenChange }: ShoppingCartProps) {
               >
                 Your bag is empty
               </h3>
-              <p className="text-[#666666] mb-8" style={{ fontSize: '16px' }}>
+              <p className="mb-8 text-[#666666]" style={{ fontSize: '16px' }}>
                 Start adding items to your shopping bag
               </p>
               <Button
                 onClick={() => onOpenChange(false)}
                 variant="outline"
-                className="px-8 py-6 border-2 hover:bg-[#D4AF37] hover:text-black hover:border-[#D4AF37] transition-colors"
-                style={{ borderColor: '#D4AF37', color: '#D4AF37' }}
+                className="rounded-full border-2 border-[#D4AF37] px-8 py-4 text-xs font-semibold uppercase tracking-[0.2em] text-[#D4AF37] transition-colors hover:bg-[#D4AF37] hover:text-black"
               >
                 Continue Shopping
               </Button>
@@ -201,7 +206,7 @@ export function ShoppingCart({ open, onOpenChange }: ShoppingCartProps) {
                     >
                       <div className="flex gap-4">
                         {/* Product Image */}
-                        <div className="w-24 h-32 shrink-0 overflow-hidden rounded-sm bg-[#F5F5F5]">
+                        <div className="h-32 w-24 shrink-0 overflow-hidden rounded-sm bg-[#F5F5F5]">
                           <ImageWithFallback
                             src={item.image}
                             alt={item.name}
@@ -210,33 +215,31 @@ export function ShoppingCart({ open, onOpenChange }: ShoppingCartProps) {
                         </div>
 
                         {/* Product Details */}
-                        <div className="flex-1 flex flex-col">
-                          <div className="flex justify-between mb-2">
+                        <div className="flex flex-1 flex-col">
+                          <div className="mb-2 flex justify-between">
                             <div className="flex-1">
-                              <p 
-                                className="text-xs tracking-wider mb-1"
-                                style={{ color: '#D4AF37' }}
+                              <p
+                                className="mb-1 text-xs tracking-[0.18em] text-[#D4AF37]"
                               >
                                 {item.brand}
                               </p>
-                              <h4 
-                                className="mb-2"
-                                style={{ fontSize: '16px', fontWeight: 500 }}
+                              <h4
+                                className="mb-1 font-['Playfair_Display'] text-[15px] font-semibold text-[#111827]"
                               >
                                 {item.name}
                               </h4>
                             </div>
                             <button
                               onClick={() => removeItem(item.id)}
-                              className="text-[#666666] hover:text-[#D4AF37] transition-colors h-6"
+                              className="h-6 text-xs uppercase tracking-[0.18em] text-[#666666] transition-colors hover:text-[#D4AF37]"
                             >
-                              <X className="h-4 w-4" />
+                              Remove
                             </button>
                           </div>
 
                           {/* Color Selector */}
                           <div className="mb-3">
-                            <label className="text-xs text-[#666666] mb-2 block">
+                            <label className="mb-2 block text-xs text-[#666666]">
                               Color
                             </label>
                             <div className="flex gap-2">
@@ -258,11 +261,11 @@ export function ShoppingCart({ open, onOpenChange }: ShoppingCartProps) {
 
                           {/* Size Selector */}
                           <div className="mb-3">
-                            <label className="text-xs text-[#666666] mb-2 block">
+                            <label className="mb-2 block text-xs text-[#666666]">
                               Size
                             </label>
                             <Select value={item.size} onValueChange={(value) => updateSize(item.id, value)}>
-                              <SelectTrigger className="w-24 h-9 text-sm">
+                              <SelectTrigger className="h-8 w-24 rounded-full border border-gray-300 bg-transparent px-3 text-xs text-[#111827]">
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
@@ -277,7 +280,7 @@ export function ShoppingCart({ open, onOpenChange }: ShoppingCartProps) {
 
                           <div className="mt-auto flex items-center justify-between">
                             {/* Quantity Selector */}
-                            <div className="flex items-center border border-black/10 rounded-sm">
+                            <div className="flex items-center rounded-full border border-gray-300 bg-white">
                               <button
                                 onClick={() => updateQuantity(item.id, -1)}
                                 className="p-2 hover:bg-[#F5F5F5] transition-colors"
@@ -285,7 +288,7 @@ export function ShoppingCart({ open, onOpenChange }: ShoppingCartProps) {
                               >
                                 <Minus className="h-3 w-3" />
                               </button>
-                              <span className="px-4 text-sm" style={{ fontWeight: 500 }}>
+                              <span className="px-4 text-sm font-medium">
                                 {item.quantity}
                               </span>
                               <button
@@ -296,14 +299,8 @@ export function ShoppingCart({ open, onOpenChange }: ShoppingCartProps) {
                               </button>
                             </div>
 
-                            {/* Price */}
-                            <p 
-                              style={{ 
-                                fontSize: '18px', 
-                                fontWeight: 600,
-                                fontFamily: "'Playfair Display', serif" 
-                              }}
-                            >
+                            {/* Line price */}
+                            <p className="font-['Playfair_Display'] text-[18px] font-semibold text-[#111827]">
                               ${(item.price * item.quantity).toLocaleString()}
                             </p>
                           </div>
@@ -312,10 +309,7 @@ export function ShoppingCart({ open, onOpenChange }: ShoppingCartProps) {
 
                       {/* Divider */}
                       {index < cartItems.length - 1 && (
-                        <div 
-                          className="mt-6 h-px" 
-                          style={{ backgroundColor: '#D4AF37', opacity: 0.2 }}
-                        ></div>
+                        <div className="mt-6 h-px bg-[#E5E7EB]" />
                       )}
                     </div>
                   ))}
@@ -323,11 +317,11 @@ export function ShoppingCart({ open, onOpenChange }: ShoppingCartProps) {
               </div>
 
               {/* Footer */}
-              <div className="border-t border-black/10 px-8 py-6 bg-[#F5F5F5]">
+              <div className="border-t border-black/10 bg-[#F5F5F5] px-8 py-6">
                 {/* Subtotal */}
-                <div className="mb-6 pb-6 border-b border-[#D4AF37]/20">
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-[#666666]" style={{ fontSize: '14px' }}>
+                <div className="mb-6 border-b border-[#D4AF37]/20 pb-6">
+                  <div className="mb-2 flex items-center justify-between">
+                    <span className="text-xs uppercase tracking-[0.24em] text-[#6B7280]">
                       Subtotal
                     </span>
                     <span 
@@ -349,19 +343,13 @@ export function ShoppingCart({ open, onOpenChange }: ShoppingCartProps) {
                 <div className="grid grid-cols-2 gap-3">
                   <Button
                     variant="outline"
-                    className="py-6 border-2 hover:bg-[#D4AF37] hover:text-black hover:border-[#D4AF37] transition-colors"
-                    style={{ borderColor: '#D4AF37', color: '#D4AF37' }}
+                    className="rounded-full border-2 border-[#D4AF37] py-4 text-xs font-semibold uppercase tracking-[0.18em] text-[#D4AF37] transition-colors hover:bg-[#D4AF37] hover:text-black"
+                    onClick={handleViewCart}
                   >
                     View Cart
                   </Button>
                   <Button
-                    className="py-6 text-black uppercase tracking-wider hover:opacity-90 transition-opacity"
-                    style={{
-                      backgroundColor: '#D4AF37',
-                      fontSize: '16px',
-                      fontWeight: 600,
-                      letterSpacing: '1px'
-                    }}
+                    className="rounded-full bg-[#D4AF37] py-4 text-xs font-semibold uppercase tracking-[0.2em] text-black transition hover:bg-[#B6911F]"
                   >
                     Checkout
                   </Button>

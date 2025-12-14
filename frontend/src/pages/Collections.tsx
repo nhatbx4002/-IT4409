@@ -7,9 +7,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
-import { Navbar } from "@/components/Navbar";
-import { Footer } from "@/components/Footer";
-import { BackToTop } from "@/components/BackToTop";
+import MainLayout from "@/layout/MainLayout";
 import { FilterSidebar } from "@/components/FiltersSidebar";
 import { ProductCard } from "@/components/ProductsCard";
 import {
@@ -37,8 +35,6 @@ import {
   BRAND_GOLD,
   CATEGORY_LABEL_MAP,
   FONT_SANS,
-  FONT_SERIF,
-  TEXT_MUTED,
 } from "@/theme/constants";
 
 export function Collections() {
@@ -160,11 +156,10 @@ export function Collections() {
   const hasNoResults = !isLoading && !error && paginatedProducts.length === 0;
 
   return (
-    <div className="min-h-screen bg-white">
-      <Navbar />
-
-      <div className="container mx-auto px-4 py-8">
-        <Breadcrumb className="mb-6">
+    <MainLayout>
+      <section className="bg-[#F9FAFB] pb-10 pt-6">
+        <div className="mx-auto max-w-6xl px-6 sm:px-8 lg:px-0">
+          <Breadcrumb className="mb-4">
           <BreadcrumbList>
             {crumbs.map((c, idx) => (
               <Fragment key={`${c.label}-${idx}`}>
@@ -184,32 +179,43 @@ export function Collections() {
               </Fragment>
             ))}
           </BreadcrumbList>
-        </Breadcrumb>
+          </Breadcrumb>
 
-        <div className="mb-6">
-          <h1
-            className="mb-4"
-            style={{
-              fontFamily: FONT_SERIF,
-              fontSize: "36px",
-              fontWeight: 600,
-              letterSpacing: "-0.5px",
-            }}
-          >
-            {dynamicTitle}
-          </h1>
-          <p
-            className="text-sm"
-            style={{
-              color: TEXT_MUTED,
-              fontFamily: FONT_SANS,
-            }}
-          >
-            {isLoading ? "Loading..." : `Showing ${total} products`}
-          </p>
+          <header className="mb-6 flex flex-col gap-4 border-b border-gray-200 pb-6 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#9CA3AF]">
+                {collection ? capitalize(collection) : "All menswear"}
+              </p>
+              <h1
+                className="mt-2 font-['Playfair_Display'] text-3xl font-semibold tracking-tight text-[#111827] sm:text-4xl"
+              >
+                {dynamicTitle}
+              </h1>
+              <p
+                className="mt-2 text-xs text-[#6B7280] sm:text-sm"
+                style={{
+                  fontFamily: FONT_SANS,
+                }}
+              >
+                {isLoading
+                  ? "Curating your selection..."
+                  : `Showing ${total} handpicked pieces`}
+              </p>
+            </div>
+            <div className="rounded-2xl bg-white/80 px-4 py-3 text-xs text-[#4B5563] shadow-sm ring-1 ring-gray-200 sm:text-sm">
+              <p className="font-medium">
+                Tailored luxury for the modern gentleman.
+              </p>
+              <p className="mt-1 text-xs text-[#9CA3AF]">
+                Refine by size, color, brand and more to build your perfect edit.
+              </p>
+            </div>
+          </header>
         </div>
+      </section>
 
-        <div className="flex gap-8">
+      <section className="bg-white pb-16 pt-6">
+        <div className="mx-auto flex max-w-6xl gap-8 px-6 sm:px-8 lg:px-0">
           {isDesktopFilterVisible && (
             <aside className="hidden lg:block w-1/4 transition-all duration-500 ease-in-out">
               <div className="sticky top-4">
@@ -225,7 +231,7 @@ export function Collections() {
           <main className="flex-1">
             <div className="mb-6">
               {activeFilterCount > 0 && (
-                <div className="flex flex-wrap items-center gap-2 mb-4 pb-4 border-b border-black/10">
+                <div className="mb-4 flex flex-wrap items-center gap-2 border-b border-black/10 pb-4">
                   <span
                     className="text-sm"
                     style={{
@@ -319,7 +325,7 @@ export function Collections() {
                 </div>
               )}
 
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
                 <div className="flex items-center gap-3">
                   <button
                     onClick={() => setIsMobileFilterOpen(true)}
@@ -536,7 +542,7 @@ export function Collections() {
             )}
           </main>
         </div>
-      </div>
+      </section>
 
       <FilterSidebar
         filters={filters}
@@ -546,9 +552,7 @@ export function Collections() {
         onMobileClose={() => setIsMobileFilterOpen(false)}
       />
 
-      <Footer />
-      <BackToTop />
-    </div>
+    </MainLayout>
   );
 }
 

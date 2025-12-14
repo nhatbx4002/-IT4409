@@ -9,3 +9,6 @@ web-bundles/
 backend/uploads/
 web-bundles/
 figma/
+plan/
+.shared/
+*.md

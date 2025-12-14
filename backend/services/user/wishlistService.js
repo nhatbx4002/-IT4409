@@ -1,4 +1,5 @@
-import { Wishlist, Product } from "../../models/index.js"; 
+import { Wishlist, Product, ProductVariant } from "../../models/index.js";
+import { sequelize } from "../../config/db.config.js"; 
 
 // Thêm mới
 export const addWishlist = async (userId, productId) => {
@@ -24,7 +25,15 @@ export const getWishlist = async (userId) => {
       {
         model: Product,
         as: 'product',
-        attributes: ['id', 'name', 'base_price', 'images']
+        attributes: ['id', 'name', 'brand', 'base_price', 'sale_price', 'description', 'images', 'tags', 'is_new'],
+        include: [
+          {
+            model: ProductVariant,
+            as: 'variants',
+            attributes: ['id', 'color', 'size', 'stock_quantity'],
+            required: false
+          }
+        ]
       }
     ],
     order: [['createdAt', 'DESC']]

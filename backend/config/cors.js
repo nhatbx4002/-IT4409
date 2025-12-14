@@ -5,22 +5,38 @@ export const buildCorsOptions = () => {
     new Set([
       "http://localhost:5173",
       "http://localhost:5174",
+      "http://localhost:3000",
+      "http://localhost:5175",
+      "http://127.0.0.1:5173",
+      "http://127.0.0.1:5174",
+      "http://127.0.0.1:3000",
       APP_CONSTANTS.frontendUrl,
     ].filter(Boolean))
   );
 
+  const isDev = !APP_CONSTANTS.isProduction;
+
   return {
     origin(origin, callback) {
-      if (!origin) return callback(null, true);
-
-      const isDev = !APP_CONSTANTS.isProduction;
-      const isAllowed = allowedOrigins.includes(origin);
-
-      if (isDev || isAllowed) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
+      // Cho phép requests không có origin (Postman, curl, etc.)
+      if (!origin) {
+        return callback(null, true);
       }
+
+      // Trong môi trường dev, cho phép tất cả localhost origins
+      if (isDev) {
+        const isLocalhost = /^https?:\/\/(localhost|127\.0\.0\.1|0\.0\.0\.0)(:\d+)?$/.test(origin);
+        if (isLocalhost || allowedOrigins.includes(origin)) {
+          return callback(null, true);
+        }
+      }
+
+      // Kiểm tra origin có trong danh sách allowed
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      callback(new Error("Not allowed by CORS"));
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],

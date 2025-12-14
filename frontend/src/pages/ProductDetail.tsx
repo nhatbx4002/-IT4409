@@ -2,11 +2,13 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import MainLayout from "@/layout/MainLayout";
 import { getProductById } from "@/lib/api";
+import { addViewedProduct } from "@/lib/viewedProducts";
 import type { ProductDetail } from "@/types/products";
 import { ProductHero } from "@/components/ProductDetail/ProductHero";
 import { ProductDetailsAccordion } from "@/components/ProductDetail/ProductDetailsAccordion";
 import { ReviewsSection } from "@/components/ProductDetail/ReviewsSection";
 import { RecommendationsCarousel } from "@/components/ProductDetail/RecommendationsCarousel";
+import { ViewedProductsCarousel } from "@/components/ProductDetail/ViewedProductsCarousel";
 import { ProductBreadcrumbs } from "@/components/ProductDetail/ProductBreadcrumbs";
 import { MobileStickyCart } from "@/components/ProductDetail/MobileStickyCart";
 
@@ -30,6 +32,8 @@ export default function ProductDetail() {
         const data = await getProductById(Number(productId));
         setProduct(data);
         setError(null);
+        
+        addViewedProduct(data.id);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load product");
       } finally {
@@ -43,12 +47,14 @@ export default function ProductDetail() {
   if (isLoading) {
     return (
       <MainLayout>
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#C2A26F] mx-auto mb-4"></div>
-            <p className="text-[#757575]">Loading product...</p>
-          </div>
+      <div className="flex min-h-[70vh] items-center justify-center bg-[#050509]">
+        <div className="rounded-3xl border border-white/10 bg-white/5 px-10 py-8 text-center shadow-[0_18px_80px_rgba(15,23,42,0.85)] backdrop-blur-2xl">
+          <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-2 border-[#D4AF37]/30 border-t-[#D4AF37]" />
+          <p className="text-xs uppercase tracking-[0.24em] text-slate-300">
+            Loading product details
+          </p>
         </div>
+      </div>
       </MainLayout>
     );
   }
@@ -56,50 +62,73 @@ export default function ProductDetail() {
   if (error || !product) {
     return (
       <MainLayout>
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="text-center">
-            <h1 className="text-2xl font-bold mb-4 text-black">Product Not Found</h1>
-            <p className="text-[#757575] mb-6">{error || "The product you're looking for doesn't exist."}</p>
-            <button
-              onClick={() => navigate("/")}
-              className="px-6 py-3 bg-black text-white uppercase tracking-wider hover:bg-[#C2A26F] transition-colors duration-300"
-            >
-              Back to Home
-            </button>
-          </div>
+      <div className="flex min-h-[70vh] items-center justify-center bg-gradient-to-b from-[#F9FAFB] to-white">
+        <div className="max-w-md rounded-3xl border border-[#E5E7EB] bg-white px-8 py-10 text-center shadow-[0_18px_60px_rgba(15,23,42,0.10)]">
+          <h1 className="mb-3 font-['Playfair_Display'] text-2xl font-semibold text-[#111827]">
+            Product not found
+          </h1>
+          <p className="mb-6 text-sm text-[#6B7280]">
+            {error || "The piece you are looking for is no longer available or does not exist."}
+          </p>
+          <button
+            onClick={() => navigate("/")}
+            className="rounded-full bg-[#111827] px-8 py-3 text-xs font-semibold uppercase tracking-[0.22em] text-white transition hover:bg-black"
+          >
+            Back to Home
+          </button>
         </div>
+      </div>
       </MainLayout>
     );
   }
 
   return (
     <MainLayout>
-      <div className="bg-white min-h-screen">
-        {/* Main Container */}
-        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-white">
+      {/* Main Container */}
+      <div className="mx-auto max-w-6xl px-6 pb-16 pt-4 sm:px-8 lg:px-0">
           {/* Breadcrumbs */}
           <div className="pt-6 pb-4">
             <ProductBreadcrumbs product={product} />
           </div>
 
           {/* Hero Section */}
-          <div className="py-8 lg:py-12">
+          <div className="pt-4 pb-10 lg:pt-6 lg:pb-14">
             <ProductHero product={product} />
           </div>
 
           {/* Details Accordion */}
-          <div className="py-12 lg:py-16">
+          <div className="border-t border-[#E5E7EB] pt-10 lg:pt-14">
             <ProductDetailsAccordion product={product} />
           </div>
 
           {/* Reviews Section */}
-          <div className="py-12 lg:py-16">
+          <div className="border-t border-[#E5E7EB] pt-10 lg:pt-14">
             <ReviewsSection product={product} />
           </div>
 
           {/* Recommendations */}
-          <div className="py-12 lg:py-16">
-            <RecommendationsCarousel />
+          <div className="space-y-16 border-t border-[#E5E7EB] pt-12 lg:pt-16">
+            <RecommendationsCarousel 
+              title="You May Also Like" 
+              product={product} 
+              variant="similar"
+              excludeProductId={product.id}
+            />
+            {product.collection && (
+              <RecommendationsCarousel 
+                title="More from This Collection" 
+                product={product} 
+                variant="category"
+                excludeProductId={product.id}
+              />
+            )}
+            
+            {/* Recently Viewed */}
+            <ViewedProductsCarousel 
+              title="Recently Viewed" 
+              excludeProductId={product.id}
+            />
           </div>
         </div>
 

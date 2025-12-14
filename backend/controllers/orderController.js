@@ -1,5 +1,6 @@
 import * as orderService from '../services/orderService.js';
 import { sendError, sendSuccess } from "./controllerUtils.js";
+import { loadEnv } from '../config/env.js';
 
 /**
  * Tính phí ship (API riêng để Frontend gọi khi chọn xong địa chỉ)
@@ -8,9 +9,9 @@ export const getShippingFee = async (req, res) => {
     try {
         const userId = req.user.id;
         // locationData: { province_id, district_id, ... } từ Frontend gửi lên
-        const locationData = req.body;
+        const { promotionCode, ...locationData } = req.body;
 
-        const result = await orderService.previewShippingFee(userId, locationData);
+        const result = await orderService.previewShippingFee(userId, locationData, promotionCode);
 
         sendSuccess(res, {
             message: "Tính phí ship thành công",
@@ -27,10 +28,10 @@ export const getShippingFee = async (req, res) => {
 export const createOrder = async (req, res) => {
     try {
         const userId = req.user.id;
-        // Frontend gửi: ID địa chỉ đã lưu, Phương thức thanh toán, Ghi chú
-        const { shippingAddressId, paymentMethod, notes } = req.body;
+        // Frontend gửi: ID địa chỉ đã lưu, Phương thức thanh toán, Ghi chú, Mã giảm giá
+        const { shippingAddressId, paymentMethod, notes, promotionCode } = req.body;
 
-        const result = await orderService.createOrder(userId, shippingAddressId, paymentMethod, notes);
+        const result = await orderService.createOrder(userId, shippingAddressId, paymentMethod, notes, promotionCode);
 
         sendSuccess(res, {
             status: 201,
@@ -38,7 +39,7 @@ export const createOrder = async (req, res) => {
             data: {
                 orderId: result.order.id,
                 totalAmount: result.financials.totalAmount,
-                paymentMethod: result.order.payment_method,
+                paymentMethod: paymentMethod.toUpperCase(),
                 paymentUrl: result.paymentUrl // (Nếu là VNPAY thì có link này)
             }
         });
@@ -120,6 +121,61 @@ export const updateStatus = async (req, res) => {
             data: {
                 orderId: order.id,
                 status: order.status
+            }
+        });
+    } catch (error) {
+        sendError(res, error);
+    }
+};
+
+/**
+ * Xử lý callback từ VNPay
+ * VNPay sẽ redirect về URL này sau khi thanh toán
+ */
+export const vnPayCallback = async (req, res) => {
+    try {
+        // Lấy tất cả query params từ VNPay
+        const vnpParams = req.query;
+
+        const result = await orderService.handleVnPayCallback(vnpParams);
+
+        // Redirect về frontend với kết quả
+        const env = loadEnv();
+        const frontendUrl = env.FRONTEND_URL || 'http://localhost:5173';
+        const redirectUrl = result.success
+            ? `${frontendUrl}/orders/${result.orderId}?payment=success`
+            : `${frontendUrl}/orders/${result.orderId}?payment=failed&message=${encodeURIComponent(result.message)}`;
+
+        res.redirect(redirectUrl);
+    } catch (error) {
+        // Nếu có lỗi, redirect về trang lỗi
+        const env = loadEnv();
+        const frontendUrl = env.FRONTEND_URL || 'http://localhost:5173';
+        res.redirect(`${frontendUrl}/payment-error?message=${encodeURIComponent(error.message)}`);
+    }
+};
+
+/**
+ * API endpoint để frontend kiểm tra trạng thái thanh toán
+ * (Sau khi redirect từ VNPay)
+ */
+export const checkPaymentStatus = async (req, res) => {
+    try {
+        const { orderId } = req.params;
+        const userId = req.user.id;
+
+        const order = await orderService.getOrderById(userId, orderId);
+
+        if (!order || !order.Payment) {
+            return sendError(res, new Error("Không tìm thấy thông tin thanh toán"), 404);
+        }
+
+        sendSuccess(res, {
+            data: {
+                orderId: order.id,
+                orderStatus: order.status,
+                paymentStatus: order.Payment.status,
+                paymentMethod: order.Payment.provider
             }
         });
     } catch (error) {

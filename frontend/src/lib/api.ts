@@ -9,7 +9,17 @@ import type {
   AuthResponse,
   AuthUser,
 } from '@/types/auth';
-import { clearAuthSession, getAccessToken } from './auth';
+import type {
+  CartResponse,
+  AddToCartResponse,
+  UpdateCartItemResponse,
+} from '@/types/cart';
+import type {
+  WishlistResponse,
+  AddToWishlistResponse,
+  RemoveFromWishlistResponse,
+} from '@/types/wishlist';
+import { clearAuthSession, getAccessToken, getStoredUser } from './auth';
 
 const getApiBaseUrl = (): string => {
   const envUrl = import.meta.env.VITE_API_BASE_URL;
@@ -249,3 +259,97 @@ export async function searchProducts(
     params: buildFilterParams({ ...filters, q: query }),
   });
 }
+
+// ==============================
+// CART API
+// ==============================
+
+export async function addToCart(
+  productVariantId: number,
+  quantity: number
+): Promise<AddToCartResponse> {
+  const response = await apiClient.post<{ success: boolean; message?: string; item: AddToCartResponse }>('/cart', {
+    productVariantId,
+    quantity,
+  });
+  if (!response.data.success) {
+    throw new Error(response.data.message || 'Failed to add item to cart');
+  }
+  return response.data.item;
+}
+
+export async function getCart(): Promise<CartResponse> {
+  const response = await apiClient.get<{ success: boolean; message?: string; cart: CartResponse }>('/cart');
+  if (!response.data.success) {
+    throw new Error(response.data.message || 'Failed to get cart');
+  }
+  return response.data.cart;
+}
+
+export async function updateCartItem(
+  cartItemId: number,
+  quantity: number
+): Promise<UpdateCartItemResponse> {
+  const response = await apiClient.put<{ success: boolean; message?: string; item: UpdateCartItemResponse }>(
+    `/cart/${cartItemId}`,
+    { quantity }
+  );
+  if (!response.data.success) {
+    throw new Error(response.data.message || 'Failed to update cart item');
+  }
+  return response.data.item;
+}
+
+export async function removeCartItem(cartItemId: number): Promise<void> {
+  const response = await apiClient.delete<{ success: boolean; message?: string }>(`/cart/${cartItemId}`);
+  if (!response.data.success) {
+    throw new Error(response.data.message || 'Failed to remove cart item');
+  }
+}
+
+// ==============================
+// WISHLIST API
+// ==============================
+
+export async function addToWishlist(productId: number): Promise<AddToWishlistResponse> {
+  const user = getStoredUser();
+  if (!user?.id) {
+    throw new Error('User not authenticated');
+  }
+  
+  const response = await apiClient.post<AddToWishlistResponse>('/wishlist/add', {
+    userId: user.id,
+    productId,
+  });
+  if (!response.data.success) {
+    throw new Error(response.data.message || 'Failed to add to wishlist');
+  }
+  return response.data;
+}
+
+export async function getWishlist(userId: number): Promise<WishlistResponse> {
+  const response = await apiClient.get<WishlistResponse>(`/wishlist/${userId}`);
+  if (!response.data.success) {
+    throw new Error(response.data.message || 'Failed to fetch wishlist');
+  }
+  return response.data;
+}
+
+export async function removeFromWishlist(productId: number): Promise<RemoveFromWishlistResponse> {
+  const user = getStoredUser();
+  if (!user?.id) {
+    throw new Error('User not authenticated');
+  }
+  
+  const response = await apiClient.delete<RemoveFromWishlistResponse>('/wishlist/remove', {
+    data: { 
+      userId: user.id,
+      productId 
+    },
+  });
+  if (!response.data.success) {
+    throw new Error(response.data.message || 'Failed to remove from wishlist');
+  }
+  return response.data;
+}
+

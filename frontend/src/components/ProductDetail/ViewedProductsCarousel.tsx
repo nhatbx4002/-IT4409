@@ -1,75 +1,67 @@
 import { useEffect, useState } from "react";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
-import { getProducts, addToWishlist } from "@/lib/api";
+import { getProductById, addToWishlist } from "@/lib/api";
+import { getViewedProductIds } from "@/lib/viewedProducts";
 import { getStoredUser } from "@/lib/auth";
-import type { ProductSummary, ProductDetail, ProductFilterParams } from "@/types/products";
+import type { ProductSummary } from "@/types/products";
 import { ProductCard } from "@/components/ProductsCard";
 
-interface RecommendationsCarouselProps {
+interface ViewedProductsCarouselProps {
   title?: string;
-  product: ProductDetail;
-  variant?: "similar" | "recent" | "category";
   excludeProductId?: number;
 }
 
-export function RecommendationsCarousel({ 
-  title = "You May Also Like", 
-  product, 
-  variant = "similar",
+export function ViewedProductsCarousel({ 
+  title = "Recently Viewed", 
   excludeProductId 
-}: RecommendationsCarouselProps) {
+}: ViewedProductsCarouselProps) {
   const [products, setProducts] = useState<ProductSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const user = getStoredUser();
 
   useEffect(() => {
-    const fetchProducts = async () => {
+    const fetchViewedProducts = async () => {
       try {
         setIsLoading(true);
         
-        const filters: ProductFilterParams = {
-          page: 1,
-          pageSize: 8,
-        };
-
-        if (variant === "similar" || variant === "category") {
-          if (product.collection) {
-            filters.collection = product.collection;
-          }
-          if (product.category?.slug) {
-            filters.categorySlug = product.category.slug;
-          }
-        }
-
-        if (variant === "recent") {
-          filters.sort = "newest";
-          if (product.collection) {
-            filters.collection = product.collection;
-          }
-        }
-
-        const response = await getProducts(filters);
+        const viewedIds = getViewedProductIds();
         
-        let filteredProducts = response.products;
-        
-        if (excludeProductId || product.id) {
-          filteredProducts = filteredProducts.filter(
-            (p) => p.id !== (excludeProductId || product.id)
-          );
+        if (viewedIds.length === 0) {
+          setProducts([]);
+          setIsLoading(false);
+          return;
         }
 
-        setProducts(filteredProducts.slice(0, 8));
+        const filteredIds = excludeProductId 
+          ? viewedIds.filter((id) => id !== excludeProductId)
+          : viewedIds;
+
+        if (filteredIds.length === 0) {
+          setProducts([]);
+          setIsLoading(false);
+          return;
+        }
+
+        const productPromises = filteredIds
+          .slice(0, 8)
+          .map((id) => getProductById(id).catch(() => null));
+
+        const results = await Promise.all(productPromises);
+        const validProducts = results.filter(
+          (p): p is ProductSummary => p !== null
+        );
+
+        setProducts(validProducts);
       } catch (error) {
-        console.error("Failed to fetch carousel products", error);
+        console.error("Failed to fetch viewed products", error);
+        setProducts([]);
       } finally {
         setIsLoading(false);
       }
     };
 
-    if (product) {
-      fetchProducts();
-    }
-  }, [product, variant, excludeProductId]);
+    fetchViewedProducts();
+  }, [excludeProductId]);
 
   const handleAddToCart = (productId: number) => {
     console.log("Add to cart", productId);

@@ -3,6 +3,7 @@ import { loadEnv } from "./config/env.js";
 import { APP_CONSTANTS } from "./config/constants.js";
 import app from "./app.js";
 import { startServer } from "./bootstrap.js";
+import { swaggerUi, swaggerSpec } from "./swagger.js";  
 
 console.log("🔄 Loading environment variables...");
 loadEnv();

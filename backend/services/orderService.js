@@ -15,7 +15,10 @@ import {
     findOrdersForUser,
     findOrderForUser,
     findAllOrders,
-    findOrderWithRelations
+    findOrderWithRelations,
+    findPaymentByOrderId,
+    findOrderById,
+    updatePaymentStatus
 } from "../repositories/orderRepository.js";
 import { withTransaction } from "../utils/transactions.js";
 
@@ -260,7 +263,7 @@ export const createOrder = async (userId, shippingAddressId, paymentMethod, note
             await Promotion.decrement('usage_limit', {
                 by: 1,
                 where: { id: discountInfo.id },
-                transaction: t
+                transaction
             });
         }
 
@@ -278,9 +281,10 @@ export const createOrder = async (userId, shippingAddressId, paymentMethod, note
         const newOrder = await createOrderRecord({
             user_id: userId,
             shipping_address_id: shippingAddressId,
+            promotion_id: discountInfo.id, // FK to Promotion
             subtotal_amount: subtotal,
             discount_amount: discountInfo.amount, // Lưu số tiền giảm
-            promotion_code: discountInfo.code,
+            promotion_code: discountInfo.code, // Snapshot of code at order time
             total_amount: totalAmount,
             status: 'pending',
             notes: finalNotes,
@@ -413,4 +417,127 @@ export const updateOrderStatusAdmin = async (orderId, newStatus) => {
     }
 
     return order;
+};
+
+/**
+ * Xử lý callback từ VNPay
+ * @param {Object} vnpParams - Các tham số từ VNPay callback
+ * @returns {Object} - Kết quả xử lý
+ */
+export const handleVnPayCallback = async (vnpParams) => {
+    const secretKey = (env.VNP_HASH_SECRET || "").trim();
+    
+    if (!secretKey) {
+        throw new Error("VNPay secret key chưa được cấu hình");
+    }
+
+    // Lấy SecureHash từ params
+    const secureHash = vnpParams['vnp_SecureHash'];
+    delete vnpParams['vnp_SecureHash'];
+    delete vnpParams['vnp_SecureHashType'];
+
+    // Sắp xếp và tạo chuỗi để verify
+    let sorted = {};
+    let str = [];
+    for (let key in vnpParams) {
+        if (vnpParams.hasOwnProperty(key)) {
+            str.push(encodeURIComponent(key));
+        }
+    }
+    str.sort();
+    for (let key of str) {
+        sorted[key] = encodeURIComponent(vnpParams[key]).replace(/%20/g, "+");
+    }
+
+    const signData = querystring.stringify(sorted, { encode: false });
+    const hmac = crypto.createHmac("sha512", secretKey);
+    const signed = hmac.update(Buffer.from(signData, 'utf-8')).digest("hex");
+
+    // Verify signature
+    if (secureHash !== signed) {
+        throw new Error("Chữ ký không hợp lệ");
+    }
+
+    // Lấy thông tin từ callback
+    const vnpResponseCode = vnpParams['vnp_ResponseCode'];
+    const vnpTxnRef = vnpParams['vnp_TxnRef'];
+    const vnpAmount = parseFloat(vnpParams['vnp_Amount']) / 100; // VNPay trả về số tiền * 100
+    const vnpTransactionStatus = vnpParams['vnp_TransactionStatus'];
+    const vnpTransactionNo = vnpParams['vnp_TransactionNo'];
+
+    // Lấy orderId từ vnpTxnRef (format: orderId_HHmmss)
+    const orderId = parseInt(vnpTxnRef.split('_')[0], 10);
+    
+    if (!orderId || isNaN(orderId)) {
+        throw new Error("Không tìm thấy Order ID từ callback");
+    }
+
+    // Tìm order và payment
+    const order = await findOrderById(orderId);
+    if (!order) {
+        throw new Error("Đơn hàng không tồn tại");
+    }
+
+    const payment = await findPaymentByOrderId(orderId);
+    if (!payment) {
+        throw new Error("Thông tin thanh toán không tồn tại");
+    }
+
+    // Kiểm tra số tiền
+    if (Math.abs(parseFloat(order.total_amount) - vnpAmount) > 0.01) {
+        throw new Error("Số tiền thanh toán không khớp");
+    }
+
+    // Xử lý kết quả thanh toán
+    const result = await withTransaction(async (transaction) => {
+        let paymentStatus = 'failed';
+        let orderStatus = order.status;
+
+        // ResponseCode = '00' và TransactionStatus = '00' => Thành công
+        if (vnpResponseCode === '00' && vnpTransactionStatus === '00') {
+            paymentStatus = 'completed';
+            // Nếu order đang pending, chuyển sang confirmed
+            if (order.status === 'pending') {
+                orderStatus = 'confirmed';
+            }
+        } else {
+            paymentStatus = 'failed';
+            // Nếu thanh toán thất bại và order đang pending, có thể giữ nguyên hoặc đổi sang failed
+            // Tùy vào business logic
+        }
+
+        // Cập nhật payment
+        await updatePaymentStatus(
+            payment.id,
+            {
+                status: paymentStatus,
+                provider_txn_id: vnpTransactionNo,
+                raw_payload: vnpParams
+            },
+            transaction
+        );
+
+        // Cập nhật order status
+        if (orderStatus !== order.status) {
+            order.status = orderStatus;
+            await order.save({ transaction });
+        }
+
+        return {
+            success: paymentStatus === 'completed',
+            orderId: order.id,
+            paymentStatus,
+            orderStatus,
+            message: paymentStatus === 'completed' 
+                ? 'Thanh toán thành công' 
+                : `Thanh toán thất bại. Mã lỗi: ${vnpResponseCode}`
+        };
+    });
+
+    // Gửi email thông báo nếu thanh toán thành công
+    if (result.success && order.User && order.User.email) {
+        sendOrderStatusEmail(order.User.email, order.id, result.orderStatus);
+    }
+
+    return result;
 };

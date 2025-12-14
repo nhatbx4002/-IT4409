@@ -13,9 +13,12 @@ import {
   Share2,
   Check,
   CreditCard,
+  Loader2,
 } from "lucide-react";
 import type { ProductDetail } from "@/types/products";
 import { ImageWithFallback } from "@/components/figma/ImageWithFallback";
+import { addToCart } from "@/lib/api";
+import { toast } from "sonner";
 
 interface ProductHeroProps {
   product: ProductDetail;
@@ -49,6 +52,7 @@ export function ProductHero({ product }: ProductHeroProps) {
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
 
   const availableVariants = selectedColor
     ? product.variants.filter((v) => v.color === selectedColor)
@@ -80,8 +84,38 @@ export function ProductHero({ product }: ProductHeroProps) {
   const discountAmount = hasDiscount ? product.price - (product.salePrice || 0) : 0;
   const klarnaSplit = (displayPrice / 4).toFixed(2);
 
-  const handleAddToCart = () => {
-    console.log("Add to cart", { productId: product.id, color: selectedColor, size: selectedSize, quantity });
+  const handleAddToCart = async () => {
+    if (!currentVariant) {
+      toast.error("Please select a color and size");
+      return;
+    }
+
+    if (!currentVariant.id) {
+      toast.error("Invalid product variant");
+      return;
+    }
+
+    if (quantity <= 0) {
+      toast.error("Quantity must be greater than 0");
+      return;
+    }
+
+    if (currentVariant.stockQuantity < quantity) {
+      toast.error(`Only ${currentVariant.stockQuantity} items available in stock`);
+      return;
+    }
+
+    try {
+      setIsAddingToCart(true);
+      await addToCart(currentVariant.id, quantity);
+      toast.success("Product added to cart successfully!");
+      setQuantity(1);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Failed to add product to cart";
+      toast.error(errorMessage);
+    } finally {
+      setIsAddingToCart(false);
+    }
   };
 
   const handleBuyNow = () => {
@@ -215,7 +249,9 @@ export function ProductHero({ product }: ProductHeroProps) {
 
           <div className="space-y-2">
             <div className="flex flex-wrap items-end gap-4">
-              <span className="text-[36px] font-bold text-[#1A1A1A]">${displayPrice.toFixed(2)}</span>
+              <span className="font-['Playfair_Display'] text-[32px] font-semibold text-[#1A1A1A]">
+                ${displayPrice.toFixed(2)}
+              </span>
               {hasDiscount && (
                 <>
                   <span className="text-[24px] text-[#9CA3AF] line-through">${product.price.toFixed(2)}</span>
@@ -276,12 +312,12 @@ export function ProductHero({ product }: ProductHeroProps) {
                       key={size}
                       onClick={() => inStock && setSelectedSize(size)}
                       disabled={!inStock}
-                      className={`h-12 w-14 rounded-[8px] border text-[14px] font-semibold transition-all ${
+                      className={`h-10 min-w-[44px] rounded-full border text-[13px] font-medium transition-all ${
                         !inStock
                           ? "border-[#E5E7EB] bg-[#F9FAFB] text-[#9CA3AF] line-through cursor-not-allowed"
                           : isActive
-                          ? "border-[#D4AF37] bg-[#D4AF37] text-black shadow-lg"
-                          : "border-[#E5E7EB] bg-white text-[#1A1A1A] hover:border-[#D4AF37]"
+                          ? "border-[#D4AF37] bg-[#D4AF37] text-black shadow-sm"
+                          : "border-gray-300 bg-white text-[#1A1A1A] hover:border-[#D4AF37]"
                       }`}
                     >
                       {size}
@@ -298,17 +334,17 @@ export function ProductHero({ product }: ProductHeroProps) {
               <button
                 onClick={() => setQuantity((q) => Math.max(1, q - 1))}
                 disabled={quantity <= 1}
-                className="flex h-11 w-11 items-center justify-center rounded-[8px] border border-[#E5E7EB] text-[#1A1A1A] transition hover:border-[#D4AF37] disabled:opacity-50"
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-gray-300 text-[#1A1A1A] transition hover:border-[#D4AF37] disabled:opacity-50"
               >
                 <Minus className="h-4 w-4" />
               </button>
-              <div className="flex h-11 w-16 items-center justify-center rounded-[8px] border border-[#E5E7EB] text-[16px] font-semibold">
+              <div className="flex h-10 min-w-[44px] items-center justify-center rounded-full border border-gray-300 text-[15px] font-semibold">
                 {quantity}
               </div>
               <button
                 onClick={() => setQuantity((q) => q + 1)}
                 disabled={!isVariantInStock || (currentVariant && quantity >= currentVariant.stockQuantity)}
-                className="flex h-11 w-11 items-center justify-center rounded-[8px] border border-[#E5E7EB] text-[#1A1A1A] transition hover:border-[#D4AF37] disabled:opacity-50"
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-gray-300 text-[#1A1A1A] transition hover:border-[#D4AF37] disabled:opacity-50"
               >
                 <Plus className="h-4 w-4" />
               </button>
@@ -319,11 +355,15 @@ export function ProductHero({ product }: ProductHeroProps) {
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-[60%_40%]">
               <button
                 onClick={handleAddToCart}
-                disabled={!isVariantInStock}
+                disabled={!isVariantInStock || isAddingToCart}
                 className="flex h-14 items-center justify-center gap-3 rounded-[12px] bg-[#D4AF37] text-[14px] font-bold uppercase tracking-[0.2em] text-black transition hover:bg-[#C19A2F] disabled:opacity-60"
               >
-                <ShoppingBag className="h-5 w-5" />
-                Add to Cart
+                {isAddingToCart ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <ShoppingBag className="h-5 w-5" />
+                )}
+                {isAddingToCart ? "Adding..." : "Add to Cart"}
               </button>
               <button
                 onClick={handleBuyNow}

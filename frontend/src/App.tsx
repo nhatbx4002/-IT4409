@@ -6,6 +6,7 @@ import SignUpPage from "@/pages/SignUpPage";
 import OAuthCallbackPage from "@/pages/OAuthCallbackPage";
 import ProductDetail from "@/pages/ProductDetail";
 import CartPage from "@/pages/Cart";
+import Wishlist from "@/pages/Wishlist";
 
 
 export default function App() {
@@ -19,6 +20,7 @@ export default function App() {
         <Route path="/collections/:collection/:category" element={<Collections />} />
         <Route path="/products/:productId" element={<ProductDetail />} />
         <Route path="/cart" element={<CartPage />} />
+        <Route path="/wishlist" element={<Wishlist />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignUpPage />} />
         <Route path="/auth/callback" element={<OAuthCallbackPage />} />

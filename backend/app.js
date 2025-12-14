@@ -12,7 +12,7 @@ import ApiRouter from "./routes/api.js";
 import { invalidJsonHandler } from "./middlewares/invalidJsonHandler.js";
 import { notFoundHandler } from "./middlewares/notFoundHandler.js";
 import { errorHandler } from "./middlewares/errorHandler.js";
-
+import { swaggerUi, swaggerSpec, swaggerUiOptions } from "./swagger.js";  
 loadEnv();
 
 const app = express();
@@ -34,6 +34,7 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api", ApiRouter);
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec, swaggerUiOptions));
 app.use(notFoundHandler);
 app.use(errorHandler);
 

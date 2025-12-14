@@ -7,8 +7,16 @@ import {
   Minus,
   Plus,
   ShoppingBag,
+  Loader2,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
+import { ProductsCarousel } from "@/components/Cart/ProductsCarousel";
+import { ViewedProductsCarousel } from "@/components/Cart/ViewedProductsCarousel";
+import { getCart, updateCartItem, removeCartItem } from "@/lib/api";
+import type { CartItem as ApiCartItem, CartResponse } from "@/types/cart";
+import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
+import { isAuthenticated } from "@/lib/auth";
 
 type CartItem = {
   id: string;
@@ -21,6 +29,7 @@ type CartItem = {
   originalPrice?: number;
   image: string;
   quantity: number;
+  cartItemId: number;
 };
 
 type RecommendedProduct = {
@@ -42,45 +51,21 @@ const COLOR_OPTIONS = [
   { label: "Ivory", value: "Ivory", swatch: "#F4F1DE", border: "#E5E7EB" },
 ];
 
-const INITIAL_ITEMS: CartItem[] = [
-  {
-    id: "lux-suit-01",
+const mapApiCartItemToCartItem = (apiItem: ApiCartItem): CartItem => {
+  return {
+    id: `cart-item-${apiItem.cart_item_id}`,
+    cartItemId: apiItem.cart_item_id,
     brand: "ARISTINO",
-    name: "Italian Wool Suit",
-    size: "L",
-    color: "Navy Blue",
-    stockStatus: "in",
-    price: 489,
-    originalPrice: 599,
-    image:
-      "https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&w=420&q=80",
-    quantity: 1,
-  },
-  {
-    id: "lux-coat-02",
-    brand: "ARISTINO",
-    name: "Cashmere Overcoat",
-    size: "L",
-    color: "Charcoal",
-    stockStatus: "low",
-    price: 579,
-    image:
-      "https://images.unsplash.com/photo-1490111718993-d98654ce6cf7?auto=format&fit=crop&w=420&q=80",
-    quantity: 1,
-  },
-  {
-    id: "lux-shoes-03",
-    brand: "ARISTINO",
-    name: "Handcrafted Leather Shoes",
-    size: "42 EU",
-    color: "Espresso",
-    stockStatus: "in",
-    price: 399,
-    image:
-      "https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&w=420&q=80",
-    quantity: 1,
-  },
-];
+    name: apiItem.product_name,
+    size: apiItem.size || "N/A",
+    color: apiItem.color || "N/A",
+    stockStatus: apiItem.stock_quantity > 5 ? "in" : "low",
+    price: apiItem.unit_price,
+    originalPrice: undefined,
+    image: apiItem.image_url || "https://via.placeholder.com/420",
+    quantity: apiItem.quantity,
+  };
+};
 
 const RECOMMENDED: RecommendedProduct[] = [
   {
@@ -116,49 +101,130 @@ const formatCurrency = (value: number) =>
   }).format(value);
 
 export default function CartPage() {
-  const [items, setItems] = useState<CartItem[]>(INITIAL_ITEMS);
+  const navigate = useNavigate();
+  const [items, setItems] = useState<CartItem[]>([]);
+  const [cartData, setCartData] = useState<CartResponse | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [promoCode, setPromoCode] = useState("");
   const [appliedPromo, setAppliedPromo] = useState(false);
   const [promoState, setPromoState] = useState<"success" | "error" | null>(
     null,
   );
   const [isPromoExpanded, setIsPromoExpanded] = useState(false);
+  const [updatingItems, setUpdatingItems] = useState<Set<number>>(new Set());
+
+  useEffect(() => {
+    const fetchCart = async () => {
+      if (!isAuthenticated()) {
+        navigate("/login");
+        return;
+      }
+
+      try {
+        setIsLoading(true);
+        setError(null);
+        const cart = await getCart();
+        setCartData(cart);
+        setItems(cart.items.map(mapApiCartItemToCartItem));
+        if (cart.applied_promotion_code) {
+          setAppliedPromo(true);
+          setPromoCode(cart.applied_promotion_code);
+        }
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : "Failed to load cart";
+        setError(errorMessage);
+        toast.error(errorMessage);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchCart();
+  }, [navigate]);
 
   const subtotal = useMemo(
-    () => items.reduce((acc, item) => acc + item.price * item.quantity, 0),
-    [items],
+    () => cartData?.subtotal_amount || 0,
+    [cartData],
   );
-  const discount = appliedPromo ? PROMO.amount : 0;
+  const discount = useMemo(
+    () => (appliedPromo ? cartData?.discount_amount || 0 : 0),
+    [appliedPromo, cartData],
+  );
   const shipping =
     subtotal >= FREE_SHIPPING_THRESHOLD || subtotal === 0 ? 0 : SHIPPING_FEE;
-  const tax = subtotal === 0 ? 0 : Math.round(subtotal * TAX_RATE);
-  const total = Math.max(subtotal + shipping + tax - discount, 0);
+  const total = Math.max(subtotal + shipping - discount, 0);
   const itemCount = items.reduce((acc, item) => acc + item.quantity, 0);
 
-  const handleQuantityChange = (id: string, delta: 1 | -1) => {
-    setItems((prev) =>
-      prev.map((item) => {
-        if (item.id !== id) return item;
-        const nextQuantity = Math.max(item.quantity + delta, 1);
-        return { ...item, quantity: nextQuantity };
-      }),
-    );
+  const handleQuantityChange = async (id: string, delta: 1 | -1) => {
+    const item = items.find((i) => i.id === id);
+    if (!item) return;
+
+    const nextQuantity = Math.max(item.quantity + delta, 1);
+    if (nextQuantity === item.quantity) return;
+
+    try {
+      setUpdatingItems((prev) => new Set(prev).add(item.cartItemId));
+      await updateCartItem(item.cartItemId, nextQuantity);
+      
+      // Refresh cart data
+      const cart = await getCart();
+      setCartData(cart);
+      setItems(cart.items.map(mapApiCartItemToCartItem));
+      toast.success("Cart updated successfully");
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to update quantity";
+      toast.error(errorMessage);
+    } finally {
+      setUpdatingItems((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(item.cartItemId);
+        return newSet;
+      });
+    }
   };
 
   const handleSizeChange = (id: string, size: string) => {
+    // Note: Changing size/color would require changing the variant, which is a more complex operation
+    // For now, we'll just update the display but show a message
+    toast.info("To change size or color, please remove this item and add the desired variant");
     setItems((prev) =>
       prev.map((item) => (item.id === id ? { ...item, size } : item)),
     );
   };
 
   const handleColorChange = (id: string, color: string) => {
+    // Note: Changing size/color would require changing the variant, which is a more complex operation
+    // For now, we'll just update the display but show a message
+    toast.info("To change size or color, please remove this item and add the desired variant");
     setItems((prev) =>
       prev.map((item) => (item.id === id ? { ...item, color } : item)),
     );
   };
 
-  const handleRemoveItem = (id: string) => {
-    setItems((prev) => prev.filter((item) => item.id !== id));
+  const handleRemoveItem = async (id: string) => {
+    const item = items.find((i) => i.id === id);
+    if (!item) return;
+
+    try {
+      setUpdatingItems((prev) => new Set(prev).add(item.cartItemId));
+      await removeCartItem(item.cartItemId);
+      
+      // Refresh cart data
+      const cart = await getCart();
+      setCartData(cart);
+      setItems(cart.items.map(mapApiCartItemToCartItem));
+      toast.success("Item removed from cart");
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to remove item";
+      toast.error(errorMessage);
+    } finally {
+      setUpdatingItems((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(item.cartItemId);
+        return newSet;
+      });
+    }
   };
 
   const handleApplyPromo = () => {
@@ -177,6 +243,41 @@ export default function CartPage() {
     setAppliedPromo(false);
     setPromoState("error");
   };
+
+  if (isLoading) {
+    return (
+      <MainLayout>
+        <section className="bg-white">
+          <div className="mx-auto max-w-[1200px] px-4 py-20 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-center py-20">
+              <Loader2 className="h-8 w-8 animate-spin text-[#D4AF37]" />
+            </div>
+          </div>
+        </section>
+      </MainLayout>
+    );
+  }
+
+  if (error && items.length === 0) {
+    return (
+      <MainLayout>
+        <section className="bg-white">
+          <div className="mx-auto max-w-[1200px] px-4 py-20 sm:px-6 lg:px-8">
+            <div className="flex flex-col items-center justify-center py-20">
+              <AlertCircle className="h-12 w-12 text-red-600 mb-4" />
+              <p className="text-lg text-[#6B7280] mb-4">{error}</p>
+              <button
+                onClick={() => window.location.reload()}
+                className="px-6 py-3 bg-[#D4AF37] text-black font-semibold uppercase tracking-wider hover:bg-[#B6911F] transition-colors"
+              >
+                Retry
+              </button>
+            </div>
+          </div>
+        </section>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>
@@ -211,6 +312,7 @@ export default function CartPage() {
                     <CartItemCard
                       key={item.id}
                       item={item}
+                      isUpdating={updatingItems.has(item.cartItemId)}
                       onDecrease={() => handleQuantityChange(item.id, -1)}
                       onIncrease={() => handleQuantityChange(item.id, 1)}
                       onRemove={() => handleRemoveItem(item.id)}
@@ -224,26 +326,30 @@ export default function CartPage() {
                   <EmptyCartState />
                 )}
               </div>
-
-              <PromoCodeToggle
-                className="mt-12"
-                isExpanded={isPromoExpanded}
-                onToggle={() => setIsPromoExpanded((prev) => !prev)}
-                promoCode={promoCode}
-                status={promoState}
-                isApplied={appliedPromo}
-                onChange={setPromoCode}
-                onApply={handleApplyPromo}
-              />
             </div>
 
             <OrderSummaryCard
               subtotal={subtotal}
               shipping={shipping}
-              tax={tax}
               discount={discount}
               total={total}
+              promoCode={promoCode}
+              promoState={promoState}
+              appliedPromo={appliedPromo}
+              isPromoExpanded={isPromoExpanded}
+              onPromoCodeChange={setPromoCode}
+              onApplyPromo={handleApplyPromo}
+              onTogglePromo={() => setIsPromoExpanded((prev) => !prev)}
             />
+          </div>
+
+          {/* Product Carousels */}
+          <div className="mt-20 space-y-16">
+            <ProductsCarousel 
+              title="Other Products" 
+              filters={{ sort: "newest" }}
+            />
+            <ViewedProductsCarousel title="Recently Viewed" />
           </div>
         </div>
         <SiteFooter />
@@ -259,6 +365,7 @@ const stockStyles = {
 
 type CartItemCardProps = {
   item: CartItem;
+  isUpdating?: boolean;
   onIncrease: () => void;
   onDecrease: () => void;
   onRemove: () => void;
@@ -268,6 +375,7 @@ type CartItemCardProps = {
 
 const CartItemCard = ({
   item,
+  isUpdating = false,
   onIncrease,
   onDecrease,
   onRemove,
@@ -320,6 +428,7 @@ const CartItemCard = ({
       <div className="mt-auto flex flex-wrap items-center justify-between gap-6">
         <QuantityControl
           quantity={item.quantity}
+          isUpdating={isUpdating}
           onIncrease={onIncrease}
           onDecrease={onDecrease}
         />
@@ -331,10 +440,12 @@ const CartItemCard = ({
 
 const QuantityControl = ({
   quantity,
+  isUpdating = false,
   onIncrease,
   onDecrease,
 }: {
   quantity: number;
+  isUpdating?: boolean;
   onIncrease: () => void;
   onDecrease: () => void;
 }) => (
@@ -342,11 +453,15 @@ const QuantityControl = ({
     <button
       type="button"
       aria-label="Decrease quantity"
-      disabled={quantity === 1}
+      disabled={quantity === 1 || isUpdating}
       onClick={onDecrease}
       className="text-lg transition hover:text-[#000000] disabled:cursor-not-allowed disabled:opacity-30"
     >
-      <Minus className="h-4 w-4" />
+      {isUpdating ? (
+        <Loader2 className="h-4 w-4 animate-spin" />
+      ) : (
+        <Minus className="h-4 w-4" />
+      )}
     </button>
     <span aria-label="Current quantity" className="text-base font-semibold">
       {quantity}
@@ -354,10 +469,15 @@ const QuantityControl = ({
     <button
       type="button"
       aria-label="Increase quantity"
+      disabled={isUpdating}
       onClick={onIncrease}
-      className="text-lg transition hover:text-[#000000]"
+      className="text-lg transition hover:text-[#000000] disabled:cursor-not-allowed disabled:opacity-30"
     >
-      <Plus className="h-4 w-4" />
+      {isUpdating ? (
+        <Loader2 className="h-4 w-4 animate-spin" />
+      ) : (
+        <Plus className="h-4 w-4" />
+      )}
     </button>
   </div>
 );
@@ -439,43 +559,48 @@ const PriceStack = ({
   </div>
 );
 
-const EmptyCartState = () => (
-  <div className="flex flex-col items-center rounded-2xl border border-[#E5E7EB] bg-white px-8 py-16 text-center">
-    <div className="flex h-20 w-20 items-center justify-center rounded-full bg-[#E5E7EB]/40 text-[#9CA3AF]">
-      <ShoppingBag className="h-10 w-10" />
-    </div>
-    <p className="mt-6 text-xl text-[#6B7280]">Your cart is empty</p>
-    <button
-      type="button"
-      className="mt-6 rounded-full bg-[#D4AF37] px-8 py-3 text-sm font-semibold uppercase text-black transition hover:bg-[#B6911F]"
-    >
-      Continue Shopping
-    </button>
-    <div className="mt-8 w-full">
-      <p className="text-sm font-medium text-[#1A1A1A]">Recommended for you</p>
-      <div className="mt-4 grid gap-4 sm:grid-cols-3">
-        {RECOMMENDED.map((product) => (
-          <div
-            key={product.id}
-            className="rounded-xl border border-[#E5E7EB] bg-white/60 p-3 text-left"
-          >
-            <img
-              src={product.image}
-              alt={product.name}
-              className="h-32 w-full rounded-lg object-cover"
-            />
-            <p className="mt-3 text-sm font-medium text-[#1A1A1A]">
-              {product.name}
-            </p>
-            <p className="text-sm text-[#6B7280]">
-              {formatCurrency(product.price)}
-            </p>
-          </div>
-        ))}
+const EmptyCartState = () => {
+  const navigate = useNavigate();
+  
+  return (
+    <div className="flex flex-col items-center rounded-2xl border border-[#E5E7EB] bg-white px-8 py-16 text-center">
+      <div className="flex h-20 w-20 items-center justify-center rounded-full bg-[#E5E7EB]/40 text-[#9CA3AF]">
+        <ShoppingBag className="h-10 w-10" />
+      </div>
+      <p className="mt-6 text-xl text-[#6B7280]">Your cart is empty</p>
+      <button
+        type="button"
+        onClick={() => navigate("/collections")}
+        className="mt-6 rounded-full bg-[#D4AF37] px-8 py-3 text-sm font-semibold uppercase text-black transition hover:bg-[#B6911F]"
+      >
+        Continue Shopping
+      </button>
+      <div className="mt-8 w-full">
+        <p className="text-sm font-medium text-[#1A1A1A]">Recommended for you</p>
+        <div className="mt-4 grid gap-4 sm:grid-cols-3">
+          {RECOMMENDED.map((product) => (
+            <div
+              key={product.id}
+              className="rounded-xl border border-[#E5E7EB] bg-white/60 p-3 text-left"
+            >
+              <img
+                src={product.image}
+                alt={product.name}
+                className="h-32 w-full rounded-lg object-cover"
+              />
+              <p className="mt-3 text-sm font-medium text-[#1A1A1A]">
+                {product.name}
+              </p>
+              <p className="text-sm text-[#6B7280]">
+                {formatCurrency(product.price)}
+              </p>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 const PromoCodeToggle = ({
   promoCode,
@@ -500,7 +625,7 @@ const PromoCodeToggle = ({
     <button
       type="button"
       onClick={onToggle}
-      className="text-sm font-semibold text-[#333333] underline underline-offset-4 transition hover:text-[#000000]"
+      className="text-xs font-medium text-[#333333] underline underline-offset-4 transition hover:text-[#000000]"
     >
       Do you have a promo code?
     </button>
@@ -510,19 +635,19 @@ const PromoCodeToggle = ({
       }`}
     >
       {isExpanded && (
-        <div className="mt-4 border border-[#E5E5E5] p-4">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="mt-3 border border-[#E5E5E5] p-3">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
             <input
               value={promoCode}
               onChange={(event) => onChange(event.target.value)}
               placeholder="Enter code"
-              className="h-11 flex-1 border-b border-[#E5E5E5] bg-transparent px-1 text-sm text-[#333333] focus:border-[#C2A26F] focus:outline-none"
+              className="h-9 flex-1 border-b border-[#E5E5E5] bg-transparent px-1 text-xs text-[#333333] focus:border-[#D4AF37] focus:outline-none"
             />
             <button
               type="button"
               onClick={onApply}
-              className="h-11 px-8 text-xs font-bold uppercase tracking-[0.3em] text-[#000000] transition"
-              style={{ backgroundColor: "#C2A26F" }}
+              className="h-9 px-4 text-xs font-semibold uppercase tracking-[0.2em] text-black transition hover:bg-[#B6911F]"
+              style={{ backgroundColor: "#D4AF37" }}
             >
               Apply
             </button>
@@ -548,15 +673,27 @@ const PromoCodeToggle = ({
 const OrderSummaryCard = ({
   subtotal,
   shipping,
-  tax,
   discount,
   total,
+  promoCode,
+  promoState,
+  appliedPromo,
+  isPromoExpanded,
+  onPromoCodeChange,
+  onApplyPromo,
+  onTogglePromo,
 }: {
   subtotal: number;
   shipping: number;
-  tax: number;
   discount: number;
   total: number;
+  promoCode: string;
+  promoState: "success" | "error" | null;
+  appliedPromo: boolean;
+  isPromoExpanded: boolean;
+  onPromoCodeChange: (value: string) => void;
+  onApplyPromo: () => void;
+  onTogglePromo: () => void;
 }) => (
   <aside className="h-fit space-y-6 lg:sticky lg:top-5">
     <p className="text-xs uppercase tracking-[0.3em] text-[#999999]">
@@ -570,7 +707,6 @@ const OrderSummaryCard = ({
           shipping === 0 && subtotal > 0 ? "Free" : formatCurrency(shipping)
         }
       />
-      <SummaryRow label="Tax (estimated)" value={formatCurrency(tax)} />
       {discount > 0 && (
         <SummaryRow
           label="Discount"
@@ -579,6 +715,16 @@ const OrderSummaryCard = ({
         />
       )}
     </div>
+
+    <PromoCodeToggle
+      promoCode={promoCode}
+      status={promoState}
+      isApplied={appliedPromo}
+      onChange={onPromoCodeChange}
+      onApply={onApplyPromo}
+      isExpanded={isPromoExpanded}
+      onToggle={onTogglePromo}
+    />
     <div className="border-t-2 border-[#000000] pt-6">
       <div className="flex items-center justify-between">
         <span className="text-xs uppercase tracking-[0.3em] text-[#999999]">
@@ -594,8 +740,8 @@ const OrderSummaryCard = ({
     </div>
     <button
       type="button"
-      className="mt-2 flex h-[55px] w-full items-center justify-center gap-2 text-xs font-bold uppercase tracking-[0.3em] text-[#000000] transition hover:bg-[#D4B885]"
-      style={{ backgroundColor: "#C2A26F" }}
+      className="mt-2 flex h-[55px] w-full items-center justify-center gap-2 text-xs font-bold uppercase tracking-[0.3em] text-black transition hover:bg-[#B6911F]"
+      style={{ backgroundColor: "#D4AF37" }}
     >
       Proceed to Checkout
       <ArrowRight className="h-4 w-4" />

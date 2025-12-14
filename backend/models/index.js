@@ -26,6 +26,15 @@ Cart.belongsTo(User, { foreignKey: 'user_id' });
 Cart.hasMany(CartItem, { foreignKey: 'cart_id' });
 CartItem.belongsTo(Cart, { foreignKey: 'cart_id' });
 
+// Association between CartItem and ProductVariant
+CartItem.belongsTo(ProductVariant, { 
+  foreignKey: 'product_variant_id',
+  as: 'product_variant'
+});
+ProductVariant.hasMany(CartItem, { 
+  foreignKey: 'product_variant_id'
+});
+
 Product.belongsTo(Category, {
   foreignKey: "category_id",
   as: "category",         
@@ -42,6 +51,7 @@ Wishlist.belongsTo(Product, { foreignKey: 'product_id', as: 'product' });
 
 ProductVariant.belongsTo(Product, { 
   foreignKey: 'product_id',
+  as: 'product',
   onDelete: 'CASCADE',
 });
 Product.hasMany(ProductVariant, {
@@ -63,6 +73,9 @@ Category.hasMany(Category, {
 
 Order.belongsTo(User, { foreignKey: 'user_id' });
 User.hasMany(Order, { foreignKey: 'user_id' });
+
+Order.belongsTo(Promotion, { foreignKey: 'promotion_id', allowNull: true });
+Promotion.hasMany(Order, { foreignKey: 'promotion_id' });
 
 Order.hasMany(OrderItem, { foreignKey: 'order_id' });
 OrderItem.belongsTo(Order, { foreignKey: 'order_id' });

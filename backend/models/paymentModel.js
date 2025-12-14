@@ -9,6 +9,11 @@ export const Payment = sequelize.define("payments", {
   amount: DataTypes.DECIMAL(12,2),
   currency: { type: DataTypes.STRING(10), defaultValue: "VND" },
   status: DataTypes.STRING(20),
+  payment_method: { type: DataTypes.STRING(50), allowNull: true }, // COD, VNPAY, etc
   raw_payload: DataTypes.JSONB,
   created_at: { type: DataTypes.DATE, defaultValue: DataTypes.NOW },
+  updated_at: { type: DataTypes.DATE, defaultValue: DataTypes.NOW },
+}, {
+  timestamps: true
 });
+

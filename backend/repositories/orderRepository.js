@@ -8,6 +8,7 @@ import {
   OrderItem,
   Payment,
   User,
+  Promotion,
 } from "../models/index.js";
 
 export const findCartWithItems = (userId) =>
@@ -48,13 +49,22 @@ export const findOrdersForUser = (userId) =>
   Order.findAll({
     where: { user_id: userId },
     order: [["created_at", "DESC"]],
-    include: [{ model: Payment }, { model: OrderItem }],
+    include: [
+      { model: Payment },
+      { model: OrderItem },
+      { model: Promotion, as: "promotion", attributes: ["id", "name", "code", "discount_type", "discount_value"] }
+    ],
   });
 
 export const findOrderForUser = (userId, orderId) =>
   Order.findOne({
     where: { id: orderId, user_id: userId },
-    include: [{ model: ShippingAddress }, { model: Payment }, { model: OrderItem }],
+    include: [
+      { model: ShippingAddress },
+      { model: Payment },
+      { model: OrderItem },
+      { model: Promotion, as: "promotion", attributes: ["id", "name", "code", "discount_type", "discount_value"] }
+    ],
   });
 
 export const findAllOrders = () =>
@@ -67,11 +77,33 @@ export const findAllOrders = () =>
       },
       { model: Payment },
       { model: OrderItem },
+      { model: Promotion, as: "promotion", attributes: ["id", "name", "code", "discount_type", "discount_value"] }
     ],
   });
 
 export const findOrderWithRelations = (orderId) =>
   Order.findByPk(orderId, {
     include: [{ model: User }, { model: OrderItem }],
+  });
+
+export const findPaymentByOrderId = (orderId) =>
+  Payment.findOne({
+    where: { order_id: orderId },
+    include: [{ model: Order }],
+  });
+
+export const findOrderById = (orderId) =>
+  Order.findByPk(orderId, {
+    include: [
+      { model: Payment },
+      { model: User },
+      { model: Promotion, as: "promotion", attributes: ["id", "name", "code", "discount_type", "discount_value"] }
+    ],
+  });
+
+export const updatePaymentStatus = (paymentId, updates, transaction) =>
+  Payment.update(updates, {
+    where: { id: paymentId },
+    transaction,
   });
 

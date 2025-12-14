@@ -9,6 +9,8 @@ import { NewArrivals } from "@/components/HomePage/NewArrivals";
 import { PromotionBanner } from "@/components/HomePage/PromotionBanner";
 import { EditorialSection } from "@/components/HomePage/EditorialSection";
 import { InstagramGallery } from "@/components/HomePage/InstagramGallery";
+import { TrustStrip } from "@/components/HomePage/TrustStrip";
+import { ValuePropsStrip } from "@/components/HomePage/ValuePropsStrip";
 
 
 export default function Home() {
@@ -26,9 +28,11 @@ export default function Home() {
       ) : (
         <>
           <Hero />
+          <TrustStrip />
           <FeaturedCollections />
           <BrandCarousel />
           <NewArrivals />
+          <ValuePropsStrip />
           <PromotionBanner />
           <EditorialSection />
           <InstagramGallery />

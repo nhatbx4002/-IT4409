@@ -6,16 +6,175 @@ import { redirectOAuthError } from "../utils/oauth.js";
 
 const router = express.Router();
 
-router.post('/auth/signUp', signUp); //dang ky
-router.post('/auth/signIn', signIn); //dang nhap
-router.get('/auth/signOut', authenticateToken, signOut); //dang xuat
+/**
+ * @swagger
+ * /auth/signUp:
+ *   post:
+ *     summary: Đăng ký tài khoản
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - password
+ *               - fullName
+ *             properties:
+ *               email:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *               fullName:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Đăng ký thành công
+ *       400:
+ *         description: Lỗi đăng ký
+ */
+router.post('/auth/signUp', signUp);
 
-//quen mat khau
+/**
+ * @swagger
+ * /auth/signIn:
+ *   post:
+ *     summary: Đăng nhập
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - password
+ *             properties:
+ *               email:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Đăng nhập thành công
+ *       401:
+ *         description: Sai thông tin đăng nhập
+ */
+router.post('/auth/signIn', signIn);
+
+/**
+ * @swagger
+ * /auth/signOut:
+ *   get:
+ *     summary: Đăng xuất
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Đăng xuất thành công
+ *       401:
+ *         description: Unauthorized
+ */
+router.get('/auth/signOut', authenticateToken, signOut);
+
+/**
+ * @swagger
+ * /auth/send-otp:
+ *   post:
+ *     summary: Gửi OTP để reset mật khẩu
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *             properties:
+ *               email:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Gửi OTP thành công
+ *       400:
+ *         description: Lỗi gửi OTP
+ */
 router.post('/auth/send-otp', sendOTPEmail);
+
+/**
+ * @swagger
+ * /auth/verify-otp:
+ *   post:
+ *     summary: Xác thực OTP
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - otp
+ *             properties:
+ *               email:
+ *                 type: string
+ *               otp:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Xác thực OTP thành công
+ *       400:
+ *         description: OTP không hợp lệ
+ */
 router.post('/auth/verify-otp', verifyOTPEmail);
+
+/**
+ * @swagger
+ * /auth/reset-password:
+ *   post:
+ *     summary: Reset mật khẩu
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - otp
+ *               - newPassword
+ *             properties:
+ *               email:
+ *                 type: string
+ *               otp:
+ *                 type: string
+ *               newPassword:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Reset mật khẩu thành công
+ *       400:
+ *         description: Lỗi reset mật khẩu
+ */
 router.post('/auth/reset-password', resetPassword);
 
-//dang nhap bang google
+/**
+ * @swagger
+ * /auth/google:
+ *   get:
+ *     summary: Đăng nhập bằng Google
+ *     tags: [Auth]
+ *     responses:
+ *       302:
+ *         description: Redirect to Google OAuth
+ */
 router.get("/auth/google", passport.authenticate("google", { scope: ["profile", "email"] }));
 
 // Callback sau khi Google xác thực
@@ -56,7 +215,16 @@ router.get(
   }
 );
 
-//dang nhap bang facebook
+/**
+ * @swagger
+ * /auth/facebook:
+ *   get:
+ *     summary: Đăng nhập bằng Facebook
+ *     tags: [Auth]
+ *     responses:
+ *       302:
+ *         description: Redirect to Facebook OAuth
+ */
 router.get("/auth/facebook", facebookAuth);
 
 // Callback sau khi Facebook xác thực
@@ -66,7 +234,41 @@ router.get(
   facebookAuthCallback
 );
 
-//Cap nhat thong tin tai khoan
+/**
+ * @swagger
+ * /auth/profile/{id}:
+ *   put:
+ *     summary: Cập nhật thông tin tài khoản
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               fullName:
+ *                 type: string
+ *               phone:
+ *                 type: string
+ *               avatar:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Cập nhật thành công
+ *       400:
+ *         description: Lỗi cập nhật
+ *       401:
+ *         description: Unauthorized
+ */
 router.put("/auth/profile/:id", authenticateToken, updateUser);
 
 export default router;

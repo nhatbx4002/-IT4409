@@ -3,10 +3,10 @@ import {
     CartItem,
     Product,
     ProductVariant,
-    Promotion,
+    // Promotion, // Tạm thời comment để tránh lỗi, sẽ xử lý discount sau
     sequelize, // Dùng cho transactions (đảm bảo an toàn dữ liệu)
 } from "../models/index.js";
-import { Op } from "sequelize";
+import { Op, col } from "sequelize";
 
 /**
  * Hàm nội bộ: Tìm giỏ hàng của user, nếu chưa có thì tạo mới
@@ -159,26 +159,45 @@ export const removeItemFromCart = async (userId, cartItemId) => {
  * 4. Lấy chi tiết giỏ hàng và tính tổng tiền
  */
 export const getCartDetails = async (userId) => {
-    const cart = await getOrCreateCart(userId);
+    try {
+        const cart = await getOrCreateCart(userId);
 
-    // Lấy tất cả item trong giỏ, đồng thời lấy thông tin của
-    // ProductVariant (biến thể) và Product (sản phẩm gốc)
-    const cartItems = await CartItem.findAll({
-        where: { cart_id: cart.id },
-        include: [
-            {
-                model: ProductVariant,
-                as: "product_variant", // (Yêu cầu 'as' trong models/index.js)
-                include: [
-                    {
-                        model: Product,
-                        as: "product", // (Yêu cầu 'as' trong models/index.js)
-                    },
-                ],
-            },
-        ],
-        order: [["added_at", "DESC"]], // Sắp xếp theo ngày thêm
-    });
+        // Lấy tất cả item trong giỏ, đồng thời lấy thông tin của
+        // ProductVariant (biến thể) và Product (sản phẩm gốc)
+        const cartItems = await CartItem.findAll({
+            where: { cart_id: cart.id },
+            include: [
+                {
+                    model: ProductVariant,
+                    as: "product_variant",
+                    required: false, // LEFT JOIN để không bỏ qua items nếu variant bị xóa
+                    attributes: [
+                        "id",
+                        "product_id",
+                        "color",
+                        "size",
+                        "sku",
+                        "price_adjustment",
+                        "stock_quantity",
+                        "image_url",
+                    ],
+                    include: [
+                        {
+                            model: Product,
+                            as: "product",
+                            required: false, // LEFT JOIN để không bỏ qua items nếu product bị xóa
+                            attributes: [
+                                "id",
+                                "name",
+                                "slug",
+                                "base_price",
+                            ],
+                        },
+                    ],
+                },
+            ],
+            order: [[col("cart_items.added_at"), "DESC"]], // Sắp xếp theo ngày thêm, chỉ định rõ table name
+        });
 
     let subtotal_amount = 0;
     let items = [];
@@ -194,65 +213,68 @@ export const getCartDetails = async (userId) => {
 
         // Tính giá cuối cùng của 1 sản phẩm
         // (Giá gốc + điều chỉnh giá của biến thể)
-        const final_price =
-            parseFloat(product.base_price) +
-            parseFloat(variant.price_adjustment);
+        // Đồng nhất với cách tính trong productService
+        const basePrice = parseFloat(product.base_price || 0);
+        const priceAdjustment = parseFloat(variant.price_adjustment || 0);
+        const final_price = basePrice + priceAdjustment;
 
         // Tính tổng tiền của dòng này
-        const line_total = final_price * item.quantity;
+        const line_total = Number((final_price * item.quantity).toFixed(2));
 
         // Cộng dồn vào tổng tạm tính
         subtotal_amount += line_total;
 
         // Thêm vào mảng items để trả về
+        // Đồng nhất format với product service và thêm product_id để link về product detail
         items.push({
             cart_item_id: item.id,
             quantity: item.quantity,
+            product_id: product.id, // Thêm product_id để frontend có thể link về product detail
             product_variant_id: variant.id,
-            sku: variant.sku,
-            product_name: product.name,
-            color: variant.color,
-            size: variant.size,
-            image_url: variant.image_url, // Ảnh của biến thể
+            product_name: product.name || "Unknown Product",
+            product_slug: product.slug || null, // Thêm slug để dễ dàng tạo URL
+            sku: variant.sku || null,
+            color: variant.color || null,
+            size: variant.size || null,
+            image_url: variant.image_url || null,
             unit_price: final_price,
             line_total: line_total,
-            stock_quantity: variant.stock_quantity, // Gửi về để frontend kiểm tra
+            stock_quantity: variant.stock_quantity || 0,
         });
     }
 
-    // === 4. TÍNH TỔNG GIÁ TẠM TÍNH (áp dụng khuyến mãi) ===
+    // === 4. TÍNH TỔNG GIÁ TẠM TÍNH ===
+    // TODO: Xử lý promotion/discount sau
+    // Tạm thời bỏ qua promotion để chỉ hiển thị sản phẩm và tính tổng giá
+    /*
     const activePromotion = await Promotion.findOne({
         where: {
-            start_date: { [Op.lte]: new Date() }, // Bắt đầu <= hôm nay
-            end_date: { [Op.gte]: new Date() }, // Kết thúc >= hôm nay
+            is_active: true,
+            start_date: { [Op.lte]: new Date() },
+            end_date: { [Op.gte]: new Date() },
         },
-        // Tạm lấy cái đầu tiên
     });
 
     let discount_amount = 0;
     if (activePromotion) {
-        if (activePromotion.discount_type === "percentage") {
-            discount_amount =
-                subtotal_amount * (parseFloat(activePromotion.discount_value) / 100);
-        } else if (activePromotion.discount_type === "fixed") {
-            discount_amount = parseFloat(activePromotion.discount_value);
-        }
+        // Logic tính discount sẽ được implement sau
     }
+    */
 
-    // Đảm bảo giảm giá không lớn hơn tổng tiền
-    if (discount_amount > subtotal_amount) {
-        discount_amount = subtotal_amount;
+    const discount_amount = 0; // Tạm thời không có discount
+    const total_amount = subtotal_amount; // Tổng = subtotal (chưa có discount)
+
+        return {
+            id: cart.id,
+            user_id: cart.user_id,
+            items: items,
+            subtotal_amount: parseFloat(subtotal_amount.toFixed(2)),
+            discount_amount: parseFloat(discount_amount.toFixed(2)),
+            total_amount: parseFloat(total_amount.toFixed(2)),
+            applied_promotion_code: null, // Tạm thời không có promotion
+        };
+    } catch (error) {
+        console.error("Error in getCartDetails:", error);
+        throw error;
     }
-
-    const total_amount = subtotal_amount - discount_amount;
-
-    return {
-        id: cart.id,
-        user_id: cart.user_id,
-        items: items,
-        subtotal_amount: subtotal_amount,
-        discount_amount: discount_amount,
-        total_amount: total_amount,
-        applied_promotion_code: activePromotion ? activePromotion.code : null,
-    };
 };

@@ -639,6 +639,7 @@ const seedData = async () => {
         {
           user_id: users[0].id,
           shipping_address_id: addresses[0].id,
+          promotion_id: promotions[0].id,
           subtotal_amount: order1Subtotal,
           discount_amount: order1Discount,
           total_amount: order1Total,
@@ -649,6 +650,7 @@ const seedData = async () => {
         {
           user_id: users[2].id,
           shipping_address_id: addresses[2].id,
+          promotion_id: promotions[2].id,
           subtotal_amount: order2Subtotal,
           discount_amount: order2Discount,
           total_amount: order2Total,
@@ -659,6 +661,7 @@ const seedData = async () => {
         {
           user_id: users[3].id,
           shipping_address_id: addresses[3].id,
+          promotion_id: promotions[1].id,
           subtotal_amount: order3Subtotal,
           discount_amount: order3Discount,
           total_amount: order3Total,

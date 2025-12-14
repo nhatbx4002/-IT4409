@@ -25,15 +25,7 @@ export function ProductCard({
 
   return (
     <div
-      className="group relative bg-white transition-all duration-500 flex flex-col"
-      style={{
-        borderRadius: "8px",
-        boxShadow: isHovered
-          ? "0 8px 24px rgba(0, 0, 0, 0.15)"
-          : "0 4px 6px rgba(0, 0, 0, 0.1)",
-        maxHeight: "700px",
-        height: "100%",
-      }}
+      className={`group relative flex h-full max-h-[700px] flex-col rounded-2xl bg-white/95 ring-1 ring-gray-200 transition-all duration-500 ${isHovered ? "shadow-[0_18px_60px_rgba(15,23,42,0.25)] translate-y-[-2px]" : "shadow-[0_8px_30px_rgba(15,23,42,0.12)]"}`}
       onMouseEnter={() => {
         setIsHovered(true);
         if (product.images.length > 1) {
@@ -46,15 +38,7 @@ export function ProductCard({
       }}
     >
       {/* Image Container - 320x400px aspect ratio */}
-      <div
-        className="relative overflow-hidden bg-[#F8F8F8] shrink-0"
-        style={{
-          width: "100%",
-          aspectRatio: "320/400",
-          borderRadius: "8px 8px 0 0",
-          maxHeight: "400px",
-        }}
-      >
+      <div className="relative aspect-4/5 max-h-[400px] w-full shrink-0 overflow-hidden rounded-t-2xl bg-[#F8F8F8]">
         {/* Product Images */}
         <div className="relative w-full h-full">
           {product.images.map((image, idx) => (
@@ -62,34 +46,18 @@ export function ProductCard({
               key={idx}
               src={image}
               alt={product.name}
-              className={`absolute inset-0 w-full h-full object-cover transition-all duration-700 ${
+              className={`absolute inset-0 h-full w-full object-cover transition-all duration-700 ${
                 idx === currentImageIndex
                   ? "opacity-100 scale-100"
-                  : "opacity-0 scale-105"
+                  : "pointer-events-none opacity-0 scale-105"
               }`}
-              style={{
-                transform:
-                  isHovered && idx === currentImageIndex
-                    ? "scale(1.08)"
-                    : "scale(1)",
-              }}
             />
           ))}
         </div>
 
         {/* NEW Badge - Top Left */}
         {product.isNew && (
-          <div
-            className="absolute top-0 left-0 z-10 bg-black text-white uppercase tracking-wider"
-            style={{
-              fontSize: "11px",
-              fontWeight: 600,
-              padding: "6px 12px",
-              fontFamily: "'Poppins', sans-serif",
-              letterSpacing: "1px",
-              borderRadius: "8px 0 8px 0",
-            }}
-          >
+          <div className="absolute left-3 top-3 z-10 rounded-full bg-black/80 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-white shadow-sm">
             NEW
           </div>
         )}
@@ -97,17 +65,7 @@ export function ProductCard({
         {/* SALE Badge */}
         {hasDiscount && (
           <div
-            className="absolute top-0 left-0 z-10 text-black uppercase tracking-wider"
-            style={{
-              backgroundColor: "#D4AF37",
-              fontSize: "11px",
-              fontWeight: 600,
-              padding: "6px 12px",
-              fontFamily: "'Poppins', sans-serif",
-              letterSpacing: "1px",
-              borderRadius: "8px 0 8px 0",
-              marginTop: product.isNew ? "36px" : "0",
-            }}
+            className={`absolute left-3 z-10 rounded-full bg-[#D4AF37] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-black shadow-sm ${product.isNew ? "top-8" : "top-3"}`}
           >
             SALE
           </div>
@@ -115,30 +73,12 @@ export function ProductCard({
 
         {/* Circular Action Buttons - Centered Horizontally */}
         <div
-          className="absolute left-1/2 top-1/2 z-20 flex gap-3 transition-all duration-500  "
-          style={{
-            opacity: isHovered ? 1 : 0,
-            transform: isHovered
-              ? "translate(-50%, -50%) scale(1)"
-              : "translate(-50%, -50%) scale(0.8)",
-          }}
+          className={`absolute left-1/2 top-1/2 z-20 flex -translate-x-1/2 -translate-y-1/2 gap-3 transition-all duration-300 ${isHovered ? "opacity-100 scale-100" : "pointer-events-none opacity-0 scale-95"}`}
         >
           {/* Quick View Button */}
           <button
             onClick={() => navigate(`/products/${product.id}`)}
-            className="flex items-center justify-center bg-white transition-all duration-300 hover:scale-110 group/btn"
-            style={{
-              width: "40px",
-              height: "40px",
-              borderRadius: "50%",
-              boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = "#D4AF37";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = "#FFF";
-            }}
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-white/95 text-black shadow-[0_8px_20px_rgba(15,23,42,0.35)] transition-colors duration-200 hover:bg-[#D4AF37] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D4AF37] focus-visible:ring-offset-2 focus-visible:ring-offset-white"
             aria-label="View Product Details"
           >
             <Eye className="w-4 h-4 text-black" />
@@ -147,19 +87,7 @@ export function ProductCard({
           {/* Wishlist Button */}
           <button
             onClick={() => onAddToWishlist(product.id)}
-            className="flex items-center justify-center bg-white transition-all duration-300 hover:scale-110 group/btn"
-            style={{
-              width: "40px",
-              height: "40px",
-              borderRadius: "50%",
-              boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = "#D4AF37";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = "#FFF";
-            }}
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-white/95 text-black shadow-[0_8px_20px_rgba(15,23,42,0.35)] transition-colors duration-200 hover:bg-[#D4AF37] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D4AF37] focus-visible:ring-offset-2 focus-visible:ring-offset-white"
             aria-label="Add to Wishlist"
           >
             <Heart className="w-4 h-4 text-black" />
@@ -168,19 +96,7 @@ export function ProductCard({
           {/* Add to Cart Button */}
           <button
             onClick={() => onAddToCart(product.id)}
-            className="flex items-center justify-center bg-white transition-all duration-300 hover:scale-110 group/btn"
-            style={{
-              width: "40px",
-              height: "40px",
-              borderRadius: "50%",
-              boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = "#D4AF37";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = "#FFF";
-            }}
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-white/95 text-black shadow-[0_8px_20px_rgba(15,23,42,0.35)] transition-colors duration-200 hover:bg-[#D4AF37] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D4AF37] focus-visible:ring-offset-2 focus-visible:ring-offset-white"
             aria-label="Add to Cart"
           >
             <ShoppingBag className="w-4 h-4 text-black" />
@@ -205,32 +121,16 @@ export function ProductCard({
       </div>
 
       {/* Content Area - 20px padding */}
-      <div className="p-5 flex-1 flex flex-col overflow-hidden">
+      <div className="flex flex-1 flex-col overflow-hidden p-5">
         <div className="space-y-3 flex-1">
           {/* Brand Name - Gold, Uppercase, Letter-spacing */}
-          <div
-            className="uppercase tracking-wider"
-            style={{
-              color: "#D4AF37",
-              fontSize: "12px",
-              fontWeight: 600,
-              fontFamily: "'Poppins', sans-serif",
-              letterSpacing: "1.5px",
-            }}
-          >
+          <div className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#D4AF37]">
             {product.brand}
           </div>
 
           {/* Product Name - Playfair Display, 20px, Bold */}
           <h3
-            className="text-black line-clamp-1 overflow-hidden text-ellipsis"
-            style={{
-              fontFamily: "'Playfair Display', serif",
-              fontSize: "20px",
-              fontWeight: 600,
-              lineHeight: "1.4",
-              minHeight: "28px",
-            }}
+            className="min-h-[28px] overflow-hidden text-ellipsis font-['Playfair_Display'] text-[18px] font-semibold leading-snug text-[#111827] line-clamp-2"
             title={product.name}
           >
             {product.name}
@@ -255,13 +155,7 @@ export function ProductCard({
                 />
               ))}
             </div>
-            <span
-              className="text-[#999999]"
-              style={{
-                fontSize: "13px",
-                fontFamily: "'Poppins', sans-serif",
-              }}
-            >
+            <span className="text-[12px] text-[#9CA3AF]">
               ({product.reviewCount})
             </span>
           </div>
@@ -269,24 +163,11 @@ export function ProductCard({
           {/* Price - 24px Bold Black */}
           <div className="flex items-center gap-3 pt-1">
             {hasDiscount && (
-              <span
-                className="text-[#999999] line-through"
-                style={{
-                  fontSize: "18px",
-                  fontFamily: "'Poppins', sans-serif",
-                }}
-              >
+              <span className="text-[14px] text-[#9CA3AF] line-through">
                 ${product.price}
               </span>
             )}
-            <span
-              className="text-black"
-              style={{
-                fontFamily: "'Poppins', sans-serif",
-                fontSize: "24px",
-                fontWeight: 700,
-              }}
-            >
+            <span className="font-['Poppins'] text-[18px] font-semibold text-[#111827]">
               ${displayPrice}
             </span>
           </div>
@@ -294,14 +175,7 @@ export function ProductCard({
           {/* Color Selector - "Colors:" label + 3 circular swatches (24px) */}
           {product.colors.length > 0 && (
             <div className="flex items-center gap-3 pt-2">
-              <span
-                className="text-black"
-                style={{
-                  fontSize: "13px",
-                  fontFamily: "'Poppins', sans-serif",
-                  fontWeight: 500,
-                }}
-              >
+              <span className="text-[12px] font-medium text-[#111827]">
                 Colors:
               </span>
               <div className="flex items-center gap-2">
@@ -309,19 +183,14 @@ export function ProductCard({
                   <button
                     key={idx}
                     onClick={() => setSelectedColorIndex(idx)}
-                    className="transition-all duration-300 hover:scale-110"
+                    className={`h-6 w-6 rounded-full border-2 transition-all duration-200 hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D4AF37] focus-visible:ring-offset-2 focus-visible:ring-offset-white`}
                     style={{
-                      width: "24px",
-                      height: "24px",
-                      borderRadius: "50%",
                       backgroundColor: color,
-                      border:
-                        selectedColorIndex === idx
-                          ? "2px solid #D4AF37"
-                          : "2px solid #E0E0E0",
+                      borderColor:
+                        selectedColorIndex === idx ? "#D4AF37" : "#E5E7EB",
                       boxShadow:
                         selectedColorIndex === idx
-                          ? "0 0 0 2px rgba(212, 175, 55, 0.2)"
+                          ? "0 0 0 2px rgba(212,175,55,0.35)"
                           : "none",
                     }}
                     title={color}
@@ -329,13 +198,7 @@ export function ProductCard({
                   />
                 ))}
                 {product.colors.length > 3 && (
-                  <span
-                    className="text-[#999999]"
-                    style={{
-                      fontSize: "12px",
-                      fontFamily: "'Poppins', sans-serif",
-                    }}
-                  >
+                  <span className="text-[11px] text-[#9CA3AF]">
                     +{product.colors.length - 3}
                   </span>
                 )}
@@ -346,24 +209,11 @@ export function ProductCard({
 
         {/* Hidden "Add to Cart" Button - Full-width, appears on hover */}
         <div
-          className="transition-all duration-500 overflow-hidden"
-          style={{
-            maxHeight: isHovered ? "60px" : "0",
-            opacity: isHovered ? 1 : 0,
-            marginTop: isHovered ? "16px" : "0",
-          }}
+          className={`overflow-hidden pt-0 transition-all duration-300 ${isHovered ? "mt-4 max-h-16 opacity-100" : "mt-0 max-h-0 opacity-0"}`}
         >
           <button
             onClick={() => onAddToCart(product.id)}
-            className="w-full bg-black text-white uppercase tracking-widest transition-all duration-300 hover:bg-[#D4AF37] hover:text-black disabled:opacity-50 disabled:cursor-not-allowed"
-            style={{
-              padding: "14px 0",
-              fontSize: "14px",
-              fontWeight: 600,
-              fontFamily: "'Poppins', sans-serif",
-              letterSpacing: "1.5px",
-              borderRadius: "4px",
-            }}
+            className="w-full rounded-full bg-black py-3 text-[11px] font-semibold uppercase tracking-[0.24em] text-white transition-colors duration-200 hover:bg-[#D4AF37] hover:text-black disabled:cursor-not-allowed disabled:opacity-50"
             disabled={!product.inStock}
           >
             {product.inStock ? "ADD TO CART" : "OUT OF STOCK"}

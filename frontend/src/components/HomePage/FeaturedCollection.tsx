@@ -1,23 +1,71 @@
+import { useEffect, useState } from "react";
 import { ImageWithFallback } from "../figma/ImageWithFallback";
+import { getProductsByCategory } from "@/lib/api";
+
+interface FeaturedCategory {
+  title: string;
+  subtitle: string;
+  image: string;
+  categorySlug?: string;
+  productCount?: number;
+}
 
 export function FeaturedCollections() {
-  const collections = [
+  const [categories, setCategories] = useState<FeaturedCategory[]>([
     {
       title: "Tailored Suits",
       subtitle: "Refined Elegance",
-      image: "https://images.unsplash.com/photo-1557039834-2f2208c6973c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtZW5zJTIwbHV4dXJ5JTIwZmFzaGlvbiUyMHN1aXR8ZW58MXx8fHwxNzYxNDEwOTEzfDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral"
+      image: "https://images.unsplash.com/photo-1557039834-2f2208c6973c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtZW5zJTIwbHV4dXJ5JTIwZmFzaGlvbiUyMHN1aXR8ZW58MXx8fHwxNzYxNDEwOTEzfDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
+      categorySlug: "men-shirts",
     },
     {
       title: "Designer Shirts",
       subtitle: "Timeless Classics",
-      image: "https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtZW5zJTIwZHJlc3MlMjBzaGlydCUyMGx1eHVyeXxlbnwxfHx8fDE3NjE0MTA5MTN8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral"
+      image: "https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHhtZW5zJTIwZHJlc3MlMjBzaGlydCUyMGx1eHVyeXxlbnwxfHx8fDE3NjE0MTA5MTN8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
+      categorySlug: "men-pants",
     },
     {
       title: "Premium Accessories",
       subtitle: "Complete Your Look",
-      image: "https://images.unsplash.com/photo-1554301840-913d3250f757?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxsdXh1cnklMjBhY2Nlc3NvcmllcyUyMHdhdGNoJTIwamV3ZWxyeXxlbnwxfHx8fDE3NjE0MTA5MTN8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral"
+      image: "https://images.unsplash.com/photo-1554301840-913d3250f757?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxsdXh1cnklMjBhY2Nlc3NvcmllcyUyMHdhdGNoJTIwamV3ZWxyeXxlbnwxfHx8fDE3NjE0MTA5MTN8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
+      categorySlug: "watches",
     }
-  ];
+  ]);
+
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchCategoryProductCounts = async () => {
+      try {
+        const updatedCategories = await Promise.all(
+          categories.map(async (category) => {
+            if (!category.categorySlug) return category;
+            
+            try {
+              const response = await getProductsByCategory(category.categorySlug, {
+                pageSize: 1,
+                page: 1,
+              });
+              return {
+                ...category,
+                productCount: response.total || 0,
+              };
+            } catch (err) {
+              console.error(`Error fetching count for ${category.categorySlug}:`, err);
+              return category;
+            }
+          })
+        );
+        setCategories(updatedCategories);
+      } catch (err) {
+        console.error("Error fetching category counts:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchCategoryProductCounts();
+  }, []);
 
   return (
     <section className="py-20 bg-white">
@@ -34,7 +82,7 @@ export function FeaturedCollections() {
         </div>
 
         <div className="grid md:grid-cols-3 gap-8">
-          {collections.map((collection, index) => (
+          {categories.map((collection, index) => (
             <div 
               key={index} 
               className="group cursor-pointer relative overflow-hidden aspect-3/4"
@@ -68,6 +116,11 @@ export function FeaturedCollections() {
                 >
                   {collection.title}
                 </h3>
+                {collection.productCount !== undefined && (
+                  <p className="text-xs text-gray-300 mt-2">
+                    {collection.productCount} products
+                  </p>
+                )}
               </div>
             </div>
           ))}
