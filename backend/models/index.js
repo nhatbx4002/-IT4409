@@ -83,6 +83,10 @@ OrderItem.belongsTo(Order, { foreignKey: 'order_id' });
 Order.hasOne(Payment, { foreignKey: 'order_id' });
 Payment.belongsTo(Order, { foreignKey: 'order_id' });
 
+// Shipping address linkage
+Order.belongsTo(ShippingAddress, { foreignKey: 'shipping_address_id' });
+ShippingAddress.hasMany(Order, { foreignKey: 'shipping_address_id' });
+
 User.hasMany(ShippingAddress, { foreignKey: 'user_id' });
 ShippingAddress.belongsTo(User, { foreignKey: 'user_id' });
 

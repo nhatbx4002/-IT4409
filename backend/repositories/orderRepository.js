@@ -61,9 +61,9 @@ export const findOrderForUser = (userId, orderId) =>
     where: { id: orderId, user_id: userId },
     include: [
       { model: ShippingAddress },
-      { model: Payment },
+      { model: Payment, required: false }, // required: false để không fail nếu chưa có payment
       { model: OrderItem },
-      { model: Promotion, as: "promotion", attributes: ["id", "name", "code", "discount_type", "discount_value"] }
+      { model: Promotion, as: "promotion", attributes: ["id", "name", "code", "discount_type", "discount_value"], required: false }
     ],
   });
 

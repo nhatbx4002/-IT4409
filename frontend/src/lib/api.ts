@@ -353,3 +353,73 @@ export async function removeFromWishlist(productId: number): Promise<RemoveFromW
   return response.data;
 }
 
+// ==============================
+// CHECKOUT API
+// ==============================
+
+import type {
+  ShippingAddress,
+  AddressFormData,
+  ShippingFeeRequest,
+  ShippingFeeResponse,
+  CheckoutRequest,
+  CheckoutResponse,
+  PaymentStatusResponse,
+} from '@/types/checkout';
+import type { Order } from '@/types/order';
+
+export async function getMyAddresses(): Promise<ShippingAddress[]> {
+  const response = await apiClient.get<ApiResponse<ShippingAddress[]>>('/addresses');
+  return unwrapResponse(response.data);
+}
+
+export async function createAddress(data: AddressFormData): Promise<ShippingAddress> {
+  const response = await apiClient.post<ApiResponse<ShippingAddress>>('/addresses', {
+    full_name: data.full_name,
+    phone: data.phone,
+    city: data.city,
+    district: data.district,
+    ward: data.ward,
+    address: data.address,
+    is_default: data.is_default,
+  });
+  return unwrapResponse(response.data);
+}
+
+export async function deleteAddress(addressId: number): Promise<void> {
+  const response = await apiClient.delete<ApiResponse<void>>(`/addresses/${addressId}`);
+  if (!response.data.success) {
+    throw new Error(response.data.message || 'Failed to delete address');
+  }
+}
+
+export async function previewShippingFee(payload: ShippingFeeRequest): Promise<ShippingFeeResponse> {
+  const response = await apiClient.post<ApiResponse<ShippingFeeResponse>>('/orders/shipping-fee', payload);
+  return unwrapResponse(response.data);
+}
+
+// Backward-compatible helper used by existing forms
+export async function getShippingFee(
+  province_id: string | number,
+  district_id: string | number,
+  promotionCode?: string,
+  city?: string
+): Promise<ShippingFeeResponse> {
+  return previewShippingFee({ province_id, district_id, city, promotionCode });
+}
+
+export async function checkout(data: CheckoutRequest): Promise<CheckoutResponse> {
+  const response = await apiClient.post<ApiResponse<CheckoutResponse>>('/orders/checkout', data);
+  return unwrapResponse(response.data);
+}
+
+export async function getPaymentStatus(orderId: number): Promise<PaymentStatusResponse> {
+  const response = await apiClient.get<ApiResponse<PaymentStatusResponse>>(`/orders/${orderId}/payment/status`);
+  return unwrapResponse(response.data);
+}
+
+export async function getMyOrders(): Promise<Order[]> {
+  const response = await apiClient.get<ApiResponse<Order[]>>('/orders');
+  return unwrapResponse(response.data);
+}
+

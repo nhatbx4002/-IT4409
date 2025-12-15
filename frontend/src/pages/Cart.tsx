@@ -250,7 +250,7 @@ export default function CartPage() {
         <section className="bg-white">
           <div className="mx-auto max-w-[1200px] px-4 py-20 sm:px-6 lg:px-8">
             <div className="flex items-center justify-center py-20">
-              <Loader2 className="h-8 w-8 animate-spin text-[#D4AF37]" />
+              <Loader2 className="h-8 w-8 animate-spin text-black" />
             </div>
           </div>
         </section>
@@ -268,7 +268,7 @@ export default function CartPage() {
               <p className="text-lg text-[#6B7280] mb-4">{error}</p>
               <button
                 onClick={() => window.location.reload()}
-                className="px-6 py-3 bg-[#D4AF37] text-black font-semibold uppercase tracking-wider hover:bg-[#B6911F] transition-colors"
+                className="rounded-md bg-black px-6 py-3 font-semibold uppercase tracking-wide text-white transition hover:bg-gray-800"
               >
                 Retry
               </button>
@@ -296,7 +296,7 @@ export default function CartPage() {
                   <p className="text-xs uppercase tracking-[0.4em] text-[#999999]">
                     Aristino
                   </p>
-                  <h1 className="font-['Playfair_Display'] text-[54px] leading-none text-[#000000]">
+                  <h1 className="text-4xl font-bold leading-none text-black sm:text-5xl">
                     Shopping Bag
                   </h1>
                 </div>
@@ -396,7 +396,7 @@ const CartItemCard = ({
           <p className="text-xs uppercase tracking-[0.3em] text-[#999999]">
             {item.brand}
           </p>
-          <p className="font-['Playfair_Display'] text-2xl text-[#333333]">
+          <p className="text-2xl font-bold text-black">
             {item.name}
           </p>
         </div>
@@ -548,7 +548,7 @@ const PriceStack = ({
   item: CartItem;
 }) => (
   <div className="text-right">
-    <p className="text-lg font-semibold text-[#000000]">
+    <p className="text-lg font-bold text-black">
       {formatCurrency(item.price * item.quantity)}
     </p>
     {item.originalPrice ? (
@@ -571,7 +571,7 @@ const EmptyCartState = () => {
       <button
         type="button"
         onClick={() => navigate("/collections")}
-        className="mt-6 rounded-full bg-[#D4AF37] px-8 py-3 text-sm font-semibold uppercase text-black transition hover:bg-[#B6911F]"
+        className="mt-6 rounded-md bg-black px-8 py-3 text-sm font-semibold uppercase tracking-wide text-white transition hover:bg-gray-800"
       >
         Continue Shopping
       </button>
@@ -646,8 +646,7 @@ const PromoCodeToggle = ({
             <button
               type="button"
               onClick={onApply}
-              className="h-9 px-4 text-xs font-semibold uppercase tracking-[0.2em] text-black transition hover:bg-[#B6911F]"
-              style={{ backgroundColor: "#D4AF37" }}
+              className="h-9 rounded-md bg-gray-800 px-4 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-gray-900"
             >
               Apply
             </button>
@@ -695,10 +694,10 @@ const OrderSummaryCard = ({
   onApplyPromo: () => void;
   onTogglePromo: () => void;
 }) => (
-  <aside className="h-fit space-y-6 lg:sticky lg:top-5">
-    <p className="text-xs uppercase tracking-[0.3em] text-[#999999]">
+  <aside className="h-fit space-y-6 rounded-lg border border-gray-200 bg-gray-50 p-6 lg:sticky lg:top-5">
+    <h2 className="text-xl font-bold text-black">
       Order Summary
-    </p>
+    </h2>
     <div className="space-y-4">
       <SummaryRow label="Subtotal" value={formatCurrency(subtotal)} />
       <SummaryRow
@@ -725,23 +724,23 @@ const OrderSummaryCard = ({
       isExpanded={isPromoExpanded}
       onToggle={onTogglePromo}
     />
-    <div className="border-t-2 border-[#000000] pt-6">
+    <div className="space-y-3 border-t border-gray-200 pt-4">
       <div className="flex items-center justify-between">
-        <span className="text-xs uppercase tracking-[0.3em] text-[#999999]">
-          Total
+        <span className="text-lg font-bold text-black">
+          Tổng cộng
         </span>
         <div className="text-right">
-          <p className="font-['Playfair_Display'] text-4xl text-[#000000]">
+          <p className="text-xl font-bold text-black">
             {formatCurrency(total)}
           </p>
-          <p className="text-xs text-[#999999]">USD</p>
+          <p className="mt-1 text-xs text-gray-500">(Đã bao gồm VAT)</p>
         </div>
       </div>
     </div>
     <button
       type="button"
-      className="mt-2 flex h-[55px] w-full items-center justify-center gap-2 text-xs font-bold uppercase tracking-[0.3em] text-black transition hover:bg-[#B6911F]"
-      style={{ backgroundColor: "#D4AF37" }}
+      onClick={() => navigate("/checkout")}
+      className="mt-2 flex h-[55px] w-full items-center justify-center gap-2 rounded-md bg-black text-sm font-semibold uppercase tracking-wide text-white transition hover:bg-gray-800"
     >
       Proceed to Checkout
       <ArrowRight className="h-4 w-4" />
@@ -765,9 +764,9 @@ const SummaryRow = ({
   value: string;
   valueClass?: string;
 }) => (
-  <div className="flex items-center justify-between text-xs uppercase tracking-[0.3em] text-[#999999]">
-    <span>{label}</span>
-    <span className={`text-[#333333] ${valueClass}`}>{value}</span>
+  <div className="flex items-center justify-between text-sm">
+    <span className="text-gray-600">{label}</span>
+    <span className={`font-medium text-black ${valueClass}`}>{value}</span>
   </div>
 );
 

@@ -193,19 +193,19 @@ export function Navbar() {
                   </DropdownMenuContent>
                 ) : (
                    <DropdownMenuContent align="end" className="w-72 bg-white border border-black/10 shadow-lg">
-                    <DropdownMenuItem className="cursor-pointer hover:bg-[#F5F5F5] py-3" onClick={() => alert("Go /account")}>
+                    <DropdownMenuItem className="cursor-pointer hover:bg-[#F5F5F5] py-3" onClick={() => navigate("/account")}> 
                       <UserCircle className="h-4 w-4 mr-3 text-[#D4AF37]" />
                       <span className="text-sm">My Profile</span>
                     </DropdownMenuItem>
-                    <DropdownMenuItem className="cursor-pointer hover:bg-[#F5F5F5] py-3" onClick={() => alert("Go /orders")}>
+                    <DropdownMenuItem className="cursor-pointer hover:bg-[#F5F5F5] py-3" onClick={() => navigate("/orders")}>
                       <Package className="h-4 w-4 mr-3 text-[#D4AF37]" />
                       <span className="text-sm">My Orders</span>
                     </DropdownMenuItem>
-                    <DropdownMenuItem className="cursor-pointer hover:bg-[#F5F5F5] py-3" onClick={() => alert("Go /wishlist")}>
+                    <DropdownMenuItem className="cursor-pointer hover:bg-[#F5F5F5] py-3" onClick={() => navigate("/wishlist")}>
                       <Heart className="h-4 w-4 mr-3 text-[#D4AF37]" />
                       <span className="text-sm">Wishlist</span>
                     </DropdownMenuItem>
-                    <DropdownMenuItem className="cursor-pointer hover:bg-[#F5F5F5] py-3" onClick={() => alert("Go /account/settings")}>
+                    <DropdownMenuItem className="cursor-pointer hover:bg-[#F5F5F5] py-3" onClick={() => navigate("/account")}>
                       <Settings className="h-4 w-4 mr-3 text-[#D4AF37]" />
                       <span className="text-sm">Settings</span>
                     </DropdownMenuItem>

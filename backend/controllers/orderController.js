@@ -166,7 +166,20 @@ export const checkPaymentStatus = async (req, res) => {
 
         const order = await orderService.getOrderById(userId, orderId);
 
-        if (!order || !order.Payment) {
+        if (!order) {
+            return sendError(res, new Error("Không tìm thấy đơn hàng"), 404);
+        }
+
+        // Sequelize có thể trả về Payment với tên khác nhau, kiểm tra cả hai
+        let payment = order.Payment || order.payment;
+        
+        // Nếu không tìm thấy trong include, query trực tiếp
+        if (!payment) {
+            const { findPaymentByOrderId } = await import('../repositories/orderRepository.js');
+            payment = await findPaymentByOrderId(order.id);
+        }
+        
+        if (!payment) {
             return sendError(res, new Error("Không tìm thấy thông tin thanh toán"), 404);
         }
 
@@ -174,8 +187,8 @@ export const checkPaymentStatus = async (req, res) => {
             data: {
                 orderId: order.id,
                 orderStatus: order.status,
-                paymentStatus: order.Payment.status,
-                paymentMethod: order.Payment.provider
+                paymentStatus: payment.status,
+                paymentMethod: payment.provider
             }
         });
     } catch (error) {

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import MainLayout from "@/layout/MainLayout";
 import { Heart, Trash2 } from "lucide-react";
 import { getWishlist, removeFromWishlist, addToWishlist, addToCart } from "@/lib/api";
@@ -45,6 +46,7 @@ const transformToProductSummary = (item: ApiWishlistItem): ProductSummary | null
 };
 
 export default function Wishlist() {
+  const navigate = useNavigate();
   const [products, setProducts] = useState<ProductSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -221,7 +223,7 @@ export default function Wishlist() {
               </p>
               <Button 
                 className="mt-6 bg-black text-white hover:bg-gray-800 px-8 py-6 text-base font-semibold"
-                onClick={() => window.location.href = '/collections'}
+                onClick={() => navigate('/collections')}
               >
                 Browse Products
               </Button>
