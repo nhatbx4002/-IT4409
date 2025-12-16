@@ -6,7 +6,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /api/cart:
+ * /cart:
  *   get:
  *     summary: Lấy chi tiết giỏ hàng của user
  *     tags: [Cart]
@@ -22,7 +22,7 @@ router.get('/', authenticateToken, getCart);
 
 /**
  * @swagger
- * /api/cart:
+ * /cart:
  *   post:
  *     summary: Thêm sản phẩm mới vào giỏ hàng
  *     tags: [Cart]
@@ -52,7 +52,7 @@ router.post('/', authenticateToken, addItem);
 
 /**
  * @swagger
- * /api/cart/{cartItemId}:
+ * /cart/{cartItemId}:
  *   put:
  *     summary: Cập nhật số lượng sản phẩm trong giỏ hàng
  *     tags: [Cart]
@@ -87,7 +87,7 @@ router.put('/:cartItemId', authenticateToken, updateItem);
 
 /**
  * @swagger
- * /api/cart/{cartItemId}:
+ * /cart/{cartItemId}:
  *   delete:
  *     summary: Xóa sản phẩm khỏi giỏ hàng
  *     tags: [Cart]

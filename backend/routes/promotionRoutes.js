@@ -7,7 +7,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /api/promotions:
+ * /promotions:
  *   get:
  *     summary: Lấy danh sách khuyến mãi
  *     tags: [Promotions]
@@ -19,7 +19,7 @@ router.get("/", promotionController.getPromotions);
 
 /**
  * @swagger
- * /api/promotions/apply:
+ * /promotions/apply:
  *   post:
  *     summary: Áp dụng mã giảm giá
  *     tags: [Promotions]
@@ -44,7 +44,7 @@ router.post("/apply", promotionController.applyCoupon);
 
 /**
  * @swagger
- * /api/promotions/create:
+ * /promotions/create:
  *   post:
  *     summary: Tạo khuyến mãi mới (Admin only)
  *     tags: [Promotions, Admin]
@@ -86,7 +86,7 @@ router.post("/create", authenticateToken, isAdmin, promotionController.createPro
 
 /**
  * @swagger
- * /api/promotions/{id}:
+ * /promotions/{id}:
  *   delete:
  *     summary: Xóa khuyến mãi (Admin only)
  *     tags: [Promotions, Admin]

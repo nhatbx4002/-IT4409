@@ -18,7 +18,7 @@ const router = express.Router();
 // === PUBLIC ROUTES (Không cần authenticate) ===
 /**
  * @swagger
- * /api/orders/payment/vnpay/callback:
+ * /payment/vnpay/callback:
  *   get:
  *     summary: Callback từ VNPay sau khi thanh toán
  *     tags: [Orders]
@@ -52,7 +52,7 @@ router.use(authenticateToken);
 
 /**
  * @swagger
- * /api/orders/shipping-fee:
+ * /shipping-fee:
  *   post:
  *     summary: Tính phí ship (Preview)
  *     tags: [Orders]
@@ -84,7 +84,7 @@ router.post('/shipping-fee', getShippingFee);
 
 /**
  * @swagger
- * /api/orders/checkout:
+ * /checkout:
  *   post:
  *     summary: Tạo đơn hàng (Checkout)
  *     tags: [Orders]
@@ -119,7 +119,7 @@ router.post('/checkout', createOrder);
 
 /**
  * @swagger
- * /api/orders:
+ * /:
  *   get:
  *     summary: Xem danh sách đơn hàng của user
  *     tags: [Orders]
@@ -135,7 +135,7 @@ router.get('/', getMyOrders);
 
 /**
  * @swagger
- * /api/orders/{orderId}/payment/status:
+ * /{orderId}/payment/status:
  *   get:
  *     summary: Kiểm tra trạng thái thanh toán
  *     tags: [Orders]
@@ -157,7 +157,7 @@ router.get('/:orderId/payment/status', checkPaymentStatus);
 
 /**
  * @swagger
- * /api/orders/{id}:
+ * /{id}:
  *   get:
  *     summary: Xem chi tiết đơn hàng
  *     tags: [Orders]
@@ -179,7 +179,7 @@ router.get('/:id', getOrderDetails);
 
 /**
  * @swagger
- * /api/orders/{id}/cancel:
+ * /{id}/cancel:
  *   put:
  *     summary: Hủy đơn hàng
  *     tags: [Orders]
@@ -206,7 +206,7 @@ router.put('/:id/cancel', cancelMyOrder);
 
 /**
  * @swagger
- * /api/orders/admin/all:
+ * /admin/all:
  *   get:
  *     summary: Xem danh sách tất cả đơn hàng (Admin only)
  *     tags: [Orders, Admin]
@@ -222,7 +222,7 @@ router.get('/admin/all', isAdmin, getAllOrders);
 
 /**
  * @swagger
- * /api/orders/admin/{id}/status:
+ * /admin/{id}/status:
  *   put:
  *     summary: Cập nhật trạng thái đơn hàng (Admin only)
  *     tags: [Orders, Admin]

@@ -1,13 +1,18 @@
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { ImageWithFallback } from "@/components/figma/ImageWithFallback";
-import { ShoppingBag, Minus, Plus, X } from "lucide-react";
-import { useState } from "react";
+import { ShoppingBag, Minus, Plus, X, Loader2 } from "lucide-react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { getCart, updateCartItem, removeCartItem } from "@/lib/api";
+import type { CartItem as ApiCartItem, CartResponse } from "@/types/cart";
+import { isAuthenticated } from "@/lib/auth";
+import { toast } from "sonner";
 
 interface CartItem {
   id: number;
+  cartItemId: number;
   image: string;
   name: string;
   brand: string;
@@ -25,72 +30,88 @@ interface ShoppingCartProps {
   onOpenChange: (open: boolean) => void;
 }
 
+const mapApiCartItemToCartItem = (apiItem: ApiCartItem, index: number): CartItem => {
+  const colorName = apiItem.color || "N/A";
+  const colorHex = getColorHex(colorName);
+  
+  return {
+    id: index + 1,
+    cartItemId: apiItem.cart_item_id,
+    image: apiItem.image_url || "https://via.placeholder.com/420",
+    name: apiItem.product_name,
+    brand: "ARISTINO",
+    color: colorName,
+    colorHex: colorHex,
+    size: apiItem.size || "N/A",
+    price: apiItem.unit_price,
+    quantity: apiItem.quantity,
+    availableColors: [{ name: colorName, hex: colorHex }],
+    availableSizes: [apiItem.size || "N/A"],
+  };
+};
+
+const getColorHex = (colorName: string): string => {
+  const colorMap: Record<string, string> = {
+    "Navy Blue": "#1e3a8a",
+    "Black": "#000000",
+    "Charcoal": "#4b5563",
+    "White": "#ffffff",
+    "Brown": "#8B4513",
+    "N/A": "#cccccc",
+  };
+  return colorMap[colorName] || "#cccccc";
+};
+
 export function ShoppingCart({ open, onOpenChange }: ShoppingCartProps) {
   const navigate = useNavigate();
-  const [cartItems, setCartItems] = useState<CartItem[]>([
-    {
-      id: 1,
-      image: "https://images.unsplash.com/photo-1603122101829-e56305b0a5f7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtZW5zJTIwbHV4dXJ5JTIwc3VpdHxlbnwxfHx8fDE3NjEzOTQzMTR8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
-      name: "Classic Navy Suit",
-      brand: "ARMANI",
-      color: "Navy Blue",
-      colorHex: "#1e3a8a",
-      size: "L",
-      price: 2850,
-      quantity: 1,
-      availableColors: [
-        { name: "Navy Blue", hex: "#1e3a8a" },
-        { name: "Black", hex: "#000000" },
-        { name: "Charcoal", hex: "#4b5563" }
-      ],
-      availableSizes: ["S", "M", "L", "XL", "XXL"]
-    },
-    {
-      id: 2,
-      image: "https://images.unsplash.com/photo-1758024699178-634329cb7cde?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtZW5zJTIwZHJlc3MlMjBzaGlydHxlbnwxfHx8fDE3NjE0MTE2ODN8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
-      name: "Premium Cotton Shirt",
-      brand: "RALPH LAUREN",
-      color: "White",
-      colorHex: "#ffffff",
-      size: "M",
-      price: 385,
-      quantity: 2,
-      availableColors: [
-        { name: "White", hex: "#ffffff" },
-        { name: "Light Blue", hex: "#e0f2fe" },
-        { name: "Pink", hex: "#fce7f3" }
-      ],
-      availableSizes: ["S", "M", "L", "XL"]
-    },
-    {
-      id: 3,
-      image: "https://images.unsplash.com/photo-1658837407083-308b902ee99d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtZW5zJTIwbGVhdGhlciUyMHNob2VzfGVufDF8fHx8MTc2MTMwOTQxNHww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
-      name: "Leather Oxford Shoes",
-      brand: "SALVATORE FERRAGAMO",
-      color: "Black",
-      colorHex: "#000000",
-      size: "10",
-      price: 850,
-      quantity: 1,
-      availableColors: [
-        { name: "Black", hex: "#000000" },
-        { name: "Brown", hex: "#8B4513" }
-      ],
-      availableSizes: ["8", "9", "10", "11", "12"]
-    }
-  ]);
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [cartData, setCartData] = useState<CartResponse | null>(null);
 
-  const updateQuantity = (id: number, change: number) => {
-    setCartItems(items =>
-      items.map(item =>
-        item.id === id
-          ? { ...item, quantity: Math.max(1, item.quantity + change) }
-          : item
-      )
-    );
+  useEffect(() => {
+    const fetchCart = async () => {
+      if (!open || !isAuthenticated()) {
+        return;
+      }
+
+      try {
+        setIsLoading(true);
+        const cart = await getCart();
+        setCartData(cart);
+        setCartItems(cart.items.map((item, index) => mapApiCartItemToCartItem(item, index)));
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : "Failed to load cart";
+        toast.error(errorMessage);
+        setCartItems([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchCart();
+  }, [open]);
+
+  const updateQuantity = async (cartItemId: number, change: number) => {
+    const item = cartItems.find(i => i.cartItemId === cartItemId);
+    if (!item) return;
+
+    const newQuantity = Math.max(1, item.quantity + change);
+    if (newQuantity === item.quantity) return;
+
+    try {
+      await updateCartItem(cartItemId, newQuantity);
+      const cart = await getCart();
+      setCartData(cart);
+      setCartItems(cart.items.map((item, index) => mapApiCartItemToCartItem(item, index)));
+      toast.success("Cart updated successfully");
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to update quantity";
+      toast.error(errorMessage);
+    }
   };
 
   const updateSize = (id: number, newSize: string) => {
+    toast.info("To change size, please remove this item and add the desired variant");
     setCartItems(items =>
       items.map(item =>
         item.id === id
@@ -101,6 +122,7 @@ export function ShoppingCart({ open, onOpenChange }: ShoppingCartProps) {
   };
 
   const updateColor = (id: number, colorName: string, colorHex: string) => {
+    toast.info("To change color, please remove this item and add the desired variant");
     setCartItems(items =>
       items.map(item =>
         item.id === id
@@ -110,16 +132,30 @@ export function ShoppingCart({ open, onOpenChange }: ShoppingCartProps) {
     );
   };
 
-  const removeItem = (id: number) => {
-    setCartItems(items => items.filter(item => item.id !== id));
+  const removeItem = async (cartItemId: number) => {
+    try {
+      await removeCartItem(cartItemId);
+      const cart = await getCart();
+      setCartData(cart);
+      setCartItems(cart.items.map((item, index) => mapApiCartItemToCartItem(item, index)));
+      toast.success("Item removed from cart");
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to remove item";
+      toast.error(errorMessage);
+    }
   };
 
-  const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const subtotal = cartData?.subtotal_amount || cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const isEmpty = cartItems.length === 0;
 
   const handleViewCart = () => {
     onOpenChange(false);
     navigate("/cart");
+  };
+
+  const handleCheckout = () => {
+    onOpenChange(false);
+    navigate("/checkout");
   };
 
   return (
@@ -164,7 +200,11 @@ export function ShoppingCart({ open, onOpenChange }: ShoppingCartProps) {
 
         {/* Cart Content */}
         <div className="flex h-[calc(100vh-120px)] flex-col">
-          {isEmpty ? (
+          {isLoading ? (
+            <div className="flex flex-1 items-center justify-center">
+              <Loader2 className="h-8 w-8 animate-spin text-[#D4AF37]" />
+            </div>
+          ) : isEmpty ? (
             // Empty State
             <div className="flex flex-1 flex-col items-center justify-center px-8 text-center">
               <div
@@ -230,7 +270,7 @@ export function ShoppingCart({ open, onOpenChange }: ShoppingCartProps) {
                               </h4>
                             </div>
                             <button
-                              onClick={() => removeItem(item.id)}
+                              onClick={() => removeItem(item.cartItemId)}
                               className="h-6 text-xs uppercase tracking-[0.18em] text-[#666666] transition-colors hover:text-[#D4AF37]"
                             >
                               Remove
@@ -282,7 +322,7 @@ export function ShoppingCart({ open, onOpenChange }: ShoppingCartProps) {
                             {/* Quantity Selector */}
                             <div className="flex items-center rounded-full border border-gray-300 bg-white">
                               <button
-                                onClick={() => updateQuantity(item.id, -1)}
+                                onClick={() => updateQuantity(item.cartItemId, -1)}
                                 className="p-2 hover:bg-[#F5F5F5] transition-colors"
                                 disabled={item.quantity <= 1}
                               >
@@ -292,7 +332,7 @@ export function ShoppingCart({ open, onOpenChange }: ShoppingCartProps) {
                                 {item.quantity}
                               </span>
                               <button
-                                onClick={() => updateQuantity(item.id, 1)}
+                                onClick={() => updateQuantity(item.cartItemId, 1)}
                                 className="p-2 hover:bg-[#F5F5F5] transition-colors"
                               >
                                 <Plus className="h-3 w-3" />
@@ -349,6 +389,7 @@ export function ShoppingCart({ open, onOpenChange }: ShoppingCartProps) {
                     View Cart
                   </Button>
                   <Button
+                    onClick={handleCheckout}
                     className="rounded-full bg-[#D4AF37] py-4 text-xs font-semibold uppercase tracking-[0.2em] text-black transition hover:bg-[#B6911F]"
                   >
                     Checkout

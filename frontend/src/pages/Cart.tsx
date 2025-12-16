@@ -340,6 +340,7 @@ export default function CartPage() {
               onPromoCodeChange={setPromoCode}
               onApplyPromo={handleApplyPromo}
               onTogglePromo={() => setIsPromoExpanded((prev) => !prev)}
+              navigate={navigate}
             />
           </div>
 
@@ -681,6 +682,7 @@ const OrderSummaryCard = ({
   onPromoCodeChange,
   onApplyPromo,
   onTogglePromo,
+  navigate,
 }: {
   subtotal: number;
   shipping: number;
@@ -693,6 +695,7 @@ const OrderSummaryCard = ({
   onPromoCodeChange: (value: string) => void;
   onApplyPromo: () => void;
   onTogglePromo: () => void;
+  navigate: (path: string) => void;
 }) => (
   <aside className="h-fit space-y-6 rounded-lg border border-gray-200 bg-gray-50 p-6 lg:sticky lg:top-5">
     <h2 className="text-xl font-bold text-black">

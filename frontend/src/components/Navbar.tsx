@@ -34,6 +34,7 @@ import { useNavigate } from "react-router-dom";
 
 import { getStoredUser, isAuthenticated, logout } from "@/lib/auth";
 import type { AuthUser } from "@/types/auth";
+import { getCart, getWishlist } from "@/lib/api";
 
 
 export function Navbar() {
@@ -41,11 +42,47 @@ export function Navbar() {
   const [cartOpen, setCartOpen] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const navigate = useNavigate();
-  const [user,setUser] = useState<AuthUser | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [cartCount, setCartCount] = useState(0);
+  const [wishlistCount, setWishlistCount] = useState(0);
 
-  useEffect(() =>{
-    setUser(isAuthenticated() ? getStoredUser() : null);
-  },[]);
+  useEffect(() => {
+    const currentUser = isAuthenticated() ? getStoredUser() : null;
+    setUser(currentUser);
+  }, []);
+
+  useEffect(() => {
+    const fetchCounts = async () => {
+      if (!isAuthenticated()) {
+        setCartCount(0);
+        setWishlistCount(0);
+        return;
+      }
+
+      try {
+        const cart = await getCart();
+        const totalItems = cart.items.reduce((sum, item) => sum + item.quantity, 0);
+        setCartCount(totalItems);
+      } catch {
+        setCartCount(0);
+      }
+
+      try {
+        const currentUser = getStoredUser();
+        if (currentUser?.id) {
+          const wishlist = await getWishlist(currentUser.id);
+          setWishlistCount(wishlist.count || wishlist.data?.length || 0);
+        }
+      } catch {
+        setWishlistCount(0);
+      }
+    };
+
+    fetchCounts();
+    
+    const interval = setInterval(fetchCounts, 5000);
+    return () => clearInterval(interval);
+  }, [user]);
 
   const initials = useMemo(() => {
     if(!user) return "U";
@@ -221,10 +258,18 @@ export function Navbar() {
               <Button
                 variant="ghost"
                 size="icon"
-                className="hidden sm:inline-flex hover:bg-transparent hover:text-[#D4AF37] transition-colors"
+                className="relative hidden sm:inline-flex hover:bg-transparent hover:text-[#D4AF37] transition-colors"
                 onClick={() => navigate("/wishlist")}
               >
                 <Heart className="h-5 w-5" />
+                {wishlistCount > 0 && (
+                  <Badge
+                    className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center p-0 text-[10px]"
+                    style={{ backgroundColor: "#D4AF37", color: "#000" }}
+                  >
+                    {wishlistCount > 99 ? "99+" : wishlistCount}
+                  </Badge>
+                )}
               </Button>
               <Button
                 variant="ghost"
@@ -233,12 +278,14 @@ export function Navbar() {
                 onClick={() => setCartOpen(true)}
               >
                 <ShoppingBag className="h-5 w-5" />
-                <Badge
-                  className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center p-0 text-[10px]"
-                  style={{ backgroundColor: "#D4AF37", color: "#000" }}
-                >
-                  3
-                </Badge>
+                {cartCount > 0 && (
+                  <Badge
+                    className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center p-0 text-[10px]"
+                    style={{ backgroundColor: "#D4AF37", color: "#000" }}
+                  >
+                    {cartCount > 99 ? "99+" : cartCount}
+                  </Badge>
+                )}
               </Button>
               {/* Mobile nav trigger */}
               <Button
