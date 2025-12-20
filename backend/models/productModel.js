@@ -65,32 +65,3 @@ Product.beforeDestroy(async (product, options) => {
     throw error;
   }
 });
-
-// Hook: Xóa category nếu không còn product nào sau khi xóa product
-Product.afterDestroy(async (product, options) => {
-  try {
-    const Category = sequelize.models.categories;
-    const ProductModel = sequelize.models.products;
-
-    // Nếu product có category_id
-    if (product.category_id && Category) {
-      // Kiểm tra xem category này còn product nào khác không
-      const remainingProducts = await ProductModel.count({
-        where: { category_id: product.category_id },
-        transaction: options.transaction,
-      });
-
-      // Nếu không còn product nào, xóa category
-      if (remainingProducts === 0) {
-        await Category.destroy({
-          where: { id: product.category_id },
-          transaction: options.transaction,
-        });
-        console.log(`✅ Deleted category ${product.category_id} (no products remaining)`);
-      }
-    }
-  } catch (error) {
-    console.error("Error checking/deleting category:", error);
-    // Không throw error để không ảnh hưởng đến việc xóa product
-  }
-});

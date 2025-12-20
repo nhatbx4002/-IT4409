@@ -23,7 +23,6 @@ loadEnv();
 const syncStrategy = process.env.SYNC_STRATEGY || process.env.DISCOUNT_SYNC_STRATEGY || "alter";
 
 async function syncModel(model, label) {
-  console.log(`🔄 Syncing ${label} table (strategy=${syncStrategy})...`);
   if (syncStrategy === "force") {
     await model.sync({ force: true });
   } else if (syncStrategy === "alter") {
@@ -31,14 +30,11 @@ async function syncModel(model, label) {
   } else {
     await model.sync();
   }
-  console.log(`✅ ${label} table synced`);
 }
 
 async function initDatabase() {
   try {
-    console.log("🔄 Connecting to database...");
     await sequelize.authenticate();
-    console.log("✅ Database connected!");
 
     await syncModel(User, "User");
     await syncModel(Category, "Category");
@@ -53,7 +49,6 @@ async function initDatabase() {
     await syncModel(Payment, "Payment");
     await syncModel(Discount, "Discount");
     await syncModel(Wishlist, "Wishlist");
-    console.log("✅ All tables synced successfully!");
   } catch (error) {
     console.error("❌ Database initialization failed:", error);
     console.error("Error details:", error.message);

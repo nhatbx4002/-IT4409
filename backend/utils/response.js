@@ -30,3 +30,4 @@ export const sendValidationError = (res, errors) => {
         errors: Array.isArray(errors) ? errors : undefined
     });
 };
+

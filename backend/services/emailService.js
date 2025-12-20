@@ -53,7 +53,6 @@ export const sendOrderStatusEmail = async (to, orderId, newStatus) => {
             subject,
             text,
         });
-        console.log(`📧 Đã gửi mail thông báo đơn hàng #${orderId} tới ${to}`);
     } catch (error) {
         console.error("❌ Lỗi gửi email:", error);
     }

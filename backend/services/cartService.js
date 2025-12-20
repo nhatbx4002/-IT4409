@@ -280,23 +280,6 @@ export const getCartDetails = async ({ userId, sessionId }) => {
     }
 
     // === 4. TÍNH TỔNG GIÁ TẠM TÍNH ===
-    // TODO: Xử lý promotion/discount sau
-    // Tạm thời bỏ qua promotion để chỉ hiển thị sản phẩm và tính tổng giá
-    /*
-    const activePromotion = await Promotion.findOne({
-        where: {
-            is_active: true,
-            start_date: { [Op.lte]: new Date() },
-            end_date: { [Op.gte]: new Date() },
-        },
-    });
-
-    let discount_amount = 0;
-    if (activePromotion) {
-        // Logic tính discount sẽ được implement sau
-    }
-    */
-
     const discount_amount = 0; // Tạm thời không có discount
     const total_amount = subtotal_amount; // Tổng = subtotal (chưa có discount)
 

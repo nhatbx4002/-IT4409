@@ -5,17 +5,16 @@ import app from "./app.js";
 import { startServer } from "./bootstrap.js";
 import { swaggerUi, swaggerSpec } from "./swagger.js";  
 
-console.log("🔄 Loading environment variables...");
+// Loading environment variables...
 loadEnv();
-console.log("✅ Environment variables loaded");
 
 const PORT = APP_CONSTANTS.port;
 
 (async () => {
   try {
-    console.log("🔄 Starting server initialization...");
+    // Starting server initialization...
     await startServer(); // Khởi tạo database
-    console.log("🔄 Starting HTTP server...");
+    // Starting HTTP server...
     app.listen(PORT, () => {
       console.log(`🚀 Server started on port ${PORT}`);
       console.log(`📍 http://localhost:${PORT}`);
