@@ -11,16 +11,26 @@ import {
   Order,
   OrderItem,
   Payment,
-  Promotion,
+  Discount,
   Review,
   Wishlist,
 } from "./models/index.js";
 
 loadEnv();
 
+// Sync strategy can be controlled with env var `SYNC_STRATEGY` or legacy `DISCOUNT_SYNC_STRATEGY`.
+// Allowed values: 'force' (drops & recreates), 'alter' (safer schema adjust). Default: 'alter'.
+const syncStrategy = process.env.SYNC_STRATEGY || process.env.DISCOUNT_SYNC_STRATEGY || "alter";
+
 async function syncModel(model, label) {
-  console.log(`🔄 Syncing ${label} table...`);
-  await model.sync({ alter: true });
+  console.log(`🔄 Syncing ${label} table (strategy=${syncStrategy})...`);
+  if (syncStrategy === "force") {
+    await model.sync({ force: true });
+  } else if (syncStrategy === "alter") {
+    await model.sync({ alter: true });
+  } else {
+    await model.sync();
+  }
   console.log(`✅ ${label} table synced`);
 }
 
@@ -41,13 +51,7 @@ async function initDatabase() {
     await syncModel(CartItem, "CartItem");
     await syncModel(OrderItem, "OrderItem");
     await syncModel(Payment, "Payment");
-
-    try {
-      await syncModel(Promotion, "Promotion");
-    } catch (promoError) {
-      console.warn("⚠️ Promotion table sync skipped:", promoError.message);
-    }
-
+    await syncModel(Discount, "Discount");
     await syncModel(Wishlist, "Wishlist");
     console.log("✅ All tables synced successfully!");
   } catch (error) {

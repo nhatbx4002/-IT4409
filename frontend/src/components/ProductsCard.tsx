@@ -23,18 +23,23 @@ export function ProductCard({
   const displayPrice = product.salePrice || product.price;
   const hasDiscount = !!product.salePrice;
 
+  const setImageByIndex = (idx: number) => {
+    const safeIndex = Math.min(Math.max(idx, 0), product.images.length - 1);
+    setCurrentImageIndex(safeIndex);
+  };
+
   return (
     <div
-      className={`group relative flex h-full max-h-[700px] flex-col rounded-2xl bg-white/95 ring-1 ring-gray-200 transition-all duration-500 ${isHovered ? "shadow-[0_18px_60px_rgba(15,23,42,0.25)] translate-y-[-2px]" : "shadow-[0_8px_30px_rgba(15,23,42,0.12)]"}`}
+      className={`group relative flex h-full max-h-[640px] flex-col rounded-2xl bg-white/95 ring-1 ring-gray-200 transition-all duration-500 ${isHovered ? "shadow-[0_18px_60px_rgba(15,23,42,0.25)] translate-y-[-2px]" : "shadow-[0_8px_30px_rgba(15,23,42,0.12)]"}`}
       onMouseEnter={() => {
         setIsHovered(true);
         if (product.images.length > 1) {
-          setCurrentImageIndex(1);
+          setImageByIndex(1);
         }
       }}
       onMouseLeave={() => {
         setIsHovered(false);
-        setCurrentImageIndex(0);
+        setImageByIndex(0);
       }}
     >
       {/* Image Container - 320x400px aspect ratio */}
@@ -71,36 +76,38 @@ export function ProductCard({
           </div>
         )}
 
-        {/* Circular Action Buttons - Centered Horizontally */}
-        <div
-          className={`absolute left-1/2 top-1/2 z-20 flex -translate-x-1/2 -translate-y-1/2 gap-3 transition-all duration-300 ${isHovered ? "opacity-100 scale-100" : "pointer-events-none opacity-0 scale-95"}`}
+        {/* Wishlist top-right */}
+        <button
+          onClick={() => onAddToWishlist(product.id)}
+          className="absolute right-3 top-3 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white/95 text-black shadow-[0_8px_20px_rgba(15,23,42,0.25)] transition-colors duration-200 hover:bg-[#D4AF37] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D4AF37] focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+          aria-label="Add to Wishlist"
         >
-          {/* Quick View Button */}
-          <button
-            onClick={() => navigate(`/products/${product.id}`)}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-white/95 text-black shadow-[0_8px_20px_rgba(15,23,42,0.35)] transition-colors duration-200 hover:bg-[#D4AF37] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D4AF37] focus-visible:ring-offset-2 focus-visible:ring-offset-white"
-            aria-label="View Product Details"
-          >
-            <Eye className="w-4 h-4 text-black" />
-          </button>
+          <Heart className="w-4 h-4 text-black" />
+        </button>
 
-          {/* Wishlist Button */}
-          <button
-            onClick={() => onAddToWishlist(product.id)}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-white/95 text-black shadow-[0_8px_20px_rgba(15,23,42,0.35)] transition-colors duration-200 hover:bg-[#D4AF37] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D4AF37] focus-visible:ring-offset-2 focus-visible:ring-offset-white"
-            aria-label="Add to Wishlist"
-          >
-            <Heart className="w-4 h-4 text-black" />
-          </button>
-
-          {/* Add to Cart Button */}
-          <button
-            onClick={() => onAddToCart(product.id)}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-white/95 text-black shadow-[0_8px_20px_rgba(15,23,42,0.35)] transition-colors duration-200 hover:bg-[#D4AF37] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D4AF37] focus-visible:ring-offset-2 focus-visible:ring-offset-white"
-            aria-label="Add to Cart"
-          >
-            <ShoppingBag className="w-4 h-4 text-black" />
-          </button>
+        {/* Hover actions slide-up */}
+        <div
+          className={`absolute inset-x-3 bottom-3 z-20 transform-gpu rounded-2xl bg-white/90 px-3 py-2 shadow-[0_12px_30px_rgba(0,0,0,0.18)] backdrop-blur transition-all duration-300 ${
+            isHovered ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0 pointer-events-none"
+          }`}
+        >
+          <div className="flex items-center justify-between gap-2 text-sm text-[#111827]">
+            <button
+              onClick={() => navigate(`/products/${product.id}`)}
+              className="flex items-center gap-2 rounded-full px-3 py-2 text-[12px] font-semibold uppercase tracking-[0.16em] text-[#111827] transition hover:text-[#D4AF37]"
+            >
+              <Eye className="h-4 w-4" />
+              View detail
+            </button>
+            <button
+              onClick={() => onAddToCart(product.id)}
+              className="inline-flex items-center gap-2 rounded-full bg-[#111827] px-3 py-2 text-[12px] font-semibold uppercase tracking-[0.18em] text-white transition hover:bg-black"
+              disabled={!product.inStock}
+            >
+              <ShoppingBag className="h-4 w-4 text-[#D4AF37]" />
+              {product.inStock ? "Add" : "Out"}
+            </button>
+          </div>
         </div>
 
         {/* Out of Stock Overlay */}
@@ -182,6 +189,10 @@ export function ProductCard({
                 {product.colors.slice(0, 3).map((color, idx) => (
                   <button
                     key={idx}
+                    onMouseEnter={() => {
+                      setSelectedColorIndex(idx);
+                      setImageByIndex(Math.min(idx + 1, product.images.length - 1));
+                    }}
                     onClick={() => setSelectedColorIndex(idx)}
                     className={`h-6 w-6 rounded-full border-2 transition-all duration-200 hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D4AF37] focus-visible:ring-offset-2 focus-visible:ring-offset-white`}
                     style={{
@@ -205,19 +216,6 @@ export function ProductCard({
               </div>
             </div>
           )}
-        </div>
-
-        {/* Hidden "Add to Cart" Button - Full-width, appears on hover */}
-        <div
-          className={`overflow-hidden pt-0 transition-all duration-300 ${isHovered ? "mt-4 max-h-16 opacity-100" : "mt-0 max-h-0 opacity-0"}`}
-        >
-          <button
-            onClick={() => onAddToCart(product.id)}
-            className="w-full rounded-full bg-black py-3 text-[11px] font-semibold uppercase tracking-[0.24em] text-white transition-colors duration-200 hover:bg-[#D4AF37] hover:text-black disabled:cursor-not-allowed disabled:opacity-50"
-            disabled={!product.inStock}
-          >
-            {product.inStock ? "ADD TO CART" : "OUT OF STOCK"}
-          </button>
         </div>
       </div>
     </div>

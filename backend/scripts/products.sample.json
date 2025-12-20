@@ -1,0 +1,921 @@
+[
+  {
+    "name": "Áo Sơ Mi Nam Kẻ Aristino Business Regular Fit 1LS0340S2",
+    "brand": "Aristino Business",
+    "basePrice": 1700000,
+    "salePrice": null,
+    "description": "Phom Regular Fit suông, họa tiết kẻ kết hợp thêu Mặt Trời Huyền Thoại. 100% Cotton thoáng khí.",
+    "images": ["https://cdn.hstatic.net/products/200000887901/img_7215.1_29579bdb1cb64380a36195537221125b.jpg"],
+    "tags": ["NEW"],
+    "slug": "ao-so-mi-nam-ke-aristino-business-regular-fit-1ls0340s2",
+    "category": "Áo Sơ Mi",
+    "variants": [
+      { "sku": "1LS0340S2-38", "size": "38", "color": "Đen kẻ sọc cam", "price": 1700000, "stock": 49, "imageUrl": "https://cdn.hstatic.net/products/200000887901/img_7215.1_29579bdb1cb64380a36195537221125b.jpg" },
+      { "sku": "1LS0340S2-43", "size": "43", "color": "Đen kẻ sọc cam", "price": 1700000, "stock": 56, "imageUrl": "https://cdn.hstatic.net/products/200000887901/img_7215.1_29579bdb1cb64380a36195537221125b.jpg" }
+    ]
+  },
+  {
+    "name": "Áo Sơ Mi Nam Trắng Solid Bamboo Tay Dài Aristino Regular Fit ALS600EDP01",
+    "brand": "Aristino",
+    "basePrice": 895000,
+    "salePrice": 805500,
+    "description": "Sơ mi trắng basic, chất liệu 48% Bamboo từ sợi tre thiên nhiên thoáng mát, kháng khuẩn.",
+    "images": ["https://cdn.hstatic.net/products/200000887901/als600edp01___2__232be60b1ec249ae91f3ed22705617b2.jpg"],
+    "tags": ["NEW"],
+    "slug": "ao-so-mi-nam-trang-solid-bamboo-tay-dai-aristino-regular-fit-als600edp01",
+    "category": "Áo Sơ Mi",
+    "variants": [
+      { "sku": "ALS600EDP01-40", "size": "40", "color": "Trắng solid", "price": 805500, "stock": 39, "imageUrl": "https://cdn.hstatic.net/products/200000887901/img_6490_copy.1_1933e7b54d144c9b9b091ba083e21b5c_7928a0f74ebd411c9145cd8f9a7d6bb7.jpg" }
+    ]
+  },
+  {
+    "name": "Áo Sơ Mi Nam Trắng Solid Aristino Slim Fit ALSR06S",
+    "brand": "Aristino",
+    "basePrice": 950000,
+    "salePrice": null,
+    "description": "Dáng ôm Slim Fit tôn dáng. Kiểu cổ đức truyền thống. Vải mịn, sáng nhẹ, thoải mái.",
+    "images": ["https://cdn.hstatic.net/products/200000887901/dsc06716_5d0e6d7f51e54488b33893a07d231ba5.jpg"],
+    "tags": ["NEW"],
+    "slug": "ao-so-mi-nam-trang-solid-aristino-slim-fit-alsr06s",
+    "category": "Áo Sơ Mi",
+    "variants": [
+      { "sku": "ALSR06S-39", "size": "39", "color": "Trắng solid", "price": 950000, "stock": 26, "imageUrl": "https://cdn.hstatic.net/products/200000887901/img_5541.1_2013f6e612974402ae819e4bfb33c69e.jpg" }
+    ]
+  },
+  {
+    "name": "Áo Sơ Mi Nam Trắng Aristino Business 1LSR16S",
+    "brand": "Aristino Business",
+    "basePrice": 1495000,
+    "salePrice": null,
+    "description": "Sơ mi trắng Slim Fit kinh điển cho nam công sở. Tinh thần Essential Elegance, tối giản và sang trọng.",
+    "images": ["https://cdn.hstatic.net/products/200000887901/dsc06863_123577b998844508b70ee39fa9aec95b_83abd614c19d44d0b7161026d5a77883.jpg"],
+    "tags": ["NEW"],
+    "slug": "ao-so-mi-nam-trang-aristino-business-1lsr16s",
+    "category": "Áo Sơ Mi",
+    "variants": [
+      { "sku": "1LSR16S-41", "size": "41", "color": "Trắng", "price": 1495000, "stock": 54, "imageUrl": "https://cdn.hstatic.net/products/200000887901/img_4091.1_d3d11028e1744d0286b2df14b134ccfb_7dbf6784bb9f4084904a8f17e016c0b1.jpg" }
+    ]
+  },
+  {
+    "name": "Áo Sơ Mi Nam Bamboo Họa Tiết Aristino Slim fit ALS1710S4",
+    "brand": "Aristino",
+    "basePrice": 1250000,
+    "salePrice": null,
+    "description": "Màu đỏ kẻ đen dệt họa tiết ấn tượng. Phom Slim Fit vừa vặn cơ thể. Chất liệu Bamboo/Polyester mịn màng.",
+    "images": ["https://cdn.hstatic.net/products/200000887901/dsc06588_a9850fdc9f974b4d9e4e8fc7baa09e02_832c6346164d4c3e946bbd032a44fa6e.jpg"],
+    "tags": ["NEW"],
+    "slug": "ao-so-mi-nam-bamboo-hoa-tiet-aristino-slim-fit-als1710s4",
+    "category": "Áo Sơ Mi",
+    "variants": [
+      { "sku": "ALS1710S4-40", "size": "40", "color": "Đỏ kẻ đen dệt họa tiết", "price": 1250000, "stock": 18, "imageUrl": "https://cdn.hstatic.net/products/200000887901/img_4086.1_d704c4734aaa4bbaa666e4464c25b701_8c7dc3c9bdbc4137bf327e66dca50bed.jpg" }
+    ]
+  },
+  {
+    "name": "Áo Sơ Mi Nam Xanh In Bamboo Aristino Slim Fit ALS1740S3",
+    "brand": "Aristino",
+    "basePrice": 1350000,
+    "salePrice": null,
+    "description": "Phom Slim Fit ôm vừa vặn. Họa tiết biểu tượng mặt trời cách điệu in tinh tế. Chất liệu Bamboo thoáng mát.",
+    "images": ["https://cdn.hstatic.net/products/200000887901/dsc02262_fa382ec9cccf49d795eb034cebf2fceb.jpg"],
+    "tags": ["NEW"],
+    "slug": "ao-so-mi-nam-xanh-in-bamboo-aristino-slim-fit-als1740s3",
+    "category": "Áo Sơ Mi",
+    "variants": [
+      { "sku": "ALS1740S3-42", "size": "42", "color": "Xanh tím than in", "price": 1350000, "stock": 43, "imageUrl": "https://cdn.hstatic.net/products/200000887901/img_1598.1_0b49d90544df46d78f9fef4c0c42be1c.jpg" }
+    ]
+  },
+  {
+    "name": "Áo Sơ Mi Nam Họa Tiết Aristino Business Perfect Fit 1SS069AS2",
+    "brand": "Aristino Business",
+    "basePrice": 1450000,
+    "salePrice": null,
+    "description": "Dáng mặc buông vạt bằng Perfect Fit. Vải dệt jacquard hoạ tiết Đan Lát trường tồn. 100% Cotton mềm mại.",
+    "images": ["https://cdn.hstatic.net/products/200000887901/dsc01833_93e0405a31884bd1a36cd55c4ed7d4a8.jpg"],
+    "tags": ["NEW"],
+    "slug": "ao-so-mi-nam-hoa-tiet-aristino-business-perfect-fit-1ss069as2",
+    "category": "Áo Sơ Mi",
+    "variants": [
+      { "sku": "1SS069AS2-38", "size": "38", "color": "Trắng in họa tiết", "price": 1450000, "stock": 33, "imageUrl": "https://cdn.hstatic.net/products/200000887901/dsc01833_93e0405a31884bd1a36cd55c4ed7d4a8.jpg" }
+    ]
+  },
+  {
+    "name": "[BIGSIZE US] Áo Polo Active thể thao Đen Nam Aristino APS003EGP01",
+    "brand": "Aristino",
+    "basePrice": 850000,
+    "salePrice": null,
+    "description": "Phom Regular Fit thể thao. 88% Recycled Polyester thân thiện môi trường. Thấm hút mồ hôi nhanh, bền bỉ.",
+    "images": ["https://cdn.hstatic.net/products/200000887901/ee98141b4b3b9d60a8fe2b196_large_f8b61e3a93d64a64a4e0da4a5bb80eda_large_9adefca9021646f193f9d8c19eff8b9c.jpg"],
+    "tags": ["NEW"],
+    "slug": "bigsize-us-ao-polo-active-the-thao-den-nam-aristino-aps003egp01",
+    "category": "Áo Polo",
+    "variants": [
+      { "sku": "APS003EGP01-XL-BLACK", "size": "XL", "color": "Đen 9", "price": 850000, "stock": 20, "imageUrl": "https://cdn.hstatic.net/products/200000887901/0d2bf49d3bec74c41cdfce45e_large_50db3588730a4a539b30034e31669b85_large_f8c03d6a3ee44035ad1162549e143beb.jpg" }
+    ]
+  },
+  {
+    "name": "Áo Elite Polo Nam Xanh Tím Than Aristino Cotton Organic APS165S3EC",
+    "brand": "Aristino",
+    "basePrice": 650000,
+    "salePrice": 520000,
+    "description": "Dáng Regular Fit, cổ dệt jacquard phối màu nổi bật. 53% Cotton Organic thoáng khí vượt trội.",
+    "images": ["https://cdn.hstatic.net/products/200000887901/dsc06795_dff5bd2b762f42dabb734643f832b69e.jpg"],
+    "tags": ["NEW"],
+    "slug": "ao-elite-polo-nam-xanh-tim-than-aristino-cotton-organic-aps165s3ec",
+    "category": "Áo Polo",
+    "variants": [
+      { "sku": "APS165S3EC-XXL", "size": "XXL", "color": "Xanh tím than 27", "price": 520000, "stock": 40, "imageUrl": "https://cdn.hstatic.net/products/200000887901/img_4056.1_cfc641c7b35e4517a9889d5039a7e87a_df57d7d742304d11a01ea5c407709081.jpg" }
+    ]
+  },
+  {
+    "name": "Áo Elite Polo Nam Xanh Aqua Aristino Cotton Organic APS166S3EC",
+    "brand": "Aristino",
+    "basePrice": 650000,
+    "salePrice": 520000,
+    "description": "Thiết kế basic, màu Xanh Aqua thanh lịch. Cotton Organic kết hợp Spandex co giãn nhẹ, thân thiện làn da.",
+    "images": ["https://cdn.hstatic.net/products/200000887901/dsc06992_16026b0f337b461784e09e179abe06ac.jpg"],
+    "tags": ["NEW"],
+    "slug": "ao-elite-polo-nam-xanh-aqua-aristino-cotton-organic-aps166s3ec",
+    "category": "Áo Polo",
+    "variants": [
+      { "sku": "APS166S3EC-3XL", "size": "3XL", "color": "Xanh aqua 10", "price": 520000, "stock": 26, "imageUrl": "https://cdn.hstatic.net/products/200000887901/img_4052.1_6eb770a4f8ac44af85238f24274258c2_1edaa23b56ff4695b644f0dce92f144f.jpg" }
+    ]
+  },
+  {
+    "name": "Áo Sơ Mi Nam Bamboo Họa Tiết Aristino Slim fit ALS1700S1",
+    "brand": "Aristino",
+    "basePrice": 1250000,
+    "salePrice": null,
+    "description": "Phom Slim Fit ôm vừa vặn. Họa tiết Đan Lát độc quyền. Chất liệu 50% Visco từ tre mềm mại, thoáng mát và kháng khuẩn.",
+    "images": ["https://cdn.hstatic.net/products/200000887901/dsc02313_320b6d1477824450be75d1162aaac8cf.jpg"],
+    "tags": ["NEW"],
+    "slug": "ao-so-mi-nam-bamboo-hoa-tiet-aristino-slim-fit-als1700s1",
+    "category": "Áo Sơ Mi",
+    "variants": [
+      { "sku": "ALS1700S1-38", "size": "38", "color": "Xanh tím than kẻ đỏ dệt họa tiết", "price": 1250000, "stock": 44, "imageUrl": "https://cdn.hstatic.net/products/200000887901/img_0754.1_0a6e43351d214476a6b07284b3b99fab.jpg" },
+      { "sku": "ALS1700S1-42", "size": "42", "color": "Xanh tím than kẻ đỏ dệt họa tiết", "price": 1250000, "stock": 22, "imageUrl": "https://cdn.hstatic.net/products/200000887901/img_0754.1_0a6e43351d214476a6b07284b3b99fab.jpg" }
+    ]
+  },
+  {
+    "name": "Áo Sơ Mi Nam Bamboo Họa Tiết Aristino Regular Fit ALS1720S2",
+    "brand": "Aristino",
+    "basePrice": 1250000,
+    "salePrice": 1125000,
+    "description": "Phom Regular Fit suông nhẹ. Họa tiết Đan Lát phối màu xanh rêu độc đáo. Chất liệu sợi tre cao cấp.",
+    "images": ["https://cdn.hstatic.net/products/200000887901/b__frame_-_2025-10-20t111918.314_ac83c4cf8dc943359ace36123054e8e4.jpg"],
+    "tags": ["NEW"],
+    "slug": "ao-so-mi-nam-bamboo-hoa-tiet-aristino-regular-fit-als1720s2",
+    "category": "Áo Sơ Mi",
+    "variants": [
+      { "sku": "ALS1720S2-40", "size": "40", "color": "Xanh tím than kẻ xanh rêu dệt họa tiết", "price": 1125000, "stock": 10, "imageUrl": "https://cdn.hstatic.net/products/200000887901/img_1074.1_a7f98fce66284d5d9191dfcfa434053b.jpg" }
+    ]
+  },
+  {
+    "name": "Áo Sơ Mi Nam Xanh Kẻ Aristino Slim Fit ALS1580S3",
+    "brand": "Aristino",
+    "basePrice": 1100000,
+    "salePrice": null,
+    "description": "Phom Slim Fit tôn dáng. Họa tiết kẻ xanh nam tính kết hợp thêu măng sét tinh tế. Chất liệu Bamboo/Polyester/Spandex co giãn.",
+    "images": ["https://cdn.hstatic.net/products/200000887901/dsc02460_19f6314cd49043cfb1935be633b0ea24.jpg"],
+    "tags": ["NEW"],
+    "slug": "ao-so-mi-nam-xanh-ke-aristino-slim-fit-als1580s3",
+    "category": "Áo Sơ Mi",
+    "variants": [
+      { "sku": "ALS1580S3-41", "size": "41", "color": "Xanh kẻ", "price": 1100000, "stock": 35, "imageUrl": "https://cdn.hstatic.net/products/200000887901/img_7955.1_2c5b8f8b78dd4e4cb2ed22c23eb24a5c.jpg" }
+    ]
+  },
+  {
+    "name": "Áo Elite Polo Nam Họa Tiết Aristino Slim Fit ALS1750S3",
+    "brand": "Aristino",
+    "basePrice": 1150000,
+    "salePrice": null,
+    "description": "Phom Slim Fit ôm nhẹ. Dệt họa tiết xanh nhạt thanh lịch. Chữ ký thêu nổi bật ở tay áo khẳng định phong thái doanh nhân.",
+    "images": ["https://cdn.hstatic.net/products/200000887901/dsc06930_7f0bafeb0ab541f1b58a32d7790c5603.jpg"],
+    "tags": ["NEW"],
+    "slug": "ao-so-mi-nam-hoa-tiet-bamboo-aristino-slim-fit-als1750s3",
+    "category": "Áo Polo",
+    "variants": [
+      { "sku": "ALS1750S3-39", "size": "39", "color": "Xanh nhạt dệt họa tiết", "price": 1150000, "stock": 21, "imageUrl": "https://cdn.hstatic.net/products/200000887901/img_4096.1_8949e1a09a2a4c648b846c733834466d.jpg" }
+    ]
+  },
+  {
+    "name": "Áo Elite Polo Nam Nâu Aristino Cotton Organic APS165S3EC",
+    "brand": "Aristino",
+    "basePrice": 650000,
+    "salePrice": 520000,
+    "description": "Phom Regular Fit suông nhẹ. Chất liệu Cotton Organic cao cấp, thân thiện làn da và thoáng khí tuyệt đối.",
+    "images": ["https://cdn.hstatic.net/products/200000887901/dsc07021_c2331f1f8f9648c6be06cf5d6c9e4569.jpg"],
+    "tags": ["NEW"],
+    "slug": "ao-elite-polo-nam-nau-aristino-cotton-organic-aps165s3ec",
+    "category": "Áo Polo",
+    "variants": [
+      { "sku": "APS165S3EC-L", "size": "L", "color": "Nâu 18", "price": 520000, "stock": 29, "imageUrl": "https://cdn.hstatic.net/products/200000887901/img_4060.1_437950aa73f44593a49600874bf66767_1bd63ff0a7124239ac84c3aa2d713044.jpg" }
+    ]
+  },
+  {
+    "name": "Áo Elite Polo Nam Be Aristino Cotton Regular Fit APS167S3EC",
+    "brand": "Aristino",
+    "basePrice": 650000,
+    "salePrice": 520000,
+    "description": "Thiết kế thời thượng với cổ áo và tay áo bo rib. Màu Be sang trọng, dễ phối đồ. Chất liệu Cotton mềm mại.",
+    "images": ["https://cdn.hstatic.net/products/200000887901/dsc07082_ade71a57998c48c9931934228a87e558.jpg"],
+    "tags": ["NEW"],
+    "slug": "ao-elite-polo-nam-be-aristino-cotton-regular-fit-aps167s3ec",
+    "category": "Áo Polo",
+    "variants": [
+      { "sku": "APS167S3EC-S", "size": "S", "color": "Be 7", "price": 520000, "stock": 57, "imageUrl": "https://cdn.hstatic.net/products/200000887901/img_3504.1_3dafbd1ef4944b6598db59b46df5018b_90078640dafb41139a466978a547d811.jpg" }
+    ]
+  },
+  {
+    "name": "Áo Elite Polo Nam Trắng Aristino Slim Fit APS072S3EC",
+    "brand": "Aristino",
+    "basePrice": 595000,
+    "salePrice": 476000,
+    "description": "Phom dáng Slim Fit ôm vừa vặn, tôn dáng. Chất liệu 62% Polyester mỏng nhẹ và 38% Seawool Polyester thoáng khí, kiểm soát mùi vượt trội.",
+    "images": [
+      "https://cdn.hstatic.net/products/200000887901/j_673ae8303c0542ac92420fb4bdb56f51.jpg"
+    ],
+    "tags": [],
+    "slug": "ao-elite-polo-nam-trang-aristino-slim-fit-aps072s3ec",
+    "category": "Áo Polo",
+    "variants": [
+      { "sku": "APS072S3EC-S", "size": "S", "color": "Trắng 1", "price": 476000, "stock": 12, "imageUrl": "https://cdn.hstatic.net/products/200000887901/img_1701.1_a459f5cc5415441c99bda2363da3f2c9_1d9979a8670d4839a95a93fa7f764000.jpg" },
+      { "sku": "APS072S3EC-M", "size": "M", "color": "Trắng 1", "price": 476000, "stock": 41, "imageUrl": "https://cdn.hstatic.net/products/200000887901/img_1701.1_a459f5cc5415441c99bda2363da3f2c9_1d9979a8670d4839a95a93fa7f764000.jpg" },
+      { "sku": "APS072S3EC-L", "size": "L", "color": "Trắng 1", "price": 476000, "stock": 13, "imageUrl": "https://cdn.hstatic.net/products/200000887901/img_1701.1_a459f5cc5415441c99bda2363da3f2c9_1d9979a8670d4839a95a93fa7f764000.jpg" }
+    ]
+  },
+  {
+    "name": "Áo Elite Polo Nam Xanh Than Aristino Cotton Slim Fit APS115S3EC",
+    "brand": "Aristino",
+    "basePrice": 650000,
+    "salePrice": 520000,
+    "description": "Phom dáng Slim fit ôm vừa vặn. Thiết kế basic với cổ dệt lịch sự kết hợp họa tiết thêu chữ ký Aristino trước ngực.",
+    "images": [
+      "https://cdn.hstatic.net/products/200000887901/dsc02000_d81dcbba65554a50b1d0da1fb8387912_8119f10065ae4ee7bddbf85799a82063.jpg"
+    ],
+    "tags": ["NEW"],
+    "slug": "ao-elite-polo-nam-xanh-than-aristino-cotton-slim-fit-aps115s3ec",
+    "category": "Áo Polo",
+    "variants": [
+      { "sku": "APS115S3EC-S", "size": "S", "color": "Xanh tím than 15V", "price": 520000, "stock": 24, "imageUrl": "https://cdn.hstatic.net/products/200000887901/img_1113.1_b4ec5f66efa24b55bf6009fbbd0cbd4e_40e654fa14bc47dbafaadb2a2ed3d744.jpg" },
+      { "sku": "APS115S3EC-XL", "size": "XL", "color": "Xanh tím than 15V", "price": 520000, "stock": 51, "imageUrl": "https://cdn.hstatic.net/products/200000887901/img_1113.1_b4ec5f66efa24b55bf6009fbbd0cbd4e_40e654fa14bc47dbafaadb2a2ed3d744.jpg" }
+    ]
+  },
+  {
+    "name": "[Combo 2] Áo Thun Nam Basic Aristino ATS001EXP02",
+    "brand": "Aristino",
+    "basePrice": 231000,
+    "salePrice": 184800,
+    "description": "Áo T-shirt phom dáng suông nhẹ, 100% Cotton tự nhiên mềm mại, xốp nhẹ và thoáng khí suốt cả ngày.",
+    "images": [
+      "https://cdn.hstatic.net/products/200000887901/z7088434583089_1d7dc002f5718c8a76e4e1db137f783e_7f6b31453f57476c9e0721d4efa88594.jpg"
+    ],
+    "tags": ["NEW"],
+    "slug": "combo-2-ao-thun-nam-basic-aristino-ats001exp02",
+    "category": "Áo Thun",
+    "variants": [
+      { "sku": "ATS001EXP02-M", "size": "M", "color": "Trắng", "price": 184800, "stock": 39, "imageUrl": "https://cdn.hstatic.net/products/200000887901/z7088434583089_1d7dc002f5718c8a76e4e1db137f783e_7f6b31453f57476c9e0721d4efa88594.jpg" },
+      { "sku": "ATS001EXP02-L", "size": "L", "color": "Trắng", "price": 184800, "stock": 55, "imageUrl": "https://cdn.hstatic.net/products/200000887901/z7088434583089_1d7dc002f5718c8a76e4e1db137f783e_7f6b31453f57476c9e0721d4efa88594.jpg" }
+    ]
+  },
+  {
+    "name": "Áo Thun Giữ Nhiệt Nam Aristino Body Fit ALT008BS0",
+    "brand": "Aristino",
+    "basePrice": 350000,
+    "salePrice": null,
+    "description": "Phom dáng Body fit ôm tôn dáng. Chất liệu kết hợp Cotton và Visco (Crabyon) giúp giữ ấm, kháng khuẩn và thoáng khí.",
+    "images": [
+      "https://cdn.hstatic.net/products/200000887901/080a5259_b56c13f79ca74d03af5bc6b36f5f115c.jpg"
+    ],
+    "tags": ["NEW"],
+    "slug": "ao-thun-giu-nhiet-nam-aristino-body-fit-alt008bs0",
+    "category": "Áo Thun",
+    "variants": [
+      { "sku": "ALT008BS0-S-XAM", "size": "S", "color": "Xám 35", "price": 350000, "stock": 22, "imageUrl": "https://cdn.hstatic.net/products/200000887901/img_6543.1_bf606e2b45a64799ada14ecf6c20541b.jpg" },
+      { "sku": "ALT008BS0-M-DEN", "size": "M", "color": "Đen 09", "price": 350000, "stock": 36, "imageUrl": "https://cdn.hstatic.net/products/200000887901/img_6539.1_3e38a2e34f0b47ee822ece1c40ddd237.jpg" }
+    ]
+  },
+  {
+    "name": "Áo thun Nam Aristino Cotton ATS004AZ",
+    "brand": "Aristino",
+    "basePrice": 395000,
+    "salePrice": null,
+    "description": "Phom Regular Fit suông nhẹ, thiết kế cổ tròn dệt rib dễ mặc. Họa tiết in ấn tượng mang lại vẻ ngoài cá tính.",
+    "images": [
+      "https://product.hstatic.net/200000887901/product/stino-cotton-regular-fit-ats004az__1__257018f09c4c4ccb9ffbad76d27be95a_ee4853a989f24c2b87986f34a47de8c4.jpg"
+    ],
+    "tags": ["NEW"],
+    "slug": "ao-thun-nam-aristino-cotton-ats004az",
+    "category": "Áo Thun",
+    "variants": [
+      { "sku": "ATS004AZ-L-BLUE", "size": "L", "color": "Xanh biển 197 MF", "price": 395000, "stock": 18, "imageUrl": "https://product.hstatic.net/200000887901/product/stino-cotton-regular-fit-ats004az__6__d4970301e0854c5c8818e748a9baed73_790e4170bb22405b8a374d6c7c0ba825.jpg" },
+      { "sku": "ATS004AZ-XL-BLACK", "size": "XL", "color": "Đen 1", "price": 395000, "stock": 12, "imageUrl": "https://product.hstatic.net/200000887901/product/stino-cotton-regular-fit-ats004az__1__257018f09c4c4ccb9ffbad76d27be95a_ee4853a989f24c2b87986f34a47de8c4.jpg" }
+    ]
+  },
+  {
+    "name": "Áo thun Nam Aristino Cotton Organic ATS012S3",
+    "brand": "Aristino",
+    "basePrice": 395000,
+    "salePrice": 197500,
+    "description": "Áo thun phom Regular Fit suông nhẹ. Chất liệu 92.5% Cotton Organic mềm mại, an toàn cho da và thoáng khí quanh năm.",
+    "images": [
+      "https://product.hstatic.net/200000887901/product/o-cotton-organic-regular-fit-ats012s3_c32d45bf6e334c97817bf0269994b04c_d6f838db0cbb4e4fa6787fdd1173d3b4.jpg"
+    ],
+    "tags": ["NEW"],
+    "slug": "ao-thun-nam-aristino-cotton-organic-ats012s3",
+    "category": "Áo Thun",
+    "variants": [
+      { "sku": "ATS012S3-M-BLUE", "size": "M", "color": "Xanh biển", "price": 197500, "stock": 33, "imageUrl": "https://product.hstatic.net/200000887901/product/o-cotton-organic-regular-fit-ats012s3_c32d45bf6e334c97817bf0269994b04c_d6f838db0cbb4e4fa6787fdd1173d3b4.jpg" },
+      { "sku": "ATS012S3-XL-WHITE", "size": "XL", "color": "Trắng", "price": 197500, "stock": 43, "imageUrl": "https://product.hstatic.net/200000887901/product/o-cotton-organic-regular-fit-ats012s3_f7ac7863a38e4799aca92dd587b7f25a_e249b1687a344f8e9ccdfbbea00b5834.jpg" }
+    ]
+  },
+  {
+    "name": "Áo Thun Nam Aristino Cotton Slim fit ATS023S3",
+    "brand": "Aristino",
+    "basePrice": 350000,
+    "salePrice": 175000,
+    "description": "Phom Slim Fit ôm nhẹ hiện đại. Họa tiết chữ Aristino tạo điểm nhấn tinh tế trên nền vải Cotton mềm mại, thoáng mát.",
+    "images": [
+      "https://cdn.hstatic.net/products/200000887901/nam-aristino-cotton-slim-fit-ats023s3_4de2b795fe86450f9bf0ee99b9b2fd02_4710a199ec20438c9b871a4ee7563510.jpg"
+    ],
+    "tags": ["NEW"],
+    "slug": "ao-thun-nam-aristino-cotton-slim-fit-ats023s3",
+    "category": "Áo Thun",
+    "variants": [
+      { "sku": "ATS023S3-S-BLACK", "size": "S", "color": "Đen 9 in", "price": 175000, "stock": 58, "imageUrl": "https://cdn.hstatic.net/products/200000887901/nam-aristino-cotton-slim-fit-ats023s3_4de2b795fe86450f9bf0ee99b9b2fd02_4710a199ec20438c9b871a4ee7563510.jpg" },
+      { "sku": "ATS023S3-L-WHITE", "size": "L", "color": "Trắng 6 in", "price": 175000, "stock": 25, "imageUrl": "https://cdn.hstatic.net/products/200000887901/nam-aristino-cotton-slim-fit-ats023s3_823fc261edb14e43a808804fbaabd907_4c0d70385b464272881de80bc22025c9.jpg" }
+    ]
+  },
+  {
+    "name": "Áo Thun Nam Aristino Regular ATS024S3",
+    "brand": "Aristino",
+    "basePrice": 375000,
+    "salePrice": null,
+    "description": "Phom Regular fit suông nhẹ, tôn dáng. Chất liệu 87% Nylon mịn mượt và 13% Spandex co giãn, mang lại cảm giác mỏng nhẹ, thoải mái.",
+    "images": [
+      "https://product.hstatic.net/200000887901/product/aristino-nylon-regular-fit-ats024s3-1_26dc58a708874f8b90641731fe98bec5_88437039e61543a4af1de4e6227eafc1.jpg"
+    ],
+    "tags": ["NEW"],
+    "slug": "ao-thun-nam-aristino-regular-ats024s3",
+    "category": "Áo Thun",
+    "variants": [
+      { "sku": "ATS024S3-S-BLUE", "size": "S", "color": "Xanh biển", "price": 375000, "stock": 38, "imageUrl": "https://product.hstatic.net/200000887901/product/aristino-nylon-regular-fit-ats024s3-1_11e026bca66d4fa1ba1e6917364a9a8f_70b3e163049d4c39a870dada57a03b49.jpg" },
+      { "sku": "ATS024S3-L-WHITE", "size": "L", "color": "Trắng", "price": 375000, "stock": 27, "imageUrl": "https://product.hstatic.net/200000887901/product/aristino-nylon-regular-fit-ats024s3-1_ba4f23c7f0ca400b8b161b4faf49b132_78d4eea13188445780d853ef91b9f0ab.jpg" }
+    ]
+  },
+  {
+    "name": "Áo Khoác Lông Vũ Nam Aristino Business 1JK004BS0",
+    "brand": "Aristino Business",
+    "basePrice": 6500000,
+    "salePrice": null,
+    "description": "Dòng hàng cao cấp, lớp giữa lông vũ (85/15) siêu nhẹ, giữ ấm tuyệt vời. Lớp ngoài Polyester bền màu, chống nhăn vượt trội.",
+    "images": [
+      "https://cdn.hstatic.net/products/200000887901/dsc02277_e5a412b332e3452ab2149bb262c25d7b.jpg"
+    ],
+    "tags": ["NEW"],
+    "slug": "ao-khoac-long-vu-nam-aristino-business-1jk004bs0",
+    "category": "Áo Khoác",
+    "variants": [
+      { "sku": "1JK004BS0-M", "size": "M", "color": "Xanh tím than 29", "price": 6500000, "stock": 57, "imageUrl": "https://cdn.hstatic.net/products/200000887901/img_4125.1_9e577aa34e2c432c98b9bdd7fa9ffb37.jpg" }
+    ]
+  },
+  {
+    "name": "Áo Khoác 2 lớp Nam Xanh Rêu Aristino Regular Fit AJK606EDP01",
+    "brand": "Aristino",
+    "basePrice": 2550000,
+    "salePrice": 2295000,
+    "description": "Thiết kế Trucker Jacket mạnh mẽ, phom Regular Fit. Công nghệ 2 lớp cản gió, giữ ấm hiệu quả cho mùa đông Việt Nam.",
+    "images": [
+      "https://cdn.hstatic.net/products/200000887901/dsc00240_f709d2d7e34d428ebec8bae60e9b8d71_8ec1cd29af034c258478fc7e0f416a08.jpg"
+    ],
+    "tags": ["NEW"],
+    "slug": "ao-khoac-2-lop-nam-xanh-reu-aristino-regular-fit-ajk606edp01",
+    "category": "Áo Khoác",
+    "variants": [
+      { "sku": "AJK606EDP01-L", "size": "L", "color": "Xanh rêu", "price": 2295000, "stock": 55, "imageUrl": "https://cdn.hstatic.net/products/200000887901/dsc00240_f709d2d7e34d428ebec8bae60e9b8d71_8ec1cd29af034c258478fc7e0f416a08.jpg" }
+    ]
+  },
+  {
+    "name": "Áo Khoác 2 Lớp Nam Đen Jacquard Aristino AJK602EDP01",
+    "brand": "Aristino",
+    "basePrice": 2550000,
+    "salePrice": 2295000,
+    "description": "Dáng bomber sang trọng với họa tiết jacquard dập nổi tạo chiều sâu. Vải cao cấp đứng form, lịch lãm cho mọi sự kiện.",
+    "images": [
+      "https://cdn.hstatic.net/products/200000887901/z7308175416040_4d1a2ea30f5e4102fab4e6a083921c13_3d685ccd81024e6091d928cafc8b73f8.jpg"
+    ],
+    "tags": ["NEW"],
+    "slug": "ao-khoac-2-lop-nam-den-jacquard-aristino-ajk602edp01",
+    "category": "Áo Khoác",
+    "variants": [
+      { "sku": "AJK602EDP01-XL", "size": "XL", "color": "Đen 3 Jacquard họa tiết", "price": 2295000, "stock": 57, "imageUrl": "https://cdn.hstatic.net/products/200000887901/z7308175416040_4d1a2ea30f5e4102fab4e6a083921c13_3d685ccd81024e6091d928cafc8b73f8.jpg" }
+    ]
+  },
+  {
+    "name": "Áo Khoác Da Lộn Nam Be Aristino Regular Fit AJK006EDP01",
+    "brand": "Aristino",
+    "basePrice": 2400000,
+    "salePrice": 2160000,
+    "description": "Chất liệu da lộn cao cấp kết hợp cúc bấm kim loại hiện đại. Phom Regular Fit dễ dàng phối với quần âu hoặc jeans.",
+    "images": [
+      "https://cdn.hstatic.net/products/200000887901/dsc06618_84762d63ec584de48620af601757a4d7_dd808d603b054e578c7f8e258c37cb80.jpg"
+    ],
+    "tags": ["NEW"],
+    "slug": "ao-khoac-da-lon-nam-be-aristino-regular-fit-ajk006edp01",
+    "category": "Áo Khoác",
+    "variants": [
+      { "sku": "AJK006EDP01-M", "size": "M", "color": "Be 18", "price": 2160000, "stock": 43, "imageUrl": "https://cdn.hstatic.net/products/200000887901/dsc06618_84762d63ec584de48620af601757a4d7_dd808d603b054e578c7f8e258c37cb80.jpg" }
+    ]
+  },
+  {
+    "name": "Áo Ba Lỗ Tanktop Nam Basic Aristino ATT001EXP01",
+    "brand": "Aristino",
+    "basePrice": 105000,
+    "salePrice": 94500,
+    "description": "Thiết kế sát nách basic, 100% Cotton tự nhiên mềm mại, thấm hút mồ hôi cực tốt cho các hoạt động thể thao.",
+    "images": [
+      "https://cdn.hstatic.net/products/200000887901/att001edp01__5__6b968b68f6c04973_8b8d215eb53c45869cc312d3a3106bf4.jpg"
+    ],
+    "tags": ["NEW"],
+    "slug": "ao-ba-lo-tanktop-nam-basic-aristino-att001exp01",
+    "category": "Áo Tanktop",
+    "variants": [
+      { "sku": "ATT001EXP01-M", "size": "M", "color": "Trắng", "price": 94500, "stock": 57, "imageUrl": "https://cdn.hstatic.net/products/200000887901/att001edp01__5__6b968b68f6c04973_8b8d215eb53c45869cc312d3a3106bf4.jpg" }
+    ]
+  },
+  {
+    "name": "Áo Ba Lỗ Tanktop Đen Nam Aristino ATT007AS0",
+    "brand": "Aristino",
+    "basePrice": 350000,
+    "salePrice": null,
+    "description": "Dáng suông thoải mái, in họa tiết graphic kẻ ngang nổi bật. Chất liệu Polyester/Spandex bền màu và co giãn linh hoạt.",
+    "images": [
+      "https://product.hstatic.net/200000887901/product/img_2490_e15a0dca90214558867dd6b5f26933b0.jpg"
+    ],
+    "tags": ["NEW"],
+    "slug": "ao-ba-lo-tanktop-den-nam-aristino-att007as0",
+    "category": "Áo Tanktop",
+    "variants": [
+      { "sku": "ATT007AS0-XL", "size": "XL", "color": "Đen 24 Solid", "price": 350000, "stock": 21, "imageUrl": "https://cdn.hstatic.net/products/200000887901/upload_9f3ad785f45446ffad80cd3ccb93269d.jpg" }
+    ]
+  },
+  {
+    "name": "Quần Âu Nam Aristino Slim Fit ATRR19A",
+    "brand": "Aristino",
+    "basePrice": 1350000,
+    "salePrice": null,
+    "description": "Phom Slim Fit tôn dáng lịch lãm. Chất liệu Rayon/Poly/Spandex bay rũ tự nhiên, ít nhăn và giữ màu sắc nét.",
+    "images": [
+      "https://cdn.hstatic.net/products/200000887901/2i3a6357.1_78da5e75a1fe48ab9f2756495ef83238_06edff54a85641379ad356c887a8e638.jpg"
+    ],
+    "tags": ["NEW"],
+    "slug": "quan-au-nam-aristino-slim-fit-atrr19a",
+    "category": "Quần Âu",
+    "variants": [
+      { "sku": "ATRR19A-32", "size": "32", "color": "Đen 1", "price": 1350000, "stock": 37, "imageUrl": "https://cdn.hstatic.net/products/200000887901/2i3a6357.1_78da5e75a1fe48ab9f2756495ef83238_06edff54a85641379ad356c887a8e638.jpg" },
+      { "sku": "ATRR19A-34", "size": "34", "color": "Đen 1", "price": 1350000, "stock": 51, "imageUrl": "https://cdn.hstatic.net/products/200000887901/2i3a6357.1_78da5e75a1fe48ab9f2756495ef83238_06edff54a85641379ad356c887a8e638.jpg" }
+    ]
+  },
+  {
+    "name": "Quần Âu Nam Aristino Regular Fit ATRR20A",
+    "brand": "Aristino",
+    "basePrice": 1350000,
+    "salePrice": null,
+    "description": "Dáng Regular Fit suông thoải mái. Thiết kế có tăng đơ tiện dụng ở cạp quần. Phù hợp cho phong cách công sở chỉn chu.",
+    "images": [
+      "https://cdn.hstatic.net/products/200000887901/2i3a6362.1_8451790c04464b2ca4bd11d103be59c3_346c3dc8a35b48d78e0ddc6b15d27888.jpg"
+    ],
+    "tags": ["NEW"],
+    "slug": "quan-au-nam-aristino-regular-fit-atrr20a",
+    "category": "Quần Âu",
+    "variants": [
+      { "sku": "ATRR20A-31-GREY", "size": "31", "color": "Xám 38", "price": 1350000, "stock": 56, "imageUrl": "https://cdn.hstatic.net/products/200000887901/2i3a6362.1_8451790c04464b2ca4bd11d103be59c3_346c3dc8a35b48d78e0ddc6b15d27888.jpg" }
+    ]
+  },
+  {
+    "name": "Quần Âu Nam Aristino Regular Fit ATR0090S1",
+    "brand": "Aristino",
+    "basePrice": 1050000,
+    "salePrice": null,
+    "description": "Phom Regular Fit phù hợp nhiều dáng người. Tone xanh tím than nam tính, chất liệu Rayon/Poly mềm mại và độ rũ tự nhiên.",
+    "images": [
+      "https://cdn.hstatic.net/products/200000887901/jtran1037_454385874c514b14994a263c1172e7c6.jpg"
+    ],
+    "tags": ["NEW"],
+    "slug": "quan-au-nam-aristino-regular-fit-atr0090s1",
+    "category": "Quần Âu",
+    "variants": [
+      { "sku": "ATR0090S1-32", "size": "32", "color": "Xanh tím than 86", "price": 1050000, "stock": 24, "imageUrl": "https://cdn.hstatic.net/products/200000887901/jtran1037_454385874c514b14994a263c1172e7c6.jpg" }
+    ]
+  },
+  {
+    "name": "Quần Âu Nam Aristino Cropped ATR0610Z",
+    "brand": "Aristino",
+    "basePrice": 995000,
+    "salePrice": null,
+    "description": "Dáng cropped ôm vừa, trẻ trung, chiều dài ngắn tới mắt cá chân. Tone be thanh lịch, chất liệu Poly/Rayon thoáng khí.",
+    "images": [
+      "https://cdn.hstatic.net/products/200000887901/img_7082_668a7f4a8b504c41a136a3e9c8a422fb.jpg"
+    ],
+    "tags": ["NEW"],
+    "slug": "quan-au-nam-aristino-cropped-atr0610z",
+    "category": "Quần Âu",
+    "variants": [
+      { "sku": "ATR0610Z-30", "size": "30", "color": "Be 145 M Slub", "price": 995000, "stock": 22, "imageUrl": "https://cdn.hstatic.net/products/200000887901/img_7082_668a7f4a8b504c41a136a3e9c8a422fb.jpg" }
+    ]
+  },
+  {
+    "name": "Quần Âu Nam Aristino Slim Fit ATR0360S3",
+    "brand": "Aristino",
+    "basePrice": 1595000,
+    "salePrice": null,
+    "description": "Phom Slim Fit ôm nhẹ, chất liệu Polyamide cao cấp co giãn cực tốt và khả năng chống thấm nước hiệu quả.",
+    "images": [
+      "https://product.hstatic.net/200000887901/product/img_0778.1_847a1eac71fa487a89cbfa9e223c64bb.jpg"
+    ],
+    "tags": ["NEW"],
+    "slug": "quan-au-nam-aristino-slim-fit-atr0360s3",
+    "category": "Quần Âu",
+    "variants": [
+      { "sku": "ATR0360S3-34", "size": "34", "color": "Be 88", "price": 1595000, "stock": 51, "imageUrl": "https://product.hstatic.net/200000887901/product/img_0778.1_847a1eac71fa487a89cbfa9e223c64bb.jpg" }
+    ]
+  },
+  {
+    "name": "Quần Jeans Nam Xanh Đậm Hiệu Ứng Giặt Mài Aristino AJN0060S0",
+    "brand": "Aristino",
+    "basePrice": 1195000,
+    "salePrice": 1075500,
+    "description": "Quần jeans phom Regular Fit suông, độ ôm vừa phải. Nút quần biểu tượng Mặt Trời Huyền Thoại sang trọng. 99.5% Cotton bền bỉ.",
+    "images": [
+      "https://cdn.hstatic.net/products/200000887901/xanh-cham-dam_6e47db8a5e2b4f3c83c93abce9efff09_e5235069ac294f0f95f2caa7e9ddb1e1.jpg"
+    ],
+    "tags": ["NEW"],
+    "slug": "quan-jeans-nam-xanh-dam-hieu-ung-giat-mai-aristino-ajn0060s0",
+    "category": "Quần Jeans",
+    "variants": [
+      { "sku": "AJN0060S0-31", "size": "31", "color": "Xanh chàm đậm", "price": 1075500, "stock": 18, "imageUrl": "https://cdn.hstatic.net/products/200000887901/xanh-cham-dam_6e47db8a5e2b4f3c83c93abce9efff09_e5235069ac294f0f95f2caa7e9ddb1e1.jpg" }
+    ]
+  },
+  {
+    "name": "Quần Dài Gió Nam Aristino Regular Fit AWP002BS0",
+    "brand": "Aristino",
+    "basePrice": 850000,
+    "salePrice": null,
+    "description": "Quần gió phom Regular Fit, ống côn nhẹ. Cạp chun co giãn, vải gió mỏng nhẹ, ít nhăn và khô nhanh, thích hợp du lịch.",
+    "images": [
+      "https://cdn.hstatic.net/products/200000887901/080a5161_b7eb66d24957401298d568f440f947e6.jpg"
+    ],
+    "tags": ["NEW"],
+    "slug": "quan-dai-gio-nam-aristino-regular-fit-awp002bs0",
+    "category": "Quần Gió",
+    "variants": [
+      { "sku": "AWP002BS0-XL-BLACK", "size": "XL", "color": "Đen 8", "price": 850000, "stock": 29, "imageUrl": "https://cdn.hstatic.net/products/200000887901/080a5164_4c7bb1687aa74e4c819ea9f690880778.jpg" }
+    ]
+  },
+  {
+    "name": "Quần Rời Thu Đông Nam Aristino Regular Fit APA006BS0",
+    "brand": "Aristino",
+    "basePrice": 750000,
+    "salePrice": null,
+    "description": "Quần dài thu đông chất liệu 78% Cotton giữ ấm tốt, thoáng khí. Cạp chun linh hoạt, túi khóa kéo an toàn cho vật dụng cá nhân.",
+    "images": [
+      "https://cdn.hstatic.net/products/200000887901/img_1044.1_f86dfa061bd1463db21bd69a38c56ac4.jpg"
+    ],
+    "tags": ["NEW"],
+    "slug": "quan-roi-thu-dong-nam-aristino-regular-fit-apa006bs0",
+    "category": "Quần Thu Đông",
+    "variants": [
+      { "sku": "APA006BS0-L-NAVY", "size": "L", "color": "Xanh tím than 26", "price": 750000, "stock": 56, "imageUrl": "https://cdn.hstatic.net/products/200000887901/img_0738.1_e07ff42608f245e9bfb384a63b0a9ad8.jpg" }
+    ]
+  },
+  {
+    "name": "Quần kaki Nam Aristino AKKR02",
+    "brand": "Aristino",
+    "basePrice": 750000,
+    "salePrice": 375000,
+    "description": "Quần khaki 100% cotton cao cấp, phom Regular Fit suông nhẹ. Dệt Dobby chỉn chu, mang lại diện mạo lịch lãm.",
+    "images": [
+      "https://cdn.hstatic.net/products/200000887901/dsc00109_7df94857780f47c3b02189b79410da90_2fd03b6614a74d3383f94b5f934be4cf.jpg"
+    ],
+    "tags": ["NEW"],
+    "slug": "quan-kaki-nam-aristino-akkr02",
+    "category": "Quần Kaki",
+    "variants": [
+      { "sku": "AKKR02-31-YELLOW", "size": "31", "color": "Vàng 34", "price": 375000, "stock": 25, "imageUrl": "https://cdn.hstatic.net/products/200000887901/dsc00114_736c6dcefea549c08e8a0a9a5e618504_27093d1940324d159c2a6ab583065d33.jpg" }
+    ]
+  },
+  {
+    "name": "Quần Âu Đen Nam Aristino Business Wool lông cừu Fiero 1TR0090S1",
+    "brand": "Aristino Business",
+    "basePrice": 2350000,
+    "salePrice": null,
+    "description": "Dòng Wool lông cừu cao cấp (50% Wool). Ly quần ép sắc nét, giữ phom tốt, không nhăn, thấm hút vượt trội cho nam công sở.",
+    "images": [
+      "https://product.hstatic.net/200000887901/product/img_0180_efc929f901144a308ecad425ed162eb8.jpg"
+    ],
+    "tags": ["NEW"],
+    "slug": "quan-au-den-nam-aristino-business-wool-long-cuu-fiero-1tr0090s1",
+    "category": "Quần Âu",
+    "variants": [
+      { "sku": "1TR0090S1-33", "size": "33", "color": "Đen 09", "price": 2350000, "stock": 11, "imageUrl": "https://product.hstatic.net/200000887901/product/img_0289.1_91c806c360144be8ab14f5d57496df6c.jpg" }
+    ]
+  },
+  {
+    "name": "Quần Âu Nam Aristino Regular Fit ATR0090S1",
+    "brand": "Aristino",
+    "basePrice": 1050000,
+    "salePrice": null,
+    "description": "Phom dáng Regular Fit suông nhẹ, tôn dáng. Tone xanh tím than nam tính. Chất liệu Rayon/Poly mềm mại và có độ rũ tự nhiên.",
+    "images": [
+      "https://cdn.hstatic.net/products/200000887901/jtran1037_454385874c514b14994a263c1172e7c6.jpg"
+    ],
+    "tags": ["NEW"],
+    "slug": "quan-au-nam-aristino-regular-fit-atr0090s1-navy",
+    "category": "Quần Âu",
+    "variants": [
+      {
+        "sku": "ATR0090S1-32",
+        "size": "32",
+        "color": "Xanh tím than 86",
+        "price": 1050000,
+        "stock": 24,
+        "imageUrl": "https://cdn.hstatic.net/products/200000887901/jtran1037_454385874c514b14994a263c1172e7c6.jpg"
+      }
+    ]
+  },
+  {
+    "name": "Quần Âu Nam Aristino Cropped ATR0600Z",
+    "brand": "Aristino",
+    "basePrice": 895000,
+    "salePrice": null,
+    "description": "Phom dáng cropped ôm vừa, chiều dài ngắn trẻ trung tới mắt cá chân. Màu Be thanh lịch, phù hợp nhiều sự kiện.",
+    "images": [
+      "https://cdn.hstatic.net/products/200000887901/img_3953.1_e766dc6896ce4b12aadeb6deae08f70a.jpg"
+    ],
+    "tags": ["NEW"],
+    "slug": "quan-au-nam-aristino-cropped-atr0600z",
+    "category": "Quần Âu",
+    "variants": [
+      {
+        "sku": "ATR0600Z-32",
+        "size": "32",
+        "color": "Be 104 Solid",
+        "price": 895000,
+        "stock": 27,
+        "imageUrl": "https://cdn.hstatic.net/products/200000887901/img_3953.1_e766dc6896ce4b12aadeb6deae08f70a.jpg"
+      }
+    ]
+  },
+  {
+    "name": "Quần Âu Đen Nam Aristino Business Wool lông cừu Fiero 1TR0090S1",
+    "brand": "Aristino Business",
+    "basePrice": 2350000,
+    "salePrice": null,
+    "description": "Chất liệu Wool lông cừu tự nhiên cao cấp, ly quần ép sắc nét. Phom Fiero đứng dáng, sang trọng cho quý ông công sở.",
+    "images": [
+      "https://product.hstatic.net/200000887901/product/img_0180_efc929f901144a308ecad425ed162eb8.jpg"
+    ],
+    "tags": ["NEW"],
+    "slug": "quan-au-den-nam-aristino-business-wool-long-cuu-fiero-1tr0090s1",
+    "category": "Quần Âu",
+    "variants": [
+      {
+        "sku": "1TR0090S1-31",
+        "size": "31",
+        "color": "Đen 09",
+        "price": 2350000,
+        "stock": 57,
+        "imageUrl": "https://product.hstatic.net/200000887901/product/img_0289.1_91c806c360144be8ab14f5d57496df6c.jpg"
+      }
+    ]
+  },
+  {
+    "name": "Quần Kaki Nam Aristino Fiero AKK0190S0",
+    "brand": "Aristino",
+    "basePrice": 1350000,
+    "salePrice": null,
+    "description": "Phom dáng Fiero suông rộng thoải mái. Chất liệu 96% Cotton thoáng khí, thấm hút mồ hôi tốt kết hợp 4% Spandex co giãn.",
+    "images": [
+      "https://cdn.hstatic.net/products/200000887901/080a5691_28d03ad85db54d66999e8ddfc9640624_f40c24517f554ee9b33b89da441b4ec1.jpg"
+    ],
+    "tags": ["NEW"],
+    "slug": "quan-kaki-nam-aristino-fiero-akk0190s0",
+    "category": "Quần Kaki",
+    "variants": [
+      {
+        "sku": "AKK0190S0-32",
+        "size": "32",
+        "color": "Xanh rêu 145",
+        "price": 1350000,
+        "stock": 23,
+        "imageUrl": "https://cdn.hstatic.net/products/200000887901/jtran1030_2fe9e1a54bc242a9a77304637cb764dd_22a04bf441fc4bc387f4357dae8dd6e6.jpg"
+      }
+    ]
+  },
+  {
+    "name": "Quần Jeans Nam Xanh Đậm Aristino AJN0060S0",
+    "brand": "Aristino",
+    "basePrice": 1195000,
+    "salePrice": 1075500,
+    "description": "Phom Regular Fit suông, hiệu ứng giặt mài hiện đại. Nút quần biểu tượng Mặt Trời Huyền Thoại. Chất liệu 99.5% Cotton bền bỉ.",
+    "images": [
+      "https://cdn.hstatic.net/products/200000887901/xanh-cham-dam_6e47db8a5e2b4f3c83c93abce9efff09_e5235069ac294f0f95f2caa7e9ddb1e1.jpg"
+    ],
+    "tags": ["NEW"],
+    "slug": "quan-jeans-nam-xanh-dam-hieu-ung-giat-mai-aristino-ajn0060s0",
+    "category": "Quần Jeans",
+    "variants": [
+      {
+        "sku": "AJN0060S0-30-NAVY",
+        "size": "30",
+        "color": "Xanh chàm đậm",
+        "price": 1075500,
+        "stock": 37,
+        "imageUrl": "https://cdn.hstatic.net/products/200000887901/xanh-cham-dam_6e47db8a5e2b4f3c83c93abce9efff09_e5235069ac294f0f95f2caa7e9ddb1e1.jpg"
+      }
+    ]
+  },
+  {
+    "name": "Quần Ba Lỗ Tanktop Nam Basic Aristino ATT001EXP03",
+    "brand": "Aristino",
+    "basePrice": 314000,
+    "salePrice": 235500,
+    "description": "Combo 03 áo tank top basic, phom dáng vừa vặn. 100% Cotton tự nhiên mềm mại, thoáng mát, thân thiện làn da.",
+    "images": [
+      "https://cdn.hstatic.net/products/200000887901/44a65b6b-0966-4e1a-8975-21a5c746_aba5f7484fb847ca9af053b54f515f46.jpg"
+    ],
+    "tags": ["NEW"],
+    "slug": "combo-3-ao-ba-lo-tanktop-nam-basic-aristino-att001exp03",
+    "category": "Áo Tanktop",
+    "variants": [
+      {
+        "sku": "ATT001EXP03-L",
+        "size": "L",
+        "color": "Trắng",
+        "price": 235500,
+        "stock": 54,
+        "imageUrl": "https://cdn.hstatic.net/products/200000887901/44a65b6b-0966-4e1a-8975-21a5c746_aba5f7484fb847ca9af053b54f515f46.jpg"
+      }
+    ]
+  },
+  {
+    "name": "[ARISTINO x QUỐC TRƯỜNG] Quần jeans Nam Aristino AJN0080Z",
+    "brand": "Aristino",
+    "basePrice": 950000,
+    "salePrice": null,
+    "description": "Phom dáng Regular Fit suông nhẹ, thiết kế túi xẻ 2 bên và túi vuông phía sau. Chất liệu 99% Cotton thoải mái.",
+    "images": [
+      "https://cdn.hstatic.net/products/200000887901/upload_f34b2a630ecc4d819b7cc27760a71209.jpg"
+    ],
+    "tags": ["NEW"],
+    "slug": "aristino-x-quoc-truong-quan-jeans-nam-aristino-ajn0080z",
+    "category": "Quần Jeans",
+    "variants": [
+      {
+        "sku": "AJN0080Z-32",
+        "size": "32",
+        "color": "Xanh chàm đậm",
+        "price": 950000,
+        "stock": 48,
+        "imageUrl": "https://product.hstatic.net/200000887901/product/quan-jeans-nam-aristino-ajn0080z__2__93786fd2fb4543e8b35850dfa105ba33_a35015ed287e464b95da734e5ae0afd6.jpg"
+      }
+    ]
+  },
+  {
+    "name": "Quần Jeans Nam Aristino AJN0030Z",
+    "brand": "Aristino",
+    "basePrice": 950000,
+    "salePrice": null,
+    "description": "Phom dáng Slim Fit hiện đại, ôm vừa vặn và tôn dáng. Chất liệu 99% Cotton bền bỉ kết hợp 1% Spandex co giãn nhẹ, mang lại cảm giác thoải mái khi vận động.",
+    "images": [
+      "https://cdn.hstatic.net/products/200000887901/upload_0f65cca34a2e4aaab4789ed06b1c27f8.jpg"
+    ],
+    "tags": ["NEW"],
+    "slug": "quan-jeans-nam-aristino-ajn0030z",
+    "category": "Quần Jeans",
+    "variants": [
+      {
+        "sku": "AJN0030Z-31-NAVY",
+        "size": "31",
+        "color": "Xanh chàm đậm",
+        "price": 950000,
+        "stock": 51,
+        "imageUrl": "https://product.hstatic.net/200000887901/product/img_6651.1_7e6126d1ca064f33bfde70b84e8fc62f.jpg"
+      }
+    ]
+  },
+  {
+    "name": "Quần âu Nam Aristino Phom Cropped ATRM040Z",
+    "brand": "Aristino",
+    "basePrice": 1195000,
+    "salePrice": null,
+    "description": "Dáng ôm vừa, độ dài cropped trẻ trung. Chất liệu Rayon/Poly/Spandex mỏng nhẹ, bề mặt vải mịn mượt và bay rũ tự nhiên.",
+    "images": [
+      "https://cdn.hstatic.net/products/200000887901/upload_655c74a5cb2a4fe1b148be56d68c4a90.jpg"
+    ],
+    "tags": ["NEW"],
+    "slug": "quan-au-nam-aristino-phom-cropped-atrm040z",
+    "category": "Quần Cropped",
+    "variants": [
+      {
+        "sku": "ATRM040Z-32",
+        "size": "32",
+        "color": "Be 074 MF",
+        "price": 1195000,
+        "stock": 21,
+        "imageUrl": "https://cdn.hstatic.net/products/200000887901/upload_b9b11a43b57842a6b546365ec9307d1c.jpg"
+      }
+    ]
+  },
+  {
+    "name": "Áo dài Nam Aristino Trống Đồng AAD0060Z",
+    "brand": "Aristino",
+    "basePrice": 2600000,
+    "salePrice": 2080000,
+    "description": "Áo dài Ngũ Thân cổ đứng, thêu hình Trống Đồng di sản trên nền vải gấm cao cấp. Sự kết hợp hoàn hảo giữa văn hóa truyền thống và thẩm mỹ đương đại.",
+    "images": [
+      "https://product.hstatic.net/200000887901/product/ao-dai-nam-aristino-aad0060z_f835b0c28a58438282b3014bdfc2d14d_04fdf1d3703e47e4b723746484d710c9.jpg"
+    ],
+    "tags": ["NEW"],
+    "slug": "ao-dai-nam-aristino-aad0060z",
+    "category": "Áo Dài",
+    "variants": [
+      {
+        "sku": "AAD0060Z-M",
+        "size": "M",
+        "color": "Trắng 6 thêu",
+        "price": 2080000,
+        "stock": 40,
+        "imageUrl": "https://product.hstatic.net/200000887901/product/dsc06127x900x900x4_be211342c17547b3b0ec43e58250af76_6f50f2f76b3444cab84d19319b1b2fcb.jpg"
+      }
+    ]
+  },
+  {
+    "name": "Áo dài Nam Aristino Báu Vật Đàn Tỳ Bà AAD0020Z",
+    "brand": "Aristino",
+    "basePrice": 2600000,
+    "salePrice": 2080000,
+    "description": "Thiết kế Ngũ Thân cài khuy trên nền vải gấm dệt chữ Vạn. Hình thêu lấy cảm hứng từ báu vật đàn Tỳ Bà trên cổng Nghi Môn, cố đô Huế.",
+    "images": [
+      "https://product.hstatic.net/200000887901/product/ao-dai-nam-aristino-aad0020z_d7d35fad8ce447a8ad571590a07d8b77_7da73198fa63435b8d2fb32cb5a60f9f.jpg"
+    ],
+    "tags": ["NEW"],
+    "slug": "ao-dai-nam-aristino-aad0020z",
+    "category": "Áo Dài",
+    "variants": [
+      {
+        "sku": "AAD0020Z-L",
+        "size": "L",
+        "color": "Xanh tím than 45 thêu",
+        "price": 2080000,
+        "stock": 12,
+        "imageUrl": "https://product.hstatic.net/200000887901/product/dsc05791x900x900x4_f9c94a95f6c94834a998241908692db9_0f4b33a4494949258494198b4df14101.jpg"
+      }
+    ]
+  },
+  {
+    "name": "Nước Hoa Nam Aristino Paris Odyssey No.12 100ml",
+    "brand": "Aristino",
+    "basePrice": 3600000,
+    "salePrice": null,
+    "description": "Nhóm hương Fruity, Woody, Musk. Mở đầu bằng bạc hà và chanh vàng, kết thúc bằng cỏ hương bài và xạ hương trắng quyền lực. Sản xuất tại Pháp.",
+    "images": [
+      "https://cdn.hstatic.net/products/200000887901/vuong_27af5f22383a4c2a8f2151ff1d9adfad.jpg"
+    ],
+    "tags": ["NEW"],
+    "slug": "nuoc-hoa-nam-aristino-paris-odyssey-no-12-100ml",
+    "category": "Nước Hoa",
+    "variants": [
+      {
+        "sku": "APFODY01AS-100ML",
+        "size": "100 ml",
+        "color": "Chai thủy tinh",
+        "price": 3600000,
+        "stock": 54,
+        "imageUrl": "https://cdn.hstatic.net/products/200000887901/dsc02377_de241b11a4534bedb8954e657562b761_f5a5ff543c554b1ca278e1ec2d4047c9.jpg"
+      }
+    ]
+  },
+  {
+    "name": "Nước Hoa Nam Aristino Paris Rooted Soul 100ml",
+    "brand": "Aristino",
+    "basePrice": 3600000,
+    "salePrice": null,
+    "description": "Nhóm hương gỗ phương Đông (Oriental Woody). Hương trầm hương quý giá kết hợp hổ phách ấm áp, tạo nên chiều sâu huyền bí và sang trọng.",
+    "images": [
+      "https://cdn.hstatic.net/products/200000887901/vuong__1__93b8ef9239c3487489e26b5c827b746a.jpg"
+    ],
+    "tags": ["NEW"],
+    "slug": "nuoc-hoa-nam-aristino-paris-rooted-soul-100ml",
+    "category": "Nước Hoa",
+    "variants": [
+      {
+        "sku": "APFROT01AS-100ML",
+        "size": "100 ml",
+        "color": "Chai thủy tinh",
+        "price": 3600000,
+        "stock": 29,
+        "imageUrl": "https://cdn.hstatic.net/products/200000887901/dsc02420_0115f7c448f245ceab0a66fea4a26683_fbf596ebf2b5418aad585b0b2d108a78.jpg"
+      }
+    ]
+  }
+]

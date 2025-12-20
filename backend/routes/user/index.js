@@ -1,11 +1,11 @@
 import { Router } from "express";
-import productRoutes from "./productRoute.js";
+import { authenticateToken } from "../../middlewares/auth.js";
+import { getProfile } from "../../controllers/user/profileController.js";
 import wishlistRoutes from "./wishlistRoutes.js";
 
 const userRouter = Router();
 
-userRouter.use("/user/products", productRoutes);
 userRouter.use("/wishlist", wishlistRoutes);
+userRouter.get("/user/profile", authenticateToken, getProfile);
 
 export default userRouter;
-

@@ -1,14 +1,11 @@
 import express from 'express';
 import { authenticateToken } from '../middlewares/auth.js';
-import { isAdmin } from '../middlewares/authMiddleware.js';
 import {
     createOrder,
     getMyOrders,
     getOrderDetails,
     getShippingFee,
     cancelMyOrder,
-    getAllOrders,
-    updateStatus,
     vnPayCallback,
     checkPaymentStatus
 } from '../controllers/orderController.js';
@@ -200,62 +197,5 @@ router.get('/:id', getOrderDetails);
  *         description: Không tìm thấy đơn hàng
  */
 router.put('/:id/cancel', cancelMyOrder);
-
-// === ADMIN ROUTES ===
-// Chỉ Admin mới được truy cập các đường dẫn này
-
-/**
- * @swagger
- * /admin/all:
- *   get:
- *     summary: Xem danh sách tất cả đơn hàng (Admin only)
- *     tags: [Orders, Admin]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Danh sách tất cả đơn hàng
- *       403:
- *         description: Không có quyền truy cập
- */
-router.get('/admin/all', isAdmin, getAllOrders);
-
-/**
- * @swagger
- * /admin/{id}/status:
- *   put:
- *     summary: Cập nhật trạng thái đơn hàng (Admin only)
- *     tags: [Orders, Admin]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: integer
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - status
- *             properties:
- *               status:
- *                 type: string
- *                 enum: [PENDING, CONFIRMED, PROCESSING, SHIPPING, DELIVERED, CANCELLED]
- *     responses:
- *       200:
- *         description: Cập nhật trạng thái thành công
- *       400:
- *         description: Lỗi cập nhật trạng thái
- *       403:
- *         description: Không có quyền truy cập
- *       404:
- *         description: Không tìm thấy đơn hàng
- */
-router.put('/admin/:id/status', isAdmin, updateStatus);
 
 export default router;

@@ -1,45 +1,140 @@
-import { registerUser, loginUser, logoutUser, sendOtpService, verifyOtpService, resetPasswordService, signInGoogle, signInFacebook, updateUserService } from "../services/authService.js";
+import { registerUser, loginUser, logoutUser, sendOtpService, verifyOtpService, resetPasswordService, signInGoogle, signInFacebook, updateUserService, verifyRefreshToken, createAccessToken } from "../services/authService.js";
 import passport  from "passport";
 import { buildOAuthCallbackUrl, redirectOAuthError } from "../utils/oauth.js";
 import { APP_CONSTANTS } from "../config/constants.js";
+import * as cartService from "../services/cartService.js";
+import { sendSuccess, sendError } from "./controllerUtils.js";
+
+const extractSessionId = (req) => {
+  const headerValue = req.headers["x-session-id"] || req.headers["x-sessionid"];
+  if (typeof headerValue === "string" && headerValue.trim()) {
+    return headerValue.trim();
+  }
+
+  const cookieHeader = req.headers?.cookie;
+  if (typeof cookieHeader === "string") {
+    const cookies = Object.fromEntries(
+      cookieHeader.split(";").map((part) => {
+        const [k, v] = part.split("=").map((s) => s.trim());
+        return [k, v];
+      })
+    );
+    if (cookies.sessionId) return cookies.sessionId;
+  }
+  return null;
+};
+
+// Get current user from token
+export const getCurrentUser = async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized"
+      });
+    }
+    
+    // req.user is set by authenticateToken middleware
+    const { password, access_token, refresh_token, ...userResponse } = req.user;
+    
+    sendSuccess(res, {
+      message: "User retrieved successfully",
+      data: userResponse
+    });
+  } catch (error) {
+    sendError(res, error);
+  }
+};
 
 // dang ky bang tai khoa local
 export const signUp = async (req,res) => {
     try{
         const newUser = await registerUser(req.body);
-        res.status(200).json({
-            success : true,
-            message : "User registered successfully",
-            user : newUser
-        })
+        sendSuccess(res, {
+            message: "User registered successfully",
+            data: { user: newUser }
+        });
     }catch(error){
-        res.status(404).json({
-            success : false,
-            message: error.message
-        })
+        sendError(res, error);
     }
 }
+
+//Refresh access token
+export const refreshAccessToken = async (req, res) => {
+  try {
+    const { refreshToken } = req.body;
+
+    if (!refreshToken) {
+      return res.status(401).json({
+        success: false,
+        message: "Refresh token required"
+      });
+    }
+
+    const decoded = verifyRefreshToken(refreshToken);
+    const { User } = await import("../models/index.js");
+    const user = await User.findByPk(decoded.id);
+
+    if (!user || user.refresh_token !== refreshToken) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid refresh token"
+      });
+    }
+
+    const newAccessToken = createAccessToken(user);
+
+    sendSuccess(res, {
+      message: "Token refreshed successfully",
+      data: {
+        accessToken: newAccessToken,
+        user: {
+          id: user.id,
+          email: user.email,
+          full_name: user.full_name,
+          role: user.role
+        }
+      }
+    });
+  } catch (error) {
+    res.status(401).json({
+      success: false,
+      message: "Invalid refresh token"
+    });
+  }
+};
+
 // dang nhap tai khoan bang local
 export const signIn = async (req,res) => {
     try{
-       const { email, password} = req.body;
+       const { email, password, isAdminLogin = false } = req.body;
        const result = await loginUser(email,password);
-       res.status(200).json({
-        success: true,
+
+       // If this is admin login, verify user has admin privileges
+       if (isAdminLogin && !['admin', 'super_admin'].includes(result.user.role)) {
+         return res.status(403).json({
+           success: false,
+           message: "Access denied. Admin privileges required."
+         });
+       }
+       const sessionId = extractSessionId(req);
+       if (sessionId) {
+        try {
+          await cartService.mergeGuestCartToUser(result.user.id, sessionId);
+        } catch (mergeError) {
+          console.error("Merge guest cart failed:", mergeError);
+        }
+       }
+       sendSuccess(res, {
         message: "User logged in successfully",
-        accessToken: result.accessToken,
-        refreshToken: result.refreshToken,
-        user: {
-            id: result.user.id,
-            email: result.user.email,
-            full_name: result.user.full_name
-        },
+        data: {
+            accessToken: result.accessToken,
+            refreshToken: result.refreshToken,
+            user: result.user
+        }
        });
     }catch(error){
-        res.status(404).json({
-            success : false,
-            message: error.message
-        })
+        sendError(res, error);
     }
 }
 
@@ -57,7 +152,7 @@ export const signOut = async (req,res) => {
         })
 
     }catch(error){
-        res.status(404).json({
+        res.status(400).json({
             success : false,
             message: error.message
         })

@@ -10,7 +10,7 @@ import { CartItem } from "./cartItemModel.js";
 import { Order } from "./orderModel.js";
 import { OrderItem } from "./orderItemModel.js";
 import { Payment } from "./paymentModel.js";
-import { Promotion } from "./promotionModel.js";
+import { Discount } from "./discountModel.js";
 import { Review } from "./reviewModel.js";
 // Sửa lại import Wishlist cho đồng bộ (có ngoặc nhọn nếu export const, không ngoặc nếu export default)
 // Dựa trên code cũ của bạn là 'export default Wishlist', nên import thế này là đúng:
@@ -71,20 +71,25 @@ Category.hasMany(Category, {
 
 
 
-Order.belongsTo(User, { foreignKey: 'user_id' });
-User.hasMany(Order, { foreignKey: 'user_id' });
+Order.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+User.hasMany(Order, { foreignKey: 'user_id', as: 'orders' });
 
-Order.belongsTo(Promotion, { foreignKey: 'promotion_id', allowNull: true });
-Promotion.hasMany(Order, { foreignKey: 'promotion_id' });
+// Discount associations
+Discount.hasMany(Order, { foreignKey: 'discount_id' });
+Order.belongsTo(Discount, { foreignKey: 'discount_id', allowNull: true });
 
-Order.hasMany(OrderItem, { foreignKey: 'order_id' });
-OrderItem.belongsTo(Order, { foreignKey: 'order_id' });
+Order.hasMany(OrderItem, { foreignKey: 'order_id', as: 'order_items' });
+OrderItem.belongsTo(Order, { foreignKey: 'order_id', as: 'order' });
+
+// OrderItem to Product association
+OrderItem.belongsTo(Product, { foreignKey: 'product_id', as: 'product' });
+Product.hasMany(OrderItem, { foreignKey: 'product_id', as: 'orderItems' });
 
 Order.hasOne(Payment, { foreignKey: 'order_id' });
 Payment.belongsTo(Order, { foreignKey: 'order_id' });
 
 // Shipping address linkage
-Order.belongsTo(ShippingAddress, { foreignKey: 'shipping_address_id' });
+Order.belongsTo(ShippingAddress, { foreignKey: 'shipping_address_id', as: 'shipping_address' });
 ShippingAddress.hasMany(Order, { foreignKey: 'shipping_address_id' });
 
 User.hasMany(ShippingAddress, { foreignKey: 'user_id' });
@@ -108,7 +113,7 @@ export {
   Order,
   OrderItem,
   Payment,
-  Promotion, // Đã có Promotion
+  Discount, // Unified Discount model
   Review,
-  Wishlist   // Đã có Wishlist
+  Wishlist
 };

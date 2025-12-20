@@ -7,4 +7,6 @@ export const CartItem = sequelize.define("cart_items", {
   product_variant_id: DataTypes.INTEGER,
   quantity: { type: DataTypes.INTEGER, defaultValue: 1 },
   added_at: { type: DataTypes.DATE, defaultValue: DataTypes.NOW },
+  created_at: { type: DataTypes.DATE, defaultValue: DataTypes.NOW },
+  updated_at: { type: DataTypes.DATE, defaultValue: DataTypes.NOW },
 });

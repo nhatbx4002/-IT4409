@@ -12,3 +12,5 @@ figma/
 plan/
 .shared/
 *.md
+.claude/
+AI/

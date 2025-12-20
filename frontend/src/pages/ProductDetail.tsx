@@ -86,7 +86,7 @@ export default function ProductDetail() {
     <MainLayout>
     <div className="min-h-screen bg-white">
       {/* Main Container */}
-      <div className="mx-auto max-w-6xl px-6 pb-16 pt-4 sm:px-8 lg:px-0">
+      <div className="w-full px-4 pb-16 pt-4 sm:px-8 lg:px-12 xl:px-16">
           {/* Breadcrumbs */}
           <div className="pt-6 pb-4">
             <ProductBreadcrumbs product={product} />

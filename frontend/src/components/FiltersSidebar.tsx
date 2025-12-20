@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
-import { ChevronDown, X } from "lucide-react";
+import { ChevronDown, X, Search } from "lucide-react";
 import { Checkbox } from "./ui/checkbox";
 import { Slider } from "./ui/slider";
 import { Label } from "./ui/label";
 import { Separator } from "./ui/separator";
+import { Input } from "./ui/input";
 import type { ProductFiltersState } from "@/types/products";
 import { CATEGORY_OPTIONS, BRAND_OPTIONS, COLOR_OPTIONS } from "@/data/filter-options";
 import { BRAND_GOLD, FONT_SANS } from "@/theme/constants";
@@ -27,8 +28,13 @@ export function FilterSidebar({
   const [pendingFilters, setPendingFilters] = useState<ProductFiltersState>(filters);
   
   const [expandedSections, setExpandedSections] = useState<string[]>([
-    'category', 'size', 'color', 'price', 'brand'
+    'category', 'size', 'color', 'brand'
   ]);
+
+  // Search states for expandable categories
+  const [brandSearch, setBrandSearch] = useState('');
+  const [showMoreBrands, setShowMoreBrands] = useState(false);
+  const [showMoreCategories, setShowMoreCategories] = useState(false);
 
   // Update pending filters when actual filters change from outside
   useEffect(() => {
@@ -90,26 +96,26 @@ export function FilterSidebar({
     const activeCount = getFilterCount(id);
     
     return (
-      <div className="border-b border-black/10 last:border-0">
+      <div className="border-b border-black/8 last:border-0">
         <button
           onClick={() => toggleSection(id)}
-          className="w-full py-4 flex items-center justify-between text-left transition-colors duration-300 hover:text-[#D4AF37]"
+          className="w-full py-4 flex items-center justify-between text-left transition-colors duration-300 hover:text-black"
         >
           <div className="flex items-center gap-2">
             <span 
-              className="text-black"
+              className="text-black font-semibold"
               style={{ 
                 fontFamily: FONT_SANS,
-                fontWeight: 500
+                fontSize: '15px'
               }}
             >
               {title}
             </span>
             {activeCount > 0 && (
               <span 
-                className="px-2 py-0.5 rounded-full text-xs text-black"
+                className="px-2.5 py-1 rounded-full text-xs text-black font-bold"
                 style={{ 
-                  backgroundColor: BRAND_GOLD,
+                  backgroundColor: '#D4AF37',
                   fontFamily: FONT_SANS
                 }}
               >
@@ -118,7 +124,7 @@ export function FilterSidebar({
             )}
           </div>
           <ChevronDown 
-            className={`w-5 h-5 transition-transform duration-300 ${
+            className={`w-5 h-5 text-black/70 transition-transform duration-300 ${
               isExpanded ? 'rotate-180' : ''
             }`}
           />
@@ -127,7 +133,7 @@ export function FilterSidebar({
         <div 
           className="overflow-hidden transition-all duration-500"
           style={{
-            maxHeight: isExpanded ? '500px' : '0',
+            maxHeight: isExpanded ? '800px' : '0',
             opacity: isExpanded ? 1 : 0
           }}
         >
@@ -144,7 +150,7 @@ export function FilterSidebar({
       {/* Category Filter */}
       <FilterSection title="Category" id="category">
         <div className="space-y-3">
-          {CATEGORY_OPTIONS.map((category) => (
+          {CATEGORY_OPTIONS.slice(0, showMoreCategories ? undefined : 5).map((category) => (
             <div key={category.slug} className="flex items-center space-x-2">
               <Checkbox
                 id={`category-${category.slug}`}
@@ -157,17 +163,26 @@ export function FilterSidebar({
                       : pendingFilters.categories.filter(c => c !== category.slug)
                   });
                 }}
-                className="border-2 border-black/20 data-[state=checked]:bg-[#D4AF37] data-[state=checked]:border-[#D4AF37]"
+                className="border-2 border-black/20 data-[state=checked]:bg-black data-[state=checked]:border-black w-5 h-5"
               />
               <Label
                 htmlFor={`category-${category.slug}`}
-                className="cursor-pointer text-sm text-[#666666] hover:text-black transition-colors duration-300"
+                className="cursor-pointer text-sm text-[#333333] hover:text-black transition-colors duration-300 font-medium"
               >
                 {category.label}
               </Label>
             </div>
           ))}
         </div>
+        
+        {CATEGORY_OPTIONS.length > 5 && (
+          <button
+            onClick={() => setShowMoreCategories(!showMoreCategories)}
+            className="mt-3 text-xs font-semibold text-[#D4AF37] hover:text-[#C99D2B] transition-colors duration-300 underline"
+          >
+            {showMoreCategories ? 'Show less' : 'Show more'}
+          </button>
+        )}
       </FilterSection>
 
       <Separator className="my-0" />
@@ -187,10 +202,10 @@ export function FilterSidebar({
                 });
               }}
               className={`
-                py-2 border-2 transition-all duration-300
+                py-2.5 px-1 rounded-lg border-2 font-semibold text-sm transition-all duration-300
                 ${pendingFilters.sizes.includes(size)
-                  ? 'border-[#D4AF37] bg-[#D4AF37] text-black'
-                  : 'border-black/20 text-[#666666] hover:border-[#D4AF37]'
+                  ? 'border-black bg-black text-white shadow-md'
+                  : 'border-black/15 text-black/70 hover:border-black/30 active:border-black'
                 }
               `}
               style={{ fontFamily: FONT_SANS }}
@@ -205,29 +220,39 @@ export function FilterSidebar({
 
       {/* Color Filter */}
       <FilterSection title="Color" id="color">
-        <div className="flex gap-3 flex-wrap">
+        <div className="flex gap-4 flex-wrap">
           {COLOR_OPTIONS.map((color) => (
-            <button
-              key={color.name}
-              onClick={() => {
-                setPendingFilters({
-                  ...pendingFilters,
-                  colors: pendingFilters.colors.includes(color.name)
-                    ? pendingFilters.colors.filter(c => c !== color.name)
-                    : [...pendingFilters.colors, color.name]
-                });
-              }}
-              className={`
-                relative w-10 h-10 rounded-full border-2 transition-all duration-300
-                ${pendingFilters.colors.includes(color.name)
-                  ? 'border-[#D4AF37] ring-2 ring-[#D4AF37] ring-offset-2'
-                  : 'border-gray-300 hover:border-[#D4AF37]'
-                }
-              `}
-              style={{ backgroundColor: color.hex }}
-              title={color.name}
-              aria-label={color.name}
-            />
+            <div key={color.name} className="flex flex-col items-center gap-2">
+              <button
+                onClick={() => {
+                  setPendingFilters({
+                    ...pendingFilters,
+                    colors: pendingFilters.colors.includes(color.name)
+                      ? pendingFilters.colors.filter(c => c !== color.name)
+                      : [...pendingFilters.colors, color.name]
+                  });
+                }}
+                className={`
+                  relative w-12 h-12 rounded-full border-3 transition-all duration-300
+                  ${pendingFilters.colors.includes(color.name)
+                    ? 'border-black ring-2 ring-black ring-offset-2 shadow-lg'
+                    : 'border-gray-300 hover:border-black/50'
+                  }
+                  ${['#FFFFFF', '#F5F5DC'].includes(color.hex) ? 'border-black/30' : ''}
+                `}
+                style={{ 
+                  backgroundColor: color.hex,
+                  boxShadow: ['#FFFFFF', '#F5F5DC'].includes(color.hex) 
+                    ? 'inset 0 0 0 1px rgba(0,0,0,0.1)' 
+                    : undefined
+                }}
+                title={color.name}
+                aria-label={color.name}
+              />
+              <span className="text-xs text-black/70 font-medium text-center w-12 truncate">
+                {color.name}
+              </span>
+            </div>
           ))}
         </div>
       </FilterSection>
@@ -237,22 +262,72 @@ export function FilterSidebar({
       {/* Price Range Filter */}
       <FilterSection title="Price Range" id="price">
         <div className="space-y-4">
-          <Slider
-            value={pendingFilters.priceRange}
-            onValueChange={(value) => {
-              setPendingFilters({
-                ...pendingFilters,
-                priceRange: value as [number, number]
-              });
-            }}
-            min={0}
-            max={500}
-            step={10}
-            className="[&_[role=slider]]:bg-[#D4AF37] [&_[role=slider]]:border-[#D4AF37]"
-          />
-          <div className="flex items-center justify-between text-sm text-[#666666]">
-            <span>${pendingFilters.priceRange[0]}</span>
-            <span>${pendingFilters.priceRange[1]}+</span>
+          {/* Price Display Labels */}
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex-1">
+              <span className="text-xs text-black/50 uppercase tracking-wider font-semibold">Min</span>
+              <div className="text-lg font-bold text-black">${pendingFilters.priceRange[0]}</div>
+            </div>
+            <div className="w-px h-8 bg-black/10" />
+            <div className="flex-1 text-right">
+              <span className="text-xs text-black/50 uppercase tracking-wider font-semibold">Max</span>
+              <div className="text-lg font-bold text-black">${pendingFilters.priceRange[1]}+</div>
+            </div>
+          </div>
+
+          {/* Slider - Improved thickness and styling */}
+          <div className="py-2">
+            <Slider
+              value={pendingFilters.priceRange}
+              onValueChange={(value) => {
+                setPendingFilters({
+                  ...pendingFilters,
+                  priceRange: value as [number, number]
+                });
+              }}
+              min={0}
+              max={500}
+              step={10}
+              className="[&_[role=slider]]:bg-black [&_[role=slider]]:border-black [&_[role=slider]]:w-5 [&_[role=slider]]:h-5 [&_[role=slider]]:shadow-md"
+            />
+          </div>
+
+          {/* Price inputs for precise control */}
+          <div className="flex gap-2 mt-3">
+            <div className="flex-1">
+              <Input
+                type="number"
+                min={0}
+                max={500}
+                value={pendingFilters.priceRange[0]}
+                onChange={(e) => {
+                  const val = Math.min(Number(e.target.value), pendingFilters.priceRange[1]);
+                  setPendingFilters({
+                    ...pendingFilters,
+                    priceRange: [Math.max(val, 0), pendingFilters.priceRange[1]]
+                  });
+                }}
+                className="w-full px-3 py-2 border-2 border-black/15 rounded-lg text-sm font-medium focus:border-black focus:outline-none transition-colors"
+                placeholder="Min"
+              />
+            </div>
+            <div className="flex-1">
+              <Input
+                type="number"
+                min={0}
+                max={500}
+                value={pendingFilters.priceRange[1]}
+                onChange={(e) => {
+                  const val = Math.max(Number(e.target.value), pendingFilters.priceRange[0]);
+                  setPendingFilters({
+                    ...pendingFilters,
+                    priceRange: [pendingFilters.priceRange[0], Math.min(val, 500)]
+                  });
+                }}
+                className="w-full px-3 py-2 border-2 border-black/15 rounded-lg text-sm font-medium focus:border-black focus:outline-none transition-colors"
+                placeholder="Max"
+              />
+            </div>
           </div>
         </div>
       </FilterSection>
@@ -261,55 +336,83 @@ export function FilterSidebar({
 
       {/* Brand Filter */}
       <FilterSection title="Brand" id="brand">
-        <div className="space-y-3">
-          {BRAND_OPTIONS.map((brand) => (
-            <div key={brand} className="flex items-center space-x-2">
-              <Checkbox
-                id={`brand-${brand}`}
-                checked={pendingFilters.brands.includes(brand)}
-                onCheckedChange={(checked) => {
-                  setPendingFilters({
-                    ...pendingFilters,
-                    brands: checked
-                      ? [...pendingFilters.brands, brand]
-                      : pendingFilters.brands.filter(b => b !== brand)
-                  });
-                }}
-                className="border-2 border-black/20 data-[state=checked]:bg-[#D4AF37] data-[state=checked]:border-[#D4AF37]"
-              />
-              <Label
-                htmlFor={`brand-${brand}`}
-                className="cursor-pointer text-sm text-[#666666] hover:text-black transition-colors duration-300"
-              >
-                {brand}
-              </Label>
-            </div>
-          ))}
+        <div className="space-y-4">
+          {/* Brand Search */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-black/40" />
+            <Input
+              type="text"
+              placeholder="Search brands..."
+              value={brandSearch}
+              onChange={(e) => setBrandSearch(e.target.value.toLowerCase())}
+              className="w-full pl-10 pr-3 py-2 border-2 border-black/15 rounded-lg text-sm focus:border-black focus:outline-none transition-colors bg-white"
+            />
+          </div>
+
+          {/* Brand List */}
+          <div className="space-y-3 max-h-80 overflow-y-auto pr-2" style={{ scrollbarWidth: 'thin' }}>
+            {BRAND_OPTIONS
+              .filter(brand => brand.toLowerCase().includes(brandSearch))
+              .slice(0, showMoreBrands ? undefined : 5)
+              .map((brand) => (
+                <div key={brand} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={`brand-${brand}`}
+                    checked={pendingFilters.brands.includes(brand)}
+                    onCheckedChange={(checked) => {
+                      setPendingFilters({
+                        ...pendingFilters,
+                        brands: checked
+                          ? [...pendingFilters.brands, brand]
+                          : pendingFilters.brands.filter(b => b !== brand)
+                      });
+                    }}
+                    className="border-2 border-black/20 data-[state=checked]:bg-black data-[state=checked]:border-black w-5 h-5"
+                  />
+                  <Label
+                    htmlFor={`brand-${brand}`}
+                    className="cursor-pointer text-sm text-[#333333] hover:text-black transition-colors duration-300 font-medium"
+                  >
+                    {brand}
+                  </Label>
+                </div>
+              ))}
+          </div>
+
+          {/* Show More/Less for Brands */}
+          {BRAND_OPTIONS.filter(b => b.toLowerCase().includes(brandSearch)).length > 5 && (
+            <button
+              onClick={() => setShowMoreBrands(!showMoreBrands)}
+              className="w-full mt-2 text-xs font-semibold text-[#D4AF37] hover:text-[#C99D2B] transition-colors duration-300 underline py-1"
+            >
+              {showMoreBrands ? 'Show less brands' : 'Show more brands'}
+            </button>
+          )}
         </div>
       </FilterSection>
 
-      {/* Action Buttons */}
-      <div className="mt-8 pt-6 border-t border-black/10 space-y-3">
+      {/* Action Buttons - Primary Ghost Style */}
+      <div className="mt-8 pt-6 border-t border-black/10 flex gap-3 items-center">
+        {/* Primary Button - Apply Filters */}
         <button
           onClick={handleApplyFilters}
-          className="w-full py-3 transition-all duration-300 hover:opacity-90"
-          style={{
-            backgroundColor: BRAND_GOLD,
-            color: '#000',
-            fontFamily: FONT_SANS,
-            fontWeight: 600
-          }}
-        >
-          APPLY FILTERS
-        </button>
-        <button
-          onClick={handleCancel}
-          className="w-full py-3 border-2 border-black/20 transition-all duration-300 hover:border-black hover:bg-black/5"
+          className="flex-1 py-3 bg-black text-white font-semibold text-sm transition-all duration-300 hover:bg-black/90 active:shadow-inner shadow-md rounded-lg"
           style={{
             fontFamily: FONT_SANS
           }}
         >
-          Cancel
+          APPLY
+        </button>
+
+        {/* Ghost Button - Clear/Cancel */}
+        <button
+          onClick={handleCancel}
+          className="text-xs font-semibold text-black/60 hover:text-black transition-colors duration-300 underline decoration-1 underline-offset-2 py-3 px-4"
+          style={{
+            fontFamily: FONT_SANS
+          }}
+        >
+          Clear
         </button>
       </div>
     </>
@@ -318,21 +421,22 @@ export function FilterSidebar({
   // Desktop version (no mobile props passed)
   if (isMobileOpen === undefined || onMobileClose === undefined) {
     return (
-      <div className="bg-white">
+      <div className="bg-white rounded-2xl p-1 h-screen flex flex-col">
         <div className="mb-6">
           <h2 
-            className="mb-2"
+            className="mb-3 text-black"
             style={{ 
               fontFamily: "'Playfair Display', serif",
-              fontSize: '24px',
-              fontWeight: 600
+              fontSize: '28px',
+              fontWeight: 700,
+              letterSpacing: '-0.5px'
             }}
           >
             Filters
           </h2>
           <div 
-            className="w-12 h-0.5"
-            style={{ backgroundColor: '#D4AF37' }}
+            className="w-16 h-1 rounded-full"
+            style={{ backgroundColor: '#000000' }}
           />
         </div>
         {filterContent}
@@ -368,15 +472,16 @@ export function FilterSidebar({
           <h2 
             style={{ 
               fontFamily: "'Playfair Display', serif",
-              fontSize: '24px',
-              fontWeight: 600
+              fontSize: '28px',
+              fontWeight: 700,
+              letterSpacing: '-0.5px'
             }}
           >
             Filters
           </h2>
           <button 
             onClick={onMobileClose}
-            className="hover:text-[#D4AF37] transition-colors duration-300"
+            className="hover:text-black transition-colors duration-300 p-1"
           >
             <X className="w-6 h-6" />
           </button>

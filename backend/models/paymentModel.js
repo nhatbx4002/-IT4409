@@ -13,7 +13,5 @@ export const Payment = sequelize.define("payments", {
   raw_payload: DataTypes.JSONB,
   created_at: { type: DataTypes.DATE, defaultValue: DataTypes.NOW },
   updated_at: { type: DataTypes.DATE, defaultValue: DataTypes.NOW },
-}, {
-  timestamps: true
 });
 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   Star,
   Heart,
@@ -9,11 +9,11 @@ import {
   Shield,
   Search,
   ShoppingBag,
-  Zap,
   Share2,
   Check,
   CreditCard,
   Loader2,
+  MapPin,
 } from "lucide-react";
 import type { ProductDetail } from "@/types/products";
 import { ImageWithFallback } from "@/components/figma/ImageWithFallback";
@@ -53,27 +53,118 @@ export function ProductHero({ product }: ProductHeroProps) {
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
+  const [isImageFading, setIsImageFading] = useState(false);
+  const [isHoverZoom, setIsHoverZoom] = useState(false);
+  const [isZoomEnabled, setIsZoomEnabled] = useState(false);
+  const [zoomPosition, setZoomPosition] = useState({ x: 50, y: 50 });
 
-  const availableVariants = selectedColor
-    ? product.variants.filter((v) => v.color === selectedColor)
-    : product.variants;
+  const { colors, sizes, colorImageMap, baseImages } = useMemo(() => {
+    const colorSet = new Set<string>();
+    const sizeSet = new Set<string>();
+    const map: Record<string, string> = {};
 
-  const availableSizes = Array.from(
-    new Set(availableVariants.map((v) => v.size).filter((s): s is string => !!s))
-  ).sort();
+    product.variants.forEach((variant) => {
+      if (variant.color) {
+        colorSet.add(variant.color);
+        if (variant.imageUrl && !map[variant.color]) {
+          map[variant.color] = variant.imageUrl;
+        }
+      }
+      if (variant.size) {
+        sizeSet.add(variant.size);
+      }
+    });
 
-  const availableColors = Array.from(
-    new Set(product.variants.map((v) => v.color).filter((c): c is string => !!c))
+    return {
+      colors: Array.from(colorSet),
+      sizes: Array.from(sizeSet),
+      colorImageMap: map,
+      baseImages: product.images || [],
+    };
+  }, [product]);
+
+  const galleryImages = useMemo(() => {
+    const variantImages = product.variants
+      .map((v) => v.imageUrl)
+      .filter((img): img is string => Boolean(img));
+
+    const prioritized = selectedColor && colorImageMap[selectedColor]
+      ? [colorImageMap[selectedColor]]
+      : [];
+
+    const merged = [...prioritized, ...variantImages, ...baseImages].filter(Boolean);
+    return merged.filter((img, idx) => merged.indexOf(img) === idx);
+  }, [baseImages, colorImageMap, product.variants, selectedColor]);
+
+  const availableVariants = useMemo(
+    () =>
+      selectedColor
+        ? product.variants.filter((v) => v.color === selectedColor)
+        : product.variants,
+    [product.variants, selectedColor]
+  );
+
+  const availableColors = useMemo(
+    () =>
+      colors.length > 0
+        ? colors
+        : Array.from(new Set(product.variants.map((v) => v.color).filter((c): c is string => !!c))),
+    [colors, product.variants]
   );
 
   useEffect(() => {
     if (availableColors.length > 0 && !selectedColor) {
       setSelectedColor(availableColors[0]);
     }
-    if (availableSizes.length > 0 && !selectedSize) {
-      setSelectedSize(availableSizes[0]);
+  }, [availableColors, selectedColor]);
+
+  const orderedSizes = useMemo(() => {
+    const combinedSizes = Array.from(new Set([...SIZE_ORDER, ...sizes]));
+    return combinedSizes.sort((a, b) => {
+      const aIndex = SIZE_ORDER.indexOf(a);
+      const bIndex = SIZE_ORDER.indexOf(b);
+      if (aIndex === -1 && bIndex === -1) return a.localeCompare(b);
+      if (aIndex === -1) return 1;
+      if (bIndex === -1) return -1;
+      return aIndex - bIndex;
+    });
+  }, [sizes]);
+
+  const sizeStates = useMemo(
+    () =>
+      orderedSizes.map((size) => {
+        const variantForSize = availableVariants.find((variant) => variant.size === size);
+        const inStock = variantForSize ? variantForSize.stockQuantity > 0 : false;
+        return { size, inStock };
+      }),
+    [availableVariants, orderedSizes]
+  );
+
+  useEffect(() => {
+    const existingSelectionValid = sizeStates.find(
+      (state) => state.size === selectedSize && state.inStock
+    );
+    if (existingSelectionValid) return;
+
+    const firstAvailable = sizeStates.find((state) => state.inStock);
+    setSelectedSize(firstAvailable?.size ?? null);
+  }, [selectedColor, sizeStates, selectedSize]);
+
+  useEffect(() => {
+    if (selectedImageIndex >= galleryImages.length) {
+      setSelectedImageIndex(0);
     }
-  }, [availableColors, availableSizes, selectedColor, selectedSize]);
+  }, [galleryImages.length, selectedImageIndex]);
+
+  useEffect(() => {
+    setSelectedImageIndex(0);
+  }, [selectedColor]);
+
+  useEffect(() => {
+    setIsImageFading(true);
+    const timeout = setTimeout(() => setIsImageFading(false), 180);
+    return () => clearTimeout(timeout);
+  }, [selectedImageIndex, galleryImages]);
 
   const currentVariant = product.variants.find(
     (v) => v.color === selectedColor && v.size === selectedSize
@@ -126,11 +217,12 @@ export function ProductHero({ product }: ProductHeroProps) {
     console.log("Add to wishlist", product.id);
   };
 
-  const isVariantInStock = currentVariant ? currentVariant.stockQuantity > 0 : product.inStock;
+  const isVariantInStock = currentVariant ? currentVariant.stockQuantity > 0 : false;
+  const hasValidSelection = Boolean(selectedColor && selectedSize && currentVariant && isVariantInStock);
   const primarySku = currentVariant?.sku || product.variants[0]?.sku || `AWS-${product.id}`;
   const colorSwatches =
     availableColors.length > 0
-      ? availableColors.slice(0, 5).map((color) => ({
+      ? availableColors.map((color) => ({
           name: formatColorLabel(color),
           value: color,
           hex: COLOR_HEX_MAP[color.toLowerCase()] || color,
@@ -141,85 +233,98 @@ export function ProductHero({ product }: ProductHeroProps) {
           hex: swatch.hex,
         }));
 
-  const combinedSizes = Array.from(new Set([...SIZE_ORDER, ...availableSizes]));
-  const orderedSizes = combinedSizes.sort((a, b) => {
-    const aIndex = SIZE_ORDER.indexOf(a);
-    const bIndex = SIZE_ORDER.indexOf(b);
-    if (aIndex === -1 && bIndex === -1) return a.localeCompare(b);
-    if (aIndex === -1) return 1;
-    if (bIndex === -1) return -1;
-    return aIndex - bIndex;
-  });
-
   useEffect(() => {
     if (!selectedColor && colorSwatches.length > 0) {
       setSelectedColor(colorSwatches[0].value);
     }
-    if (!selectedSize && orderedSizes.length > 0) {
-      setSelectedSize(orderedSizes[0]);
-    }
   }, [colorSwatches, orderedSizes, selectedColor, selectedSize]);
 
+  const leadImage = galleryImages[selectedImageIndex] || galleryImages[0];
+  const secondaryImages = galleryImages.filter((_, idx) => idx !== selectedImageIndex);
+
   return (
-    <div className="grid grid-cols-1 gap-12 lg:grid-cols-[55%_45%]">
-      <div className="rounded-[24px] border border-white/40 bg-white/10 p-6 shadow-[0_25px_80px_rgba(0,0,0,0.08)] backdrop-blur-xl">
-        <div className="relative mx-auto flex w-full max-w-[720px] flex-col items-center">
-          <div
-            className="relative w-full overflow-hidden rounded-[16px] bg-white shadow-[0_20px_60px_rgba(0,0,0,0.08)]"
-            style={{
-              height: "min(900px, 90vh)",
-              maxHeight: "900px",
-            }}
-          >
-            <ImageWithFallback
-              src={product.images[selectedImageIndex] || product.images[0]}
-              alt={product.name}
-              className="h-full w-full object-cover"
-            />
-
-            <span className="absolute left-6 top-6 inline-flex items-center gap-2 rounded-full bg-white/80 px-4 py-2 text-sm font-semibold text-[#1A1A1A] shadow">
-              <RotateCcw className="h-4 w-4 text-[#D4AF37]" />
-              360° View
-            </span>
-
-            <button
-              aria-label="Zoom image"
-              className="absolute right-6 top-6 flex h-10 w-10 items-center justify-center rounded-full bg-white text-[#1A1A1A] shadow-lg transition-transform hover:scale-105"
+    <div className="grid grid-cols-1 gap-12 lg:grid-cols-[60%_40%]">
+      <div className="rounded-[24px] border border-white/40 bg-white/60 p-5 shadow-[0_25px_70px_rgba(0,0,0,0.06)] backdrop-blur-xl">
+        <div className="space-y-5">
+          <div className="space-y-5">
+            <div
+              className="relative overflow-hidden rounded-[18px] bg-white shadow-[0_20px_60px_rgba(0,0,0,0.08)]"
+              onMouseEnter={() => setIsHoverZoom(true)}
+              onMouseLeave={() => setIsHoverZoom(false)}
+              onMouseMove={(e) => {
+                const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect();
+                const x = ((e.clientX - rect.left) / rect.width) * 100;
+                const y = ((e.clientY - rect.top) / rect.height) * 100;
+                setZoomPosition({
+                  x: Math.min(100, Math.max(0, x)),
+                  y: Math.min(100, Math.max(0, y)),
+                });
+              }}
             >
-              <Search className="h-5 w-5" />
-            </button>
+              <ImageWithFallback
+                key={leadImage}
+                src={leadImage}
+                alt={product.name}
+                className={`h-full w-full object-contain bg-[#F5F5F5] transition-opacity duration-300 ${isImageFading ? "opacity-0" : "opacity-100"}`}
+                style={{ height: "min(76vh, 860px)" }}
+              />
 
-            <button
-              aria-label="Add to wishlist"
-              onClick={handleAddToWishlist}
-              className="absolute right-6 top-20 flex h-10 w-10 items-center justify-center rounded-full bg-white text-[#D4AF37] shadow-lg transition-transform hover:scale-105"
-            >
-              <Heart className="h-5 w-5" />
-            </button>
-          </div>
+              {/* Hover zoom overlay */}
+              <div
+                className={`pointer-events-none absolute inset-0 transition-opacity duration-200 ${
+                  isHoverZoom && isZoomEnabled ? "opacity-100" : "opacity-0"
+                }`}
+                style={{
+                  backgroundImage: `url(${leadImage})`,
+                  backgroundSize: "200% 200%",
+                  backgroundPosition: `${zoomPosition.x}% ${zoomPosition.y}%`,
+                }}
+              />
 
-          {product.images.length > 1 && (
-            <div className="mt-6 flex w-full justify-center gap-4 overflow-x-auto pb-2">
-              {product.images.slice(0, 5).map((image, idx) => {
-                const isActive = idx === selectedImageIndex;
-                return (
-                  <button
-                    key={image}
-                    onClick={() => setSelectedImageIndex(idx)}
-                    className={`h-[120px] w-[120px] overflow-hidden rounded-[16px] border transition-all duration-300 ${
-                      isActive ? "border-[#D4AF37] shadow-lg" : "border-[#E5E7EB] hover:border-[#D4AF37]"
-                    }`}
-                  >
-                    <ImageWithFallback src={image} alt={`${product.name} view ${idx + 1}`} className="h-full w-full object-cover" />
-                  </button>
-                );
-              })}
+              <button
+                aria-label="Zoom image"
+                onClick={() => setIsZoomEnabled((prev) => !prev)}
+                className={`absolute right-5 top-5 flex h-10 w-10 items-center justify-center rounded-full bg-white text-[#1A1A1A] shadow-lg transition-transform hover:scale-105 ${
+                  isZoomEnabled ? "ring-2 ring-[#D4AF37]" : ""
+                }`}
+                title={isZoomEnabled ? "Disable hover zoom" : "Enable hover zoom"}
+              >
+                <Search className="h-5 w-5" />
+              </button>
             </div>
-          )}
+
+            {galleryImages.length > 0 && (
+              <div className="flex gap-3 overflow-x-auto pb-2">
+                {galleryImages.map((image, idx) => {
+                  const isActive = idx === selectedImageIndex;
+                  return (
+                    <button
+                      key={image}
+                      onClick={() => setSelectedImageIndex(idx)}
+                      className={`relative h-[120px] min-w-[120px] overflow-hidden rounded-[12px] border bg-white shadow-sm transition hover:-translate-y-1 ${
+                        isActive ? "border-[#D4AF37] shadow-md" : "border-[#E5E7EB]"
+                      }`}
+                    >
+                      <ImageWithFallback
+                        src={image}
+                        alt={`${product.name} view ${idx + 1}`}
+                        className="h-full w-full object-contain bg-[#F5F5F5]"
+                      />
+                      {isActive && (
+                        <span className="absolute left-2 top-2 rounded-full bg-[#D4AF37] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-black shadow">
+                          Đang xem
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
-      <aside className="rounded-[24px] border border-[#F1F1F1] bg-white/80 p-8 shadow-[0_25px_80px_rgba(0,0,0,0.05)] backdrop-blur-xl lg:sticky lg:top-8">
+      <aside className="rounded-[24px] border border-[#F1F1F1] bg-white/80 p-8 shadow-[0_25px_80px_rgba(0,0,0,0.05)] backdrop-blur-xl lg:sticky lg:top-6">
         <div className="space-y-8">
           <div className="space-y-3">
             <p className="text-[12px] font-semibold uppercase tracking-[0.3em] text-[#D4AF37]">
@@ -270,7 +375,12 @@ export function ProductHero({ product }: ProductHeroProps) {
           {colorSwatches.length > 0 && (
             <section className="space-y-4">
               <div className="flex items-center justify-between text-[14px] font-medium text-[#1A1A1A]">
-                <span>Color: <span className="text-[#6B7280]">{formatColorLabel(selectedColor)}</span></span>
+                <span className="uppercase tracking-[0.22em] text-[#6B7280]">
+                  Color
+                  <span className="ml-2 text-[#1A1A1A] normal-case tracking-normal">
+                    {formatColorLabel(selectedColor)}
+                  </span>
+                </span>
                 <span className="text-[#D4AF37]">Premium dye</span>
               </div>
               <div className="flex flex-wrap gap-4">
@@ -279,6 +389,14 @@ export function ProductHero({ product }: ProductHeroProps) {
                   return (
                     <button
                       key={swatch.value}
+                      onMouseEnter={() => {
+                        setSelectedColor(swatch.value);
+                        const colorImage = colorImageMap[swatch.value];
+                        if (colorImage) {
+                          const idx = galleryImages.indexOf(colorImage);
+                          if (idx >= 0) setSelectedImageIndex(idx);
+                        }
+                      }}
                       onClick={() => setSelectedColor(swatch.value)}
                       className={`relative h-12 w-12 rounded-full border-2 transition-all duration-300 ${isActive ? "border-[#D4AF37] scale-110" : "border-transparent hover:border-[#D4AF37]"}`}
                       style={{ backgroundColor: swatch.hex }}
@@ -299,24 +417,24 @@ export function ProductHero({ product }: ProductHeroProps) {
           {orderedSizes.length > 0 && (
             <section className="space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-[14px] font-semibold text-[#1A1A1A]">Size</span>
+                <span className="text-[13px] font-semibold uppercase tracking-[0.24em] text-[#6B7280]">
+                  Size
+                </span>
                 <button className="text-[13px] font-medium text-[#D4AF37] underline">Size Guide</button>
               </div>
               <div className="flex flex-wrap gap-3">
-                {orderedSizes.map((size) => {
-                  const sizeVariant = availableVariants.find((variant) => variant.size === size);
-                  const inStock = sizeVariant ? sizeVariant.stockQuantity > 0 : availableSizes.includes(size);
+                {sizeStates.map(({ size, inStock }) => {
                   const isActive = selectedSize === size;
                   return (
                     <button
                       key={size}
                       onClick={() => inStock && setSelectedSize(size)}
                       disabled={!inStock}
-                      className={`h-10 min-w-[44px] rounded-full border text-[13px] font-medium transition-all ${
+                      className={`h-11 min-w-[56px] rounded-lg border text-[13px] font-semibold uppercase tracking-[0.12em] transition-all ${
                         !inStock
                           ? "border-[#E5E7EB] bg-[#F9FAFB] text-[#9CA3AF] line-through cursor-not-allowed"
                           : isActive
-                          ? "border-[#D4AF37] bg-[#D4AF37] text-black shadow-sm"
+                          ? "border-[#111827] bg-[#111827] text-white shadow-sm"
                           : "border-gray-300 bg-white text-[#1A1A1A] hover:border-[#D4AF37]"
                       }`}
                     >
@@ -355,7 +473,7 @@ export function ProductHero({ product }: ProductHeroProps) {
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-[60%_40%]">
               <button
                 onClick={handleAddToCart}
-                disabled={!isVariantInStock || isAddingToCart}
+                disabled={!hasValidSelection || isAddingToCart}
                 className="flex h-14 items-center justify-center gap-3 rounded-[12px] bg-[#D4AF37] text-[14px] font-bold uppercase tracking-[0.2em] text-black transition hover:bg-[#C19A2F] disabled:opacity-60"
               >
                 {isAddingToCart ? (
@@ -363,15 +481,15 @@ export function ProductHero({ product }: ProductHeroProps) {
                 ) : (
                   <ShoppingBag className="h-5 w-5" />
                 )}
-                {isAddingToCart ? "Adding..." : "Add to Cart"}
+                {isAddingToCart ? "Adding..." : "Thêm vào giỏ hàng"}
               </button>
               <button
                 onClick={handleBuyNow}
-                disabled={!isVariantInStock}
+                disabled={!hasValidSelection}
                 className="flex h-14 items-center justify-center gap-2 rounded-[12px] bg-[#1A1A1A] text-[14px] font-bold uppercase tracking-[0.2em] text-white transition hover:bg-black disabled:opacity-60"
               >
-                <Zap className="h-5 w-5 text-[#D4AF37]" />
-                Buy Now
+                <MapPin className="h-5 w-5 text-[#D4AF37]" />
+                Tìm tại cửa hàng
               </button>
             </div>
             <div className="flex flex-wrap gap-3">
@@ -404,6 +522,7 @@ export function ProductHero({ product }: ProductHeroProps) {
           </section>
         </div>
       </aside>
+
     </div>
   );
 }

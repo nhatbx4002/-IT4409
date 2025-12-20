@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import MainLayout from "@/layout/MainLayout";
-import { getCart, createAddress, checkout } from "@/lib/api";
+import { getCart, createAddress, checkout, getMyAddresses } from "@/lib/api";
 import type { CartResponse } from "@/types/cart";
 import {
   CheckoutStepper,
@@ -12,13 +12,17 @@ import {
 } from "@/components/Checkout";
 import { isAuthenticated, getStoredUser } from "@/lib/auth";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Loader2, Plus, CheckCircle2 } from "lucide-react";
+import type { ShippingAddress } from "@/types/checkout";
 
 export default function CheckoutPage() {
   const navigate = useNavigate();
   const [cartData, setCartData] = useState<CartResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [currentStep, setCurrentStep] = useState<"information" | "payment">("information");
+  const [addresses, setAddresses] = useState<ShippingAddress[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<number | null>(null);
+  const [isAddingAddress, setIsAddingAddress] = useState(false);
 
   // Form state
   const [contactEmail, setContactEmail] = useState("");
@@ -35,9 +39,10 @@ export default function CheckoutPage() {
   const [paymentMethod, setPaymentMethod] = useState<"COD" | "VNPAY" | null>(null);
   const [promoCode, setPromoCode] = useState("");
   const [shippingFee, setShippingFee] = useState<number | null>(null);
-  const [shippingNote, setShippingNote] = useState<string>("Vui lòng nhập địa chỉ");
+  const [shippingNote, setShippingNote] = useState<string>("Tính ở bước sau");
   const [discountAmount, setDiscountAmount] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSavingAddress, setIsSavingAddress] = useState(false);
 
   useEffect(() => {
     if (!isAuthenticated()) {
@@ -60,6 +65,24 @@ export default function CheckoutPage() {
         setCartData(cart);
         if (cart.applied_promotion_code) {
           setPromoCode(cart.applied_promotion_code);
+        }
+        const addrList = await getMyAddresses();
+        setAddresses(addrList);
+        const defaultAddr = addrList.find((a) => a.is_default) || addrList[0];
+        if (defaultAddr) {
+          setSelectedAddressId(defaultAddr.id);
+          setAddressFormData({
+            full_name: defaultAddr.full_name || "",
+            phone: defaultAddr.phone || "",
+            address: defaultAddr.address || "",
+            city: defaultAddr.city || "",
+            district: defaultAddr.district || "",
+            ward: defaultAddr.ward || "",
+            is_default: defaultAddr.is_default || false,
+          });
+          setIsAddingAddress(false);
+        } else {
+          setIsAddingAddress(false);
         }
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : "Failed to load cart";
@@ -84,13 +107,16 @@ export default function CheckoutPage() {
       contactEmail.trim() !== "" &&
       // Accept phone from either contact info or shipping address
       (contactPhone.trim() !== "" || (addressFormData.phone?.trim?.() ?? "") !== "") &&
-      addressFormData.full_name.trim() !== "" &&
-      addressFormData.address.trim() !== "" &&
-      addressFormData.city !== "" &&
-      addressFormData.district !== "" &&
-      addressFormData.ward !== ""
+      (
+        selectedAddressId !== null ||
+        (addressFormData.full_name.trim() !== "" &&
+          addressFormData.address.trim() !== "" &&
+          addressFormData.city !== "" &&
+          addressFormData.district !== "" &&
+          addressFormData.ward !== "")
+      )
     );
-  }, [contactEmail, contactPhone, addressFormData]);
+  }, [contactEmail, contactPhone, addressFormData, selectedAddressId]);
 
   const handleAddressChange = (field: string, value: string | boolean) => {
     setAddressFormData((prev) => ({ ...prev, [field]: value }));
@@ -118,6 +144,43 @@ export default function CheckoutPage() {
     setCurrentStep("payment");
   };
 
+  const handleSaveAddress = async () => {
+    if (
+      !addressFormData.full_name.trim() ||
+      !addressFormData.address.trim() ||
+      !addressFormData.city ||
+      !addressFormData.district ||
+      !addressFormData.ward ||
+      !(addressFormData.phone || contactPhone)
+    ) {
+      toast.error("Vui lòng điền đầy đủ thông tin địa chỉ");
+      return;
+    }
+
+    try {
+      setIsSavingAddress(true);
+      const newAddress = await createAddress({
+        full_name: addressFormData.full_name,
+        phone: addressFormData.phone || contactPhone,
+        address: addressFormData.address,
+        city: addressFormData.city,
+        district: addressFormData.district,
+        ward: addressFormData.ward,
+        is_default: addressFormData.is_default,
+      });
+
+      setAddresses((prev) => [newAddress, ...prev]);
+      setSelectedAddressId(newAddress.id);
+      setIsAddingAddress(false);
+      toast.success("Đã lưu địa chỉ mới");
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Không lưu được địa chỉ";
+      toast.error(errorMessage);
+    } finally {
+      setIsSavingAddress(false);
+    }
+  };
+
   const handlePlaceOrder = async () => {
     if (!paymentMethod) {
       toast.error("Vui lòng chọn phương thức thanh toán");
@@ -131,20 +194,24 @@ export default function CheckoutPage() {
 
     setIsSubmitting(true);
     try {
-      // First, create the shipping address
-      const address = await createAddress({
-        full_name: addressFormData.full_name,
-        phone: addressFormData.phone || contactPhone,
-        address: addressFormData.address,
-        city: addressFormData.city,
-        district: addressFormData.district,
-        ward: addressFormData.ward,
-        is_default: addressFormData.is_default,
-      });
+      let shippingAddressId: number | null = selectedAddressId;
+
+      if (!shippingAddressId) {
+        const address = await createAddress({
+          full_name: addressFormData.full_name,
+          phone: addressFormData.phone || contactPhone,
+          address: addressFormData.address,
+          city: addressFormData.city,
+          district: addressFormData.district,
+          ward: addressFormData.ward,
+          is_default: addressFormData.is_default,
+        });
+        shippingAddressId = address.id;
+      }
 
       // Then, create the order
       const result = await checkout({
-        shippingAddressId: address.id,
+        shippingAddressId: shippingAddressId!,
         paymentMethod,
         promotionCode: promoCode || undefined,
       });
@@ -201,14 +268,14 @@ export default function CheckoutPage() {
       <div className="min-h-screen bg-white">
         {/* Header with Stepper */}
         <div className="border-b border-gray-200 bg-white">
-          <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
+          <div className="w-full px-4 py-6 sm:px-8 lg:px-12 xl:px-16">
             <CheckoutStepper currentStep={currentStep} />
           </div>
         </div>
 
         {/* Main Content - Two Column Layout */}
-        <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
-          <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_400px]">
+        <div className="w-full px-4 py-8 sm:px-8 lg:px-12 xl:px-16">
+          <div className="grid gap-10 lg:grid-cols-[minmax(0,1.35fr)_0.65fr]">
             {/* Left Column - Form */}
             <div className="space-y-8 lg:order-1">
               {currentStep === "information" ? (
@@ -220,20 +287,70 @@ export default function CheckoutPage() {
                     onPhoneChange={setContactPhone}
                     isAuthenticated={isAuthenticated()}
                   />
-                  <ShippingAddressForm
-                    formData={addressFormData}
-                    onFormChange={handleAddressChange}
-                    onShippingFeeUpdate={handleShippingFeeUpdate}
-                    promoCode={promoCode}
-                    subtotal={subtotal}
+                  <AddressSelector
+                    addresses={addresses}
+                    selectedId={selectedAddressId}
+                    onSelect={(id) => {
+                      setSelectedAddressId(id);
+                      setIsAddingAddress(false);
+                    }}
+                    onAddNew={() => {
+                      setSelectedAddressId(null);
+                      setIsAddingAddress(true);
+                    }}
                   />
-                  <div className="flex justify-end mt-8">
+                  {isAddingAddress && (
+                    <div className="rounded-2xl border border-gray-200 bg-white/80 p-6 shadow-sm">
+                      <h3 className="mb-4 text-lg font-semibold text-black">Thêm địa chỉ mới</h3>
+                      <ShippingAddressForm
+                        formData={addressFormData}
+                        onFormChange={handleAddressChange}
+                        onShippingFeeUpdate={handleShippingFeeUpdate}
+                        promoCode={promoCode}
+                        subtotal={subtotal}
+                      />
+                      <div className="mt-6 flex flex-wrap items-center justify-end gap-3 text-sm text-gray-600">
+                        {addresses.length > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => setIsAddingAddress(false)}
+                            className="text-sm font-semibold text-gray-500 hover:text-black underline underline-offset-2"
+                          >
+                            Hủy
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={handleSaveAddress}
+                          disabled={isSavingAddress}
+                          className="rounded-full border border-gray-300 px-5 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-gray-800 transition hover:border-black hover:text-black disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          {isSavingAddress ? "Đang lưu..." : "Lưu địa chỉ"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsAddingAddress(false);
+                            setSelectedAddressId(null);
+                            toast.success("Sẽ dùng địa chỉ này cho đơn này");
+                          }}
+                          className="rounded-full bg-black px-5 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-white transition hover:bg-gray-900"
+                        >
+                          Dùng địa chỉ này
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  <div className="flex flex-wrap items-center justify-between gap-4 mt-4">
+                    <Link to="/cart" className="text-sm font-semibold text-gray-600 hover:text-black underline underline-offset-4">
+                      Quay lại giỏ hàng
+                    </Link>
                     <button
                       onClick={handleProceedToPayment}
                       disabled={!canProceedToPayment}
-                      className="rounded-md bg-black px-8 py-3 font-semibold text-white uppercase tracking-wide transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="rounded-full bg-black px-8 py-3 text-sm font-semibold uppercase tracking-[0.22em] text-white transition hover:bg-gray-900 disabled:cursor-not-allowed disabled:opacity-50"
                     >
-                      Tiếp tục đến thanh toán
+                      Tiếp tục đến vận chuyển
                     </button>
                   </div>
                 </>
@@ -301,3 +418,81 @@ export default function CheckoutPage() {
   );
 }
 
+function AddressSelector({
+  addresses,
+  selectedId,
+  onSelect,
+  onAddNew,
+}: {
+  addresses: ShippingAddress[];
+  selectedId: number | null;
+  onSelect: (id: number) => void;
+  onAddNew: () => void;
+}) {
+  if (addresses.length === 0) {
+    return (
+      <div className="rounded-2xl border border-dashed border-gray-300 bg-white/70 p-5">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-semibold text-black">Bạn chưa có địa chỉ lưu</p>
+            <p className="text-xs text-gray-600">Thêm địa chỉ mới để giao hàng nhanh hơn.</p>
+          </div>
+          <button
+            type="button"
+            onClick={onAddNew}
+            className="inline-flex items-center gap-2 rounded-full border border-gray-300 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-black transition hover:border-black"
+          >
+            <Plus className="h-4 w-4" />
+            Thêm địa chỉ mới
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <h3 className="text-lg font-semibold text-black">Chọn địa chỉ</h3>
+      <div className="grid gap-4 md:grid-cols-2">
+        {addresses.map((address) => {
+          const isSelected = selectedId === address.id;
+          return (
+            <button
+              key={address.id}
+              type="button"
+              onClick={() => onSelect(address.id)}
+              className={`relative flex h-full flex-col rounded-2xl border p-4 text-left transition hover:border-[#C2A26F] hover:shadow-md ${
+                isSelected ? "border-[#C2A26F] bg-[#FFF9EC]" : "border-gray-200 bg-white"
+              }`}
+            >
+              {isSelected && (
+                <span className="absolute right-3 top-3 text-[#C2A26F]">
+                  <CheckCircle2 className="h-5 w-5" />
+                </span>
+              )}
+              <p className="text-sm font-semibold text-black">{address.full_name}</p>
+              <p className="text-sm text-gray-600">{address.phone}</p>
+              <p className="mt-2 text-sm text-gray-700 leading-relaxed">
+                {address.address}, {address.ward}, {address.district}, {address.city}
+              </p>
+              {address.is_default && (
+                <span className="mt-3 inline-flex w-fit items-center rounded-full bg-black px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-white">
+                  Default
+                </span>
+              )}
+            </button>
+          );
+        })}
+
+        <button
+          type="button"
+          onClick={onAddNew}
+          className="flex h-full min-h-[150px] flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-300 bg-white text-sm font-semibold text-gray-600 transition hover:border-[#C2A26F] hover:text-black"
+        >
+          <Plus className="mb-2 h-5 w-5" />
+          Thêm địa chỉ mới
+        </button>
+      </div>
+    </div>
+  );
+}

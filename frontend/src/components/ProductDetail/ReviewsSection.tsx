@@ -57,7 +57,7 @@ export function ReviewsSection({ product }: ReviewsSectionProps) {
   const totalReviews = reviews.length || product.reviewCount;
 
   return (
-    <section id="reviews" className="mx-auto max-w-5xl space-y-10">
+    <section id="reviews" className="w-full space-y-10 px-4 sm:px-6 lg:px-10">
       <div className="flex flex-col gap-6 rounded-[32px] border border-[#E5E7EB] bg-white/80 p-8 shadow-[0_20px_60px_rgba(0,0,0,0.05)] md:flex-row md:items-center md:justify-between">
         <div>
           <p className="text-[28px] font-semibold text-[#1A1A1A]" style={{ fontFamily: "'Playfair Display', serif" }}>

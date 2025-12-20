@@ -19,19 +19,24 @@ import type {
   AddToWishlistResponse,
   RemoveFromWishlistResponse,
 } from '@/types/wishlist';
-import { clearAuthSession, getAccessToken, getStoredUser } from './auth';
+import { clearAuthSession, getAccessToken, getStoredUser, getRefreshToken, setAuthSession } from './auth';
 
 const getApiBaseUrl = (): string => {
   const envUrl = import.meta.env.VITE_API_BASE_URL;
-  if (!envUrl || typeof envUrl !== 'string' || envUrl.trim() === '') {
-    return 'http://localhost:3000/api';
-  }
-  return envUrl.trim();
+  const raw = (!envUrl || typeof envUrl !== 'string' || envUrl.trim() === '')
+    ? 'http://localhost:3000'
+    : envUrl.trim();
+
+  // Guarantee we always hit the API prefix even if the env omits `/api`
+  const hasApiPath = /\/api\/?$/.test(raw);
+  return hasApiPath ? raw : `${raw.replace(/\/+$/, '')}/api`;
 };
 
 const API_BASE_URL = getApiBaseUrl();
 const normalizeBaseUrl = (url: string): string => url.replace(/\/+$/, '');
 const API_BASE_URL_NORMALIZED = normalizeBaseUrl(API_BASE_URL);
+let isRefreshing = false;
+let refreshQueue: Array<(token: string | null) => void> = [];
 
 const redirectToLogin = () => {
   clearAuthSession();
@@ -43,6 +48,7 @@ export const apiClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true,
 });
 
 apiClient.interceptors.request.use((config) => {
@@ -58,15 +64,51 @@ apiClient.interceptors.request.use((config) => {
 
     config.headers = headers;
   }
+
   return config;
 });
 
 apiClient.interceptors.response.use(
   (response) => response,
-  (error: AxiosError<ApiErrorResponse>) => {
+  async (error: AxiosError<ApiErrorResponse>) => {
     const status = error.response?.status;
+    const originalRequest = error.config as AxiosRequestConfig & { _retry?: boolean };
     if (status === 401) {
-      redirectToLogin();
+      const refreshToken = getRefreshToken();
+
+      if (!refreshToken) {
+        redirectToLogin();
+        return Promise.reject(error);
+      }
+
+      if (originalRequest._retry) {
+        redirectToLogin();
+        return Promise.reject(error);
+      }
+
+      originalRequest._retry = true;
+
+      try {
+        const newToken = await refreshAccessToken(refreshToken);
+        if (!newToken) {
+          redirectToLogin();
+          return Promise.reject(error);
+        }
+
+        // Replay queued requests
+        refreshQueue.forEach((cb) => cb(newToken));
+        refreshQueue = [];
+
+        const headers = (originalRequest.headers ?? {}) as AxiosRequestHeaders;
+        headers.Authorization = `Bearer ${newToken}`;
+        originalRequest.headers = headers;
+        return apiClient(originalRequest);
+      } catch (err) {
+        refreshQueue.forEach((cb) => cb(null));
+        refreshQueue = [];
+        redirectToLogin();
+        return Promise.reject(err);
+      }
     }
 
     const message =
@@ -78,6 +120,40 @@ apiClient.interceptors.response.use(
     return Promise.reject(new Error(message));
   }
 );
+
+async function refreshAccessToken(refreshToken: string): Promise<string | null> {
+  if (isRefreshing) {
+    return new Promise((resolve) => {
+      refreshQueue.push((token) => resolve(token));
+    });
+  }
+
+  isRefreshing = true;
+
+  try {
+    const res = await axios.post<ApiResponse<{ accessToken: string; refreshToken?: string }>>(
+      `${API_BASE_URL_NORMALIZED}/auth/refresh`,
+      { refreshToken },
+      { withCredentials: true }
+    );
+
+    const data = unwrapResponse(res.data);
+    const user = getStoredUser();
+    if (data.accessToken && user) {
+      setAuthSession(
+        { accessToken: data.accessToken, refreshToken: data.refreshToken || refreshToken },
+        user
+      );
+    }
+
+    return data.accessToken || null;
+  } catch (err) {
+    clearAuthSession();
+    return null;
+  } finally {
+    isRefreshing = false;
+  }
+}
 
 const unwrapResponse = <T>(payload: ApiResponse<T> | T): T => {
   if (payload && typeof payload === 'object' && 'success' in (payload as ApiResponse<T>)) {
@@ -233,7 +309,7 @@ const getRequest = async <T>(url: string, config?: AxiosRequestConfig) => {
 export async function getProducts(
   filters: ProductFilterParams = {}
 ): Promise<ProductsListResponse> {
-  return getRequest<ProductsListResponse>('/user/products/search', {
+  return getRequest<ProductsListResponse>('/products/search', {
     params: buildFilterParams(filters),
   });
 }
@@ -242,20 +318,20 @@ export async function getProductsByCategory(
   categorySlug: string,
   filters?: Omit<ProductFilterParams, 'categorySlug'>
 ): Promise<ProductsListResponse> {
-  return getRequest<ProductsListResponse>(`/user/products/category/${categorySlug}`, {
+  return getRequest<ProductsListResponse>(`/products/category/${categorySlug}`, {
     params: buildFilterParams(filters),
   });
 }
 
 export async function getProductById(productId: number): Promise<ProductDetail> {
-  return getRequest<ProductDetail>(`/user/products/${productId}`);
+  return getRequest<ProductDetail>(`/products/${productId}`);
 }
 
 export async function searchProducts(
   query: string,
   filters?: Omit<ProductFilterParams, 'q'>
 ): Promise<ProductsListResponse> {
-  return getRequest<ProductsListResponse>('/user/products/search', {
+  return getRequest<ProductsListResponse>('/products/search', {
     params: buildFilterParams({ ...filters, q: query }),
   });
 }
@@ -268,6 +344,12 @@ export async function addToCart(
   productVariantId: number,
   quantity: number
 ): Promise<AddToCartResponse> {
+  const token = getAccessToken();
+  if (!token) {
+    redirectToLogin();
+    throw new Error("Bạn cần đăng nhập để thêm vào giỏ hàng");
+  }
+
   const response = await apiClient.post<{ success: boolean; message?: string; item: AddToCartResponse }>('/cart', {
     productVariantId,
     quantity,
@@ -367,6 +449,68 @@ import type {
   PaymentStatusResponse,
 } from '@/types/checkout';
 import type { Order } from '@/types/order';
+// ==============================
+// DISCOUNTS API (Unified)
+// ==============================
+
+export interface DiscountDTO {
+  id: number;
+  name: string;
+  code?: string | null;
+  description?: string | null;
+  discount_type: 'percentage' | 'fixed_amount' | 'free_shipping';
+  discount_value: number;
+  max_discount_amount?: number | null;
+  min_order_value?: number | null;
+  apply_type: 'auto_apply' | 'code';
+  applicable_to?: 'order' | 'shipping';
+  start_date?: string;
+  end_date?: string;
+  usage_limit?: number | null;
+  usage_count?: number | null;
+  is_active: boolean;
+}
+
+export interface ValidateCodeResponse {
+  valid: boolean;
+  reason?: string;
+  discount?: DiscountDTO;
+}
+
+export interface ApplyDiscountRequest {
+  code?: string;
+  orderDraft?: {
+    subtotal?: number;
+    shipping_fee?: number;
+  };
+}
+
+export interface ApplyDiscountResponse {
+  applied: boolean;
+  reason?: string;
+  amount?: number;
+  discount?: DiscountDTO;
+  snapshot?: {
+    discount_code_snapshot?: string | null;
+    discount_type_snapshot?: string | null;
+    discount_value_snapshot?: number | null;
+  };
+}
+
+export async function getActiveDiscounts(): Promise<DiscountDTO[]> {
+  const res = await apiClient.get<ApiResponse<DiscountDTO[]>>('/discounts/active');
+  return unwrapResponse(res.data);
+}
+
+export async function validateDiscountCode(code: string): Promise<ValidateCodeResponse> {
+  const res = await apiClient.get<ApiResponse<ValidateCodeResponse>>(`/discounts/validate/${encodeURIComponent(code)}`);
+  return unwrapResponse(res.data);
+}
+
+export async function applyDiscount(payload: ApplyDiscountRequest): Promise<ApplyDiscountResponse> {
+  const res = await apiClient.post<ApiResponse<ApplyDiscountResponse>>('/discounts/apply', payload);
+  return unwrapResponse(res.data);
+}
 
 export async function getMyAddresses(): Promise<ShippingAddress[]> {
   const response = await apiClient.get<ApiResponse<ShippingAddress[]>>('/addresses');
@@ -422,4 +566,3 @@ export async function getMyOrders(): Promise<Order[]> {
   const response = await apiClient.get<ApiResponse<Order[]>>('/orders');
   return unwrapResponse(response.data);
 }
-

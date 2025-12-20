@@ -98,7 +98,9 @@ export const registerUser = async (data) => {
     provider: provider || "local",
     token_version: 0,
   });
-  return newUser;
+
+  // Return user without sensitive fields
+  return await User.scope('withoutSecrets').findByPk(newUser.id);
 };
 
 //Dang nhap user bang local
@@ -107,17 +109,24 @@ export const loginUser = async (email, password) => {
     throw new Error("Email and password are required");
   }
 
-  const user = await User.findOne({ where: { email } });
+  const user = await User.scope('withoutSecrets').findOne({ where: { email } });
   if (!user) {
     throw new Error("Invalid email or password");
   }
 
-  const isValidPassword = await bcrypt.compare(password, user.password);
+  // Get full user with password for verification
+  const userWithPassword = await User.findOne({ where: { email } });
+  const hashedPassword = userWithPassword.password;
+  if (!hashedPassword) {
+    throw new Error("Invalid email or password");
+  }
+
+  const isValidPassword = await bcrypt.compare(password, hashedPassword);
   if (!isValidPassword) {
     throw new Error("Invalid email or password");
   }
 
-  const tokens = await issueTokens(user);
+  const tokens = await issueTokens(userWithPassword);
 
   return {
     user,
@@ -247,5 +256,6 @@ export const updateUserService = async (userId, newData) => {
   await user.update(allowedFields);
   await user.reload();
 
-  return user;
+  // Return user without sensitive fields
+  return await User.scope('withoutSecrets').findByPk(userId);
 };

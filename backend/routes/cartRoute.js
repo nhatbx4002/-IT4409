@@ -1,8 +1,27 @@
 import express from 'express';
-import { authenticateToken } from '../middlewares/auth.js';
 import { getCart, addItem, updateItem, removeItem } from '../controllers/cartController.js';
+import { verifyAccessToken } from '../services/authService.js';
+import { User } from '../models/index.js';
 
 const router = express.Router();
+
+// Optional auth: attach user if token is valid, otherwise continue as guest
+router.use(async (req, res, next) => {
+  const authHeader = req.headers["authorization"];
+  const token = authHeader && authHeader.split(" ")[1];
+  if (!token) return next();
+
+  try {
+    const decoded = verifyAccessToken(token);
+    const user = await User.findByPk(decoded.id);
+    if (user) {
+      req.user = user;
+    }
+  } catch (err) {
+    // Ignore invalid tokens for guest flows
+  }
+  next();
+});
 
 /**
  * @swagger
@@ -18,7 +37,7 @@ const router = express.Router();
  *       401:
  *         description: Unauthorized
  */
-router.get('/', authenticateToken, getCart);
+router.get('/', getCart);
 
 /**
  * @swagger
@@ -48,7 +67,7 @@ router.get('/', authenticateToken, getCart);
  *       400:
  *         description: Lỗi thêm sản phẩm
  */
-router.post('/', authenticateToken, addItem);
+router.post('/', addItem);
 
 /**
  * @swagger
@@ -83,7 +102,7 @@ router.post('/', authenticateToken, addItem);
  *       404:
  *         description: Không tìm thấy sản phẩm trong giỏ
  */
-router.put('/:cartItemId', authenticateToken, updateItem);
+router.put('/:cartItemId', updateItem);
 
 /**
  * @swagger
@@ -105,6 +124,6 @@ router.put('/:cartItemId', authenticateToken, updateItem);
  *       404:
  *         description: Không tìm thấy sản phẩm trong giỏ
  */
-router.delete('/:cartItemId', authenticateToken, removeItem);
+router.delete('/:cartItemId', removeItem);
 
 export default router;

@@ -60,3 +60,23 @@ export const authenticateToken = async (req, res, next) => {
     });
   }
 };
+
+// Middleware to check if user has admin privileges
+export const isAdmin = (req, res, next) => {
+  // req.user is set by authenticateToken middleware
+  if (!req.user) {
+    return res.status(401).json({
+      success: false,
+      message: "Authentication required",
+    });
+  }
+
+  if (!['admin', 'super_admin'].includes(req.user.role)) {
+    return res.status(403).json({
+      success: false,
+      message: "Admin access required",
+    });
+  }
+
+  next();
+};

@@ -83,7 +83,7 @@ export function ViewedProductsCarousel({
 
   if (isLoading) {
     return (
-      <section className="mx-auto max-w-[1440px] space-y-6">
+      <section className="w-full space-y-6 px-4 sm:px-6 lg:px-10">
         <h2 className="font-['Playfair_Display'] text-[28px] font-semibold text-[#1A1A1A]">{title}</h2>
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {Array.from({ length: 4 }).map((_, index) => (
@@ -99,7 +99,7 @@ export function ViewedProductsCarousel({
   }
 
   return (
-    <section className="mx-auto max-w-[1440px] space-y-6">
+    <section className="w-full space-y-6 px-4 sm:px-6 lg:px-10">
       <h2 className="font-['Playfair_Display'] text-[28px] font-semibold text-[#1A1A1A]">{title}</h2>
 
       <Carousel

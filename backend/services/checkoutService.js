@@ -1,0 +1,176 @@
+import {
+  Cart,
+  CartItem,
+  ProductVariant,
+  Product,
+  ShippingAddress,
+} from "../models/index.js";
+import discountService from "./discountService.js";
+import { Op } from "sequelize";
+
+const SUPPORTED_PAYMENTS = ["COD", "VNPAY"];
+
+const findCartForValidation = async ({ userId, sessionId }) => {
+  const where = userId
+    ? { user_id: userId }
+    : sessionId
+    ? { session_id: sessionId, is_guest: true }
+    : null;
+
+  if (!where) {
+    const error = new Error("Không xác định được giỏ hàng");
+    error.status = 400;
+    throw error;
+  }
+
+  const cart = await Cart.findOne({
+    where,
+    include: [
+      {
+        model: CartItem,
+        include: [
+          {
+            model: ProductVariant,
+            as: "product_variant",
+            include: [{ model: Product, as: "product" }],
+          },
+        ],
+      },
+    ],
+  });
+
+  const cartItems = cart
+    ? cart.CartItems || cart.cart_items || cart.cartItems || []
+    : [];
+
+  if (!cart || cartItems.length === 0) {
+    const error = new Error("Giỏ hàng trống");
+    error.status = 400;
+    throw error;
+  }
+
+  return { cart, cartItems };
+};
+
+const validateCartItems = (cartItems) => {
+  let subtotal = 0;
+
+  for (const item of cartItems) {
+    const variant = item.product_variant;
+    if (!variant || !variant.product) {
+      const error = new Error("Sản phẩm trong giỏ hàng không còn tồn tại");
+      error.status = 400;
+      throw error;
+    }
+
+    if (!variant.stock_quantity || variant.stock_quantity < item.quantity) {
+      const error = new Error(
+        `Sản phẩm "${variant.product.name}" không đủ tồn kho`
+      );
+      error.status = 400;
+      throw error;
+    }
+
+    const price = parseFloat(variant.price || variant.product.base_price || 0);
+    subtotal += price * item.quantity;
+  }
+
+  return subtotal;
+};
+
+const validateShippingAddress = async ({ userId, shippingAddressId, shippingAddress }) => {
+  if (shippingAddressId) {
+    if (!userId) {
+      const error = new Error("Cần đăng nhập để sử dụng địa chỉ giao hàng đã lưu");
+      error.status = 401;
+      throw error;
+    }
+
+    const address = await ShippingAddress.findOne({
+      where: { id: shippingAddressId, user_id: userId },
+    });
+
+    if (!address) {
+      const error = new Error("Địa chỉ giao hàng không hợp lệ");
+      error.status = 400;
+      throw error;
+    }
+    return address;
+  }
+
+  if (shippingAddress) {
+    const requiredFields = ["full_name", "phone", "city", "district", "ward", "address"];
+    const missing = requiredFields.filter((field) => !shippingAddress[field]);
+    if (missing.length) {
+      const error = new Error(`Thiếu thông tin địa chỉ: ${missing.join(", ")}`);
+      error.status = 400;
+      throw error;
+    }
+    return shippingAddress;
+  }
+
+  const error = new Error("Thiếu thông tin địa chỉ giao hàng");
+  error.status = 400;
+  throw error;
+};
+
+const validatePaymentMethod = (paymentMethod) => {
+  if (!paymentMethod) {
+    const error = new Error("Thiếu phương thức thanh toán");
+    error.status = 400;
+    throw error;
+  }
+
+  const normalized = paymentMethod.toUpperCase();
+  if (!SUPPORTED_PAYMENTS.includes(normalized)) {
+    const error = new Error("Phương thức thanh toán không được hỗ trợ");
+    error.status = 400;
+    throw error;
+  }
+  return normalized;
+};
+
+const validatePromotion = async ({ promotionCode, subtotal }) => {
+  if (!promotionCode) return { applied: false };
+
+  const result = await discountService.applyDiscount(
+    { subtotal, shipping_fee: 0 },
+    promotionCode
+  );
+
+  if (!result.applied) {
+    const error = new Error("Mã khuyến mãi không hợp lệ hoặc không áp dụng được");
+    error.status = 400;
+    throw error;
+  }
+
+  return {
+    applied: true,
+    amount: result.amount,
+    code: promotionCode,
+    discount: result.discount,
+  };
+};
+
+export const validateCheckout = async ({
+  userId,
+  sessionId,
+  shippingAddressId,
+  shippingAddress,
+  paymentMethod,
+  promotionCode,
+}) => {
+  const { cart, cartItems } = await findCartForValidation({ userId, sessionId });
+  const subtotal = validateCartItems(cartItems);
+  const address = await validateShippingAddress({ userId, shippingAddressId, shippingAddress });
+  const payment = validatePaymentMethod(paymentMethod);
+  const promotion = await validatePromotion({ promotionCode, subtotal });
+
+  return {
+    subtotal,
+    itemCount: cartItems.length,
+    paymentMethod: payment,
+    shippingAddress: address,
+    promotion,
+  };
+};

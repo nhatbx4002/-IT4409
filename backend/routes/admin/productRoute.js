@@ -8,7 +8,7 @@ const upload = multer({ dest: "tmp/"})
 
 /**
  * @swagger
- * /admin/products/search:
+ * /admin/product-management/search:
  *   get:
  *     summary: Tìm kiếm sản phẩm (Admin)
  *     tags: [Admin, Products]
@@ -17,27 +17,64 @@ const upload = multer({ dest: "tmp/"})
  *         name: q
  *         schema:
  *           type: string
+ *         description: Từ khóa tìm kiếm
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
  *     responses:
  *       200:
  *         description: Kết quả tìm kiếm
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                 message:
+ *                   type: string
  */
 router.get("/search", searchProductsController);
 
 /**
  * @swagger
- * /admin/products:
+ * /admin/product-management:
  *   get:
  *     summary: Hiển thị tất cả sản phẩm (Admin)
  *     tags: [Admin, Products]
  *     responses:
  *       200:
  *         description: Danh sách sản phẩm
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                 message:
+ *                   type: string
  */
 router.get("/", getAllProductsController);
 
 /**
  * @swagger
- * /admin/products/create-product:
+ * /admin/product-management/create-product:
  *   post:
  *     summary: Tạo sản phẩm mới (Admin)
  *     tags: [Admin, Products]
@@ -68,6 +105,17 @@ router.get("/", getAllProductsController);
  *     responses:
  *       201:
  *         description: Tạo sản phẩm thành công
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                 message:
+ *                   type: string
  *       400:
  *         description: Lỗi tạo sản phẩm
  */
@@ -75,7 +123,7 @@ router.post("/create-product", upload.array("images", 10), createProductControll
 
 /**
  * @swagger
- * /admin/products/{productId}/variants:
+ * /admin/product-management/{productId}/variants:
  *   post:
  *     summary: Tạo biến thể cho sản phẩm (Admin)
  *     tags: [Admin, Products]
@@ -109,6 +157,17 @@ router.post("/create-product", upload.array("images", 10), createProductControll
  *     responses:
  *       201:
  *         description: Tạo biến thể thành công
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                 message:
+ *                   type: string
  *       400:
  *         description: Lỗi tạo biến thể
  */
@@ -116,7 +175,7 @@ router.post("/:productId/variants", upload.array("variantImages", 10), createVar
 
 /**
  * @swagger
- * /admin/products/{productId}:
+ * /admin/product-management/{productId}:
  *   delete:
  *     summary: Xóa sản phẩm (Admin)
  *     tags: [Admin, Products]
@@ -129,6 +188,15 @@ router.post("/:productId/variants", upload.array("variantImages", 10), createVar
  *     responses:
  *       200:
  *         description: Xóa sản phẩm thành công
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
  *       404:
  *         description: Không tìm thấy sản phẩm
  */
@@ -136,7 +204,7 @@ router.delete("/:productId", deleteProductController);
 
 /**
  * @swagger
- * /admin/products/update-product/{productId}:
+ * /admin/product-management/update-product/{productId}:
  *   patch:
  *     summary: Cập nhật sản phẩm (Admin)
  *     tags: [Admin, Products]
@@ -169,6 +237,17 @@ router.delete("/:productId", deleteProductController);
  *     responses:
  *       200:
  *         description: Cập nhật sản phẩm thành công
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                 message:
+ *                   type: string
  *       404:
  *         description: Không tìm thấy sản phẩm
  */

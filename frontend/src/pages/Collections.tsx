@@ -1,12 +1,5 @@
 import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
-import {
-  Grid,
-  List,
-  SlidersHorizontal,
-  X,
-  ChevronLeft,
-  ChevronRight,
-} from "lucide-react";
+import { SlidersHorizontal, X, ChevronLeft, ChevronRight } from "lucide-react";
 import MainLayout from "@/layout/MainLayout";
 import { FilterSidebar } from "@/components/FiltersSidebar";
 import { ProductCard } from "@/components/ProductsCard";
@@ -27,8 +20,8 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { useParams, useSearchParams } from "react-router-dom";
-import { getProducts, getProductsByCategory } from "@/lib/api";
-import type { ProductSummary, SortOption, ViewMode } from "@/types/products";
+import { addToCart, addToWishlist, getProducts, getProductsByCategory } from "@/lib/api";
+import type { ProductSummary, SortOption } from "@/types/products";
 import { useProductFilters } from "@/hooks/useProductFilters";
 import { EmptyState, ErrorState, LoadingState } from "@/components/feedback/AsyncStates";
 import {
@@ -36,6 +29,7 @@ import {
   CATEGORY_LABEL_MAP,
   FONT_SANS,
 } from "@/theme/constants";
+import { toast } from "sonner";
 
 export function Collections() {
   const { collection, category } = useParams();
@@ -74,7 +68,6 @@ export function Collections() {
     initialSort: sortParam,
   });
 
-  const [viewMode, setViewMode] = useState<ViewMode>("grid-4");
   const [currentPage, setCurrentPage] = useState(1);
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
   const [isDesktopFilterVisible, setIsDesktopFilterVisible] = useState(true);
@@ -155,44 +148,65 @@ export function Collections() {
 
   const hasNoResults = !isLoading && !error && paginatedProducts.length === 0;
 
+  const handleAddToWishlist = async (productId: number) => {
+    try {
+      await addToWishlist(productId);
+      toast.success("Đã thêm vào wishlist");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Không thể thêm vào wishlist";
+      toast.error(message);
+    }
+  };
+
+  const handleAddToCart = async (productId: number) => {
+    try {
+      // NOTE: API expects variantId; using product id as fallback with qty=1.
+      await addToCart(productId, 1);
+      toast.success("Đã thêm vào giỏ");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Không thể thêm vào giỏ";
+      toast.error(message);
+    }
+  };
+
   return (
     <MainLayout>
-      <section className="bg-[#F9FAFB] pb-10 pt-6">
-        <div className="mx-auto max-w-6xl px-6 sm:px-8 lg:px-0">
+      <section className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1503341504253-dff4815485f1?auto=format&fit=crop&w=1800&q=80')] bg-cover bg-center" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent" />
+        <div className="relative w-full px-4 py-10 sm:px-8 lg:px-12">
           <Breadcrumb className="mb-4">
-          <BreadcrumbList>
-            {crumbs.map((c, idx) => (
-              <Fragment key={`${c.label}-${idx}`}>
-                <BreadcrumbItem>
-                  {c.href ? (
-                    <BreadcrumbLink
-                      href={c.href}
-                      className="text-[#666666] hover:text-[#D4AF37] transition-colors duration-300"
-                    >
-                      {c.label}
-                    </BreadcrumbLink>
-                  ) : (
-                    <BreadcrumbPage>{c.label}</BreadcrumbPage>
-                  )}
-                </BreadcrumbItem>
-                {idx < crumbs.length - 1 && <BreadcrumbSeparator />}
-              </Fragment>
-            ))}
-          </BreadcrumbList>
+            <BreadcrumbList>
+              {crumbs.map((c, idx) => (
+                <Fragment key={`${c.label}-${idx}`}>
+                  <BreadcrumbItem>
+                    {c.href ? (
+                      <BreadcrumbLink
+                        href={c.href}
+                        className="text-white/80 hover:text-[#D4AF37] transition-colors duration-300"
+                      >
+                        {c.label}
+                      </BreadcrumbLink>
+                    ) : (
+                      <BreadcrumbPage className="text-white">{c.label}</BreadcrumbPage>
+                    )}
+                  </BreadcrumbItem>
+                  {idx < crumbs.length - 1 && <BreadcrumbSeparator className="text-white/60" />}
+                </Fragment>
+              ))}
+            </BreadcrumbList>
           </Breadcrumb>
 
-          <header className="mb-6 flex flex-col gap-4 border-b border-gray-200 pb-6 sm:flex-row sm:items-end sm:justify-between">
+          <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#9CA3AF]">
+              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#D4AF37]">
                 {collection ? capitalize(collection) : "All menswear"}
               </p>
-              <h1
-                className="mt-2 font-['Playfair_Display'] text-3xl font-semibold tracking-tight text-[#111827] sm:text-4xl"
-              >
+              <h1 className="mt-1 font-['Playfair_Display'] text-3xl font-semibold tracking-tight text-white sm:text-4xl">
                 {dynamicTitle}
               </h1>
               <p
-                className="mt-2 text-xs text-[#6B7280] sm:text-sm"
+                className="mt-2 text-xs text-white/80 sm:text-sm"
                 style={{
                   fontFamily: FONT_SANS,
                 }}
@@ -202,12 +216,12 @@ export function Collections() {
                   : `Showing ${total} handpicked pieces`}
               </p>
             </div>
-            <div className="rounded-2xl bg-white/80 px-4 py-3 text-xs text-[#4B5563] shadow-sm ring-1 ring-gray-200 sm:text-sm">
+            <div className="rounded-2xl bg-white/15 px-4 py-3 text-xs text-white shadow-sm ring-1 ring-white/20 sm:text-sm backdrop-blur">
               <p className="font-medium">
-                Tailored luxury for the modern gentleman.
+                Contemporary luxury, crafted for motion.
               </p>
-              <p className="mt-1 text-xs text-[#9CA3AF]">
-                Refine by size, color, brand and more to build your perfect edit.
+              <p className="mt-1 text-xs text-white/80">
+                Glide through filters to find your perfect look.
               </p>
             </div>
           </header>
@@ -215,16 +229,14 @@ export function Collections() {
       </section>
 
       <section className="bg-white pb-16 pt-6">
-        <div className="mx-auto flex max-w-6xl gap-8 px-6 sm:px-8 lg:px-0">
+        <div className="mx-auto flex w-full gap-8 px-6 sm:px-8">
           {isDesktopFilterVisible && (
-            <aside className="hidden lg:block w-1/4 transition-all duration-500 ease-in-out">
-              <div className="sticky top-4">
-                <FilterSidebar
-                  filters={filters}
-                  onFilterChange={setFilters}
-                  onClearFilters={handleClearFilters}
-                />
-              </div>
+            <aside className="hidden lg:block w-1/4 sticky top-0 self-start transition-all duration-500 ease-in-out">
+              <FilterSidebar
+                filters={filters}
+                onFilterChange={setFilters}
+                onClearFilters={handleClearFilters}
+              />
             </aside>
           )}
 
@@ -377,39 +389,6 @@ export function Collections() {
                   </Select>
                 </div>
 
-                <div className="flex items-center gap-1 border border-black/20 p-1">
-                  <button
-                    onClick={() => setViewMode("grid-4")}
-                    className={`p-2 transition-all duration-300 ${
-                      viewMode === "grid-4"
-                        ? "bg-[#D4AF37]"
-                        : "hover:bg-black/5"
-                    }`}
-                    aria-label="Grid 4 columns"
-                  >
-                    <Grid className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => setViewMode("grid-3")}
-                    className={`p-2 transition-all duration-300 ${
-                      viewMode === "grid-3"
-                        ? "bg-[#D4AF37]"
-                        : "hover:bg-black/5"
-                    }`}
-                    aria-label="Grid 3 columns"
-                  >
-                    <Grid className="w-4 h-4" strokeWidth={2.5} />
-                  </button>
-                  <button
-                    onClick={() => setViewMode("list")}
-                    className={`p-2 transition-all duration-300 ${
-                      viewMode === "list" ? "bg-[#D4AF37]" : "hover:bg-black/5"
-                    }`}
-                    aria-label="List view"
-                  >
-                    <List className="w-4 h-4" />
-                  </button>
-                </div>
               </div>
             </div>
 
@@ -421,39 +400,16 @@ export function Collections() {
 
             {!isLoading && !error && (
               <div
-                className={`
-                  grid gap-6 mb-12 transition-all duration-500
-                  ${
-                    viewMode === "grid-4"
-                      ? `grid-cols-1 sm:grid-cols-2 ${
-                          isDesktopFilterVisible
-                            ? "lg:grid-cols-3 xl:grid-cols-4"
-                            : "lg:grid-cols-4 xl:grid-cols-5"
-                        }`
-                      : ""
-                  }
-                  ${
-                    viewMode === "grid-3"
-                      ? `grid-cols-1 sm:grid-cols-2 ${
-                          isDesktopFilterVisible
-                            ? "lg:grid-cols-3"
-                            : "lg:grid-cols-4"
-                        }`
-                      : ""
-                  }
-                  ${viewMode === "list" ? "grid-cols-1" : ""}
-                `}
+                className={`grid gap-6 mb-12 transition-all duration-500 grid-cols-1 sm:grid-cols-2 ${
+                  isDesktopFilterVisible ? "lg:grid-cols-3 xl:grid-cols-4" : "lg:grid-cols-4 xl:grid-cols-5"
+                }`}
               >
                 {paginatedProducts.map((product) => (
                   <ProductCard
                     key={product.id}
                     product={product}
-                    onAddToWishlist={(productId) =>
-                      console.log("Add to wishlist:", productId)
-                    }
-                    onAddToCart={(productId) =>
-                      console.log("Add to cart:", productId)
-                    }
+                    onAddToWishlist={handleAddToWishlist}
+                    onAddToCart={handleAddToCart}
                   />
                 ))}
               </div>
@@ -555,4 +511,3 @@ export function Collections() {
     </MainLayout>
   );
 }
-

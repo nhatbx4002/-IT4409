@@ -30,7 +30,12 @@
     "start": "node server.js",
     "dev": "nodemon server.js",
     "dev:server": "nodemon server.js",
-    "test": "npm run test:server",
-    "test:server": "node --test ./tests/app.test.js"
+    "test": "npm run test:all",
+    "test:server": "node --test ./tests/app.test.js",
+    "test:cart": "node --test ./tests/cart.test.js",
+    "test:checkout": "node --test ./tests/checkout.test.js",
+    "test:all": "node --test ./tests/**/*.test.js",
+    "seed:discounts": "node ./scripts/seedDiscounts.js",
+    "insert:products": "node ./scripts/insertProducts.js"
   }
 }

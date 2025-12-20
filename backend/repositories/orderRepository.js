@@ -8,12 +8,24 @@ import {
   OrderItem,
   Payment,
   User,
-  Promotion,
+  Discount,
 } from "../models/index.js";
 
-export const findCartWithItems = (userId) =>
-  Cart.findOne({
-    where: { user_id: userId },
+export const findCartWithItems = (userId, sessionId) => {
+  const where = userId
+    ? { user_id: userId }
+    : sessionId
+    ? { session_id: sessionId, is_guest: true }
+    : null;
+
+  if (!where) {
+    const error = new Error("Không xác định được giỏ hàng");
+    error.status = 400;
+    throw error;
+  }
+
+  return Cart.findOne({
+    where,
     include: [
       {
         model: CartItem,
@@ -27,11 +39,19 @@ export const findCartWithItems = (userId) =>
       },
     ],
   });
+};
 
-export const findShippingAddress = (userId, addressId) =>
-  ShippingAddress.findOne({
+export const findShippingAddress = (addressId, userId, sessionId) => {
+  if (!userId) {
+    const error = new Error("Khách vãng lai không thể dùng địa chỉ đã lưu");
+    error.status = 401;
+    throw error;
+  }
+
+  return ShippingAddress.findOne({
     where: { id: addressId, user_id: userId },
   });
+};
 
 export const createOrderRecord = (payload, transaction) =>
   Order.create(payload, { transaction });
@@ -52,7 +72,7 @@ export const findOrdersForUser = (userId) =>
     include: [
       { model: Payment },
       { model: OrderItem },
-      { model: Promotion, as: "promotion", attributes: ["id", "name", "code", "discount_type", "discount_value"] }
+      { model: Discount, as: "discount", attributes: ["id", "name", "code", "discount_type", "discount_value"] }
     ],
   });
 
@@ -63,7 +83,7 @@ export const findOrderForUser = (userId, orderId) =>
       { model: ShippingAddress },
       { model: Payment, required: false }, // required: false để không fail nếu chưa có payment
       { model: OrderItem },
-      { model: Promotion, as: "promotion", attributes: ["id", "name", "code", "discount_type", "discount_value"], required: false }
+      { model: Discount, as: "discount", attributes: ["id", "name", "code", "discount_type", "discount_value"], required: false }
     ],
   });
 
@@ -77,7 +97,7 @@ export const findAllOrders = () =>
       },
       { model: Payment },
       { model: OrderItem },
-      { model: Promotion, as: "promotion", attributes: ["id", "name", "code", "discount_type", "discount_value"] }
+      { model: Discount, as: "discount", attributes: ["id", "name", "code", "discount_type", "discount_value"] }
     ],
   });
 
@@ -97,7 +117,7 @@ export const findOrderById = (orderId) =>
     include: [
       { model: Payment },
       { model: User },
-      { model: Promotion, as: "promotion", attributes: ["id", "name", "code", "discount_type", "discount_value"] }
+      { model: Discount, as: "discount", attributes: ["id", "name", "code", "discount_type", "discount_value"] }
     ],
   });
 
@@ -106,4 +126,3 @@ export const updatePaymentStatus = (paymentId, updates, transaction) =>
     where: { id: paymentId },
     transaction,
   });
-

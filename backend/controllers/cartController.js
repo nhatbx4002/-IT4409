@@ -6,8 +6,11 @@ import { sendError, sendSuccess } from "./controllerUtils.js";
  */
 export const getCart = async (req, res) => {
     try {
-        const userId = req.user.id; // Lấy từ middleware authenticateToken
-        const cart = await cartService.getCartDetails(userId);
+        const userId = req.user?.id;
+        if (!userId) {
+            throw new Error("Vui lòng đăng nhập để xem giỏ hàng");
+        }
+        const cart = await cartService.getCartDetails({ userId, sessionId: null });
 
         sendSuccess(res, {
             message: "Lấy giỏ hàng thành công",
@@ -23,10 +26,19 @@ export const getCart = async (req, res) => {
  */
 export const addItem = async (req, res) => {
     try {
-        const userId = req.user.id;
-        const { productVariantId, quantity } = req.body;
+        const userId = req.user?.id;
+        if (!userId) {
+            throw new Error("Vui lòng đăng nhập để thêm vào giỏ hàng");
+        }
+        const { productVariantId, productId, quantity } = req.body;
 
-        const item = await cartService.addProductToCart(userId, productVariantId, quantity);
+        const item = await cartService.addProductToCart(
+            userId,
+            productVariantId,
+            quantity,
+            productId,
+            null
+        );
 
         sendSuccess(res, {
             status: 201, // Created
@@ -43,11 +55,14 @@ export const addItem = async (req, res) => {
  */
 export const updateItem = async (req, res) => {
     try {
-        const userId = req.user.id;
+        const userId = req.user?.id;
+        if (!userId) {
+            throw new Error("Vui lòng đăng nhập để cập nhật giỏ hàng");
+        }
         const { cartItemId } = req.params; // Lấy ID item từ URL
         const { quantity } = req.body; // Lấy số lượng mới từ body
 
-        const updatedItem = await cartService.updateItemQuantity(userId, cartItemId, quantity);
+        const updatedItem = await cartService.updateItemQuantity(userId, cartItemId, quantity, null);
 
         sendSuccess(res, {
             message: "Cập nhật số lượng thành công",
@@ -63,10 +78,13 @@ export const updateItem = async (req, res) => {
  */
 export const removeItem = async (req, res) => {
     try {
-        const userId = req.user.id;
+        const userId = req.user?.id;
+        if (!userId) {
+            throw new Error("Vui lòng đăng nhập để xóa sản phẩm trong giỏ");
+        }
         const { cartItemId } = req.params; // Lấy ID item từ URL
 
-        await cartService.removeItemFromCart(userId, cartItemId);
+        await cartService.removeItemFromCart(userId, cartItemId, null);
 
         sendSuccess(res, { message: "Xóa sản phẩm thành công" });
     } catch (error) {

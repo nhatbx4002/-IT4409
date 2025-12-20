@@ -12,7 +12,7 @@ import {
 import { useMemo, useState, useEffect } from "react";
 import { ProductsCarousel } from "@/components/Cart/ProductsCarousel";
 import { ViewedProductsCarousel } from "@/components/Cart/ViewedProductsCarousel";
-import { getCart, updateCartItem, removeCartItem } from "@/lib/api";
+import { getCart, updateCartItem, removeCartItem, validateDiscountCode } from "@/lib/api";
 import type { CartItem as ApiCartItem, CartResponse } from "@/types/cart";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
@@ -227,28 +227,39 @@ export default function CartPage() {
     }
   };
 
-  const handleApplyPromo = () => {
-    if (!promoCode.trim()) {
+  const handleApplyPromo = async () => {
+    const code = promoCode.trim();
+    if (!code) {
       setPromoState("error");
       setAppliedPromo(false);
+      toast.error("Please enter a code");
       return;
     }
 
-    if (promoCode.trim().toUpperCase() === PROMO.code) {
-      setAppliedPromo(true);
-      setPromoState("success");
-      return;
+    try {
+      const result = await validateDiscountCode(code);
+      if (result.valid) {
+        setAppliedPromo(true);
+        setPromoState("success");
+        toast.success("Discount code is valid");
+      } else {
+        setAppliedPromo(false);
+        setPromoState("error");
+        toast.error("Invalid or expired code");
+      }
+    } catch (err) {
+      setAppliedPromo(false);
+      setPromoState("error");
+      const message = err instanceof Error ? err.message : "Failed to validate code";
+      toast.error(message);
     }
-
-    setAppliedPromo(false);
-    setPromoState("error");
   };
 
   if (isLoading) {
     return (
       <MainLayout>
         <section className="bg-white">
-          <div className="mx-auto max-w-[1200px] px-4 py-20 sm:px-6 lg:px-8">
+          <div className="w-full px-4 py-20 sm:px-6 lg:px-10 xl:px-16">
             <div className="flex items-center justify-center py-20">
               <Loader2 className="h-8 w-8 animate-spin text-black" />
             </div>
@@ -262,7 +273,7 @@ export default function CartPage() {
     return (
       <MainLayout>
         <section className="bg-white">
-          <div className="mx-auto max-w-[1200px] px-4 py-20 sm:px-6 lg:px-8">
+          <div className="w-full px-4 py-20 sm:px-6 lg:px-10 xl:px-16">
             <div className="flex flex-col items-center justify-center py-20">
               <AlertCircle className="h-12 w-12 text-red-600 mb-4" />
               <p className="text-lg text-[#6B7280] mb-4">{error}</p>
@@ -282,8 +293,8 @@ export default function CartPage() {
   return (
     <MainLayout>
       <section className="bg-white">
-        <div className="mx-auto max-w-[1200px] px-4 py-20 sm:px-6 lg:px-8">
-          <div className="grid gap-16 lg:grid-cols-[minmax(0,780px)_360px]">
+        <div className="w-full px-4 py-20 sm:px-8 lg:px-12 xl:px-16">
+          <div className="grid gap-16 lg:grid-cols-[2fr_1fr]">
             <div>
               <nav
                 aria-label="Breadcrumb"
@@ -306,25 +317,21 @@ export default function CartPage() {
               </header>
               <div className="mt-10 h-px w-full bg-[#E5E5E5]" />
 
-              <div className="mt-10 divide-y divide-[#E5E5E5]">
-                {items.length > 0 ? (
-                  items.map((item) => (
-                    <CartItemCard
-                      key={item.id}
-                      item={item}
-                      isUpdating={updatingItems.has(item.cartItemId)}
-                      onDecrease={() => handleQuantityChange(item.id, -1)}
-                      onIncrease={() => handleQuantityChange(item.id, 1)}
-                      onRemove={() => handleRemoveItem(item.id)}
-                      onSizeChange={(value) => handleSizeChange(item.id, value)}
-                      onColorChange={(value) =>
-                        handleColorChange(item.id, value)
-                      }
-                    />
-                  ))
-                ) : (
-                  <EmptyCartState />
-                )}
+      <div className="mt-10 divide-y divide-[#E5E5E5]">
+        {items.length > 0 ? (
+          items.map((item) => (
+            <CartItemCard
+              key={item.id}
+              item={item}
+              isUpdating={updatingItems.has(item.cartItemId)}
+              onDecrease={() => handleQuantityChange(item.id, -1)}
+              onIncrease={() => handleQuantityChange(item.id, 1)}
+              onRemove={() => handleRemoveItem(item.id)}
+            />
+          ))
+        ) : (
+          <EmptyCartState />
+        )}
               </div>
             </div>
 
@@ -370,8 +377,6 @@ type CartItemCardProps = {
   onIncrease: () => void;
   onDecrease: () => void;
   onRemove: () => void;
-  onSizeChange: (value: string) => void;
-  onColorChange: (value: string) => void;
 };
 
 const CartItemCard = ({
@@ -380,8 +385,6 @@ const CartItemCard = ({
   onIncrease,
   onDecrease,
   onRemove,
-  onSizeChange,
-  onColorChange,
 }: CartItemCardProps) => (
   <article className="grid grid-cols-[120px_minmax(0,1fr)] gap-8 py-10">
     <div className="group overflow-hidden">
@@ -412,14 +415,17 @@ const CartItemCard = ({
       </div>
       <div className="space-y-3">
         <p className="text-xs text-[#999999]">
-          Color: {item.color} / Size: {item.size}
+          Color: {item.color} / Size: {item.size}{" "}
+          <button
+            type="button"
+            className="ml-2 text-[11px] uppercase tracking-[0.2em] text-[#C2A26F] underline underline-offset-2 transition hover:text-[#a88953]"
+            onClick={() =>
+              toast.info("To edit color/size, please remove and re-add the variant.")
+            }
+          >
+            Edit
+          </button>
         </p>
-        <VariantControls
-          size={item.size}
-          color={item.color}
-          onSizeChange={onSizeChange}
-          onColorChange={onColorChange}
-        />
         <span
           className={`text-[11px] uppercase tracking-[0.3em] ${stockStyles[item.stockStatus]}`}
         >
@@ -626,44 +632,92 @@ const PromoCodeToggle = ({
     <button
       type="button"
       onClick={onToggle}
-      className="text-xs font-medium text-[#333333] underline underline-offset-4 transition hover:text-[#000000]"
+      className="text-xs font-semibold text-black/70 hover:text-black active:text-black/50 transition duration-300"
     >
-      Do you have a promo code?
+      {isExpanded ? "Hide promo code" : "Do you have a promo code?"}
     </button>
+    
+    {/* Expandable Section */}
     <div
-      className={`overflow-hidden transition-all duration-300 ${
-        isExpanded ? "max-h-48 opacity-100" : "max-h-0 opacity-0"
+      className={`overflow-hidden transition-all duration-500 ease-out ${
+        isExpanded ? "max-h-80 opacity-100" : "max-h-0 opacity-0"
       }`}
     >
       {isExpanded && (
-        <div className="mt-3 border border-[#E5E5E5] p-3">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+        <div className="mt-3 space-y-3">
+          {/* Label */}
+          <label className="block text-[10px] uppercase tracking-[0.2em] font-bold text-black/40 ml-1">
+            Promo Code
+          </label>
+
+          {/* Seamless Input Block */}
+          <div className="relative flex items-center group">
             <input
+              type="text"
               value={promoCode}
               onChange={(event) => onChange(event.target.value)}
-              placeholder="Enter code"
-              className="h-9 flex-1 border-b border-[#E5E5E5] bg-transparent px-1 text-xs text-[#333333] focus:border-[#D4AF37] focus:outline-none"
+              placeholder="Enter your code"
+              disabled={status === "success" && isApplied}
+              className={`
+                w-full rounded-full py-3.5 pl-6 pr-28 text-sm font-medium tracking-tight outline-none transition-all
+                ${
+                  status === "error"
+                    ? "border-2 border-[#DC2626] bg-[#FEE2E2] placeholder:text-[#DC2626]/40 focus:border-[#DC2626]"
+                    : status === "success" && isApplied
+                    ? "border-2 border-[#10B981] bg-[#F0FDF4] placeholder:text-[#10B981]/40 focus:border-[#10B981]"
+                    : "border-2 border-black bg-white placeholder:text-black/30 focus:border-black focus:shadow-lg"
+                }
+                ${status === "success" && isApplied ? "cursor-not-allowed opacity-60" : ""}
+              `}
             />
+
+            {/* Status Icon - Inside Input */}
+            {status === "success" && isApplied && (
+              <div className="absolute left-6 text-[#10B981]">
+                <CheckCircle2 className="h-5 w-5" />
+              </div>
+            )}
+            {status === "error" && (
+              <div className="absolute left-6 text-[#DC2626]">
+                <AlertCircle className="h-5 w-5" />
+              </div>
+            )}
+
+            {/* Apply Button - Rounded, Seamless */}
             <button
               type="button"
               onClick={onApply}
-              className="h-9 rounded-md bg-gray-800 px-4 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-gray-900"
+              disabled={status === "success" && isApplied}
+              className={`
+                absolute right-1.5 text-[10px] font-black uppercase tracking-widest px-5 py-2.5 rounded-full transition-all duration-300
+                ${
+                  status === "success" && isApplied
+                    ? "bg-[#10B981] text-white cursor-not-allowed opacity-70 hover:bg-[#10B981]"
+                    : status === "error"
+                    ? "bg-[#DC2626] text-white hover:bg-[#B91C1C] active:scale-95"
+                    : "bg-black text-white hover:bg-black/90 active:scale-95"
+                }
+              `}
             >
-              Apply
+              {status === "success" && isApplied ? "✓" : "Apply"}
             </button>
           </div>
-          {status === "success" && isApplied && (
-            <div className="mt-3 flex items-center gap-2 text-xs font-medium text-[#065F46]">
-              <CheckCircle2 className="h-4 w-4" />
-              {PROMO.label}
-            </div>
-          )}
-          {status === "error" && (
-            <div className="mt-2 flex items-center gap-2 text-xs text-[#DC2626]">
-              <AlertCircle className="h-4 w-4" />
-              Invalid code
-            </div>
-          )}
+
+          {/* Status Messages - Below Input */}
+          <div className="min-h-5">
+            {status === "success" && isApplied && (
+              <div className="flex items-center gap-2 text-xs font-semibold text-[#065F46] bg-[#ECFDF5] px-4 py-2 rounded-lg">
+                <CheckCircle2 className="h-4 w-4 flex-shrink-0" />
+                <span>{PROMO.label}</span>
+              </div>
+            )}
+            {status === "error" && (
+              <div className="flex items-center gap-2 text-xs font-semibold text-[#7F1D1D] bg-[#FEE2E2] px-4 py-2 rounded-lg">
+                <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                <span>Invalid or expired code</span>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>
@@ -748,10 +802,15 @@ const OrderSummaryCard = ({
       Proceed to Checkout
       <ArrowRight className="h-4 w-4" />
     </button>
-    <div className="flex flex-wrap items-center gap-3 text-xs text-[#999999]">
-      {PAYMENT_LOGOS.map((logo) => (
-        <div key={logo} className="px-3 py-2">
-          {logo}
+    <div className="space-y-4 rounded-lg bg-white/70 p-4 shadow-sm">
+      {[
+        { icon: "✅", title: "Free Returns within 30 days" },
+        { icon: "🔒", title: "Secure Checkout" },
+        { icon: "🎁", title: "Complimentary Gift Wrapping" },
+      ].map((item) => (
+        <div key={item.title} className="flex items-center gap-3 text-sm text-[#1A1A1A]">
+          <span className="text-lg">{item.icon}</span>
+          <span>{item.title}</span>
         </div>
       ))}
     </div>
@@ -775,7 +834,7 @@ const SummaryRow = ({
 
 const SiteFooter = () => (
   <footer className="mt-20 bg-[#000000] py-16 text-center text-[#999999]">
-    <div className="mx-auto max-w-[1200px] px-4">
+    <div className="w-full px-4 sm:px-6 lg:px-10 xl:px-16">
       <p className="text-sm uppercase tracking-[0.4em] text-white">
         Aristino
       </p>

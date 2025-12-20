@@ -1,4 +1,4 @@
-import { sequelize } from "../../models/index.js";
+import { sequelize, Product } from "../../models/index.js";
 import { Op } from "sequelize";
 import { resolveCategoryId } from "./product/categoryService.js";
 import {
@@ -173,13 +173,41 @@ export const updateProductService = async (productId, data = {}, files) => {
   }
 };
 
-export const getAllProductsService = async () => {
-  const products = await listProductsWithRelations({
-    where: {},
+export const getAllProductsService = async (page = 1, limit = 10, search = "") => {
+  const whereClause = {};
+
+  if (search) {
+    whereClause[Op.or] = [
+      { name: { [Op.iLike]: `%${search}%` } },
+      { brand: { [Op.iLike]: `%${search}%` } },
+    ];
+  }
+
+  const offset = (parseInt(page) - 1) * parseInt(limit);
+
+  const { count, rows } = await Product.findAndCountAll({
+    where: whereClause,
+    include: [
+      {
+        model: Category,
+        as: 'category',
+        attributes: ['id', 'name']
+      }
+    ],
     order: defaultProductOrder,
+    limit: parseInt(limit),
+    offset
   });
 
-  return products.map(stripCategoryId);
+  return {
+    products: rows.map(stripCategoryId),
+    pagination: {
+      page: parseInt(page),
+      limit: parseInt(limit),
+      total: count,
+      totalPages: Math.ceil(count / limit)
+    }
+  };
 };
 
 export const searchProductsService = async (searchTerm) => {

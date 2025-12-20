@@ -105,8 +105,12 @@ export const appendPriceAndStockFilters = (
 };
 
 export const buildPagination = (page = 1, pageSize = 12) => {
-  const parsedPage = Math.max(1, parseInt(page, 10) || 1);
-  const parsedPageSize = Math.max(1, parseInt(pageSize, 10) || 12);
+  const parsedPage = Math.max(1, Number.parseInt(page, 10) || 1);
+  const rawPageSize = Number.parseInt(pageSize, 10);
+  const parsedPageSize = Math.min(
+    100,
+    Math.max(1, Number.isFinite(rawPageSize) ? rawPageSize : 12)
+  );
 
   return {
     limit: parsedPageSize,

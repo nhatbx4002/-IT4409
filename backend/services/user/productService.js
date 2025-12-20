@@ -9,6 +9,7 @@ import {
   listProductsWithRelations,
   countProductsWithRelations,
   findProductWithRelations,
+  findProductBySlugWithRelations,
 } from "../../repositories/productRepository.js";
 import {
   appendPriceAndStockFilters,
@@ -29,7 +30,7 @@ const transformVariantDetail = (variant) => {
     color: data.color || null,
     size: data.size || null,
     sku: data.sku || null,
-    price: parseFloat(data.price_adjustment || 0),
+    price: parseFloat(data.price || 0),
     stockQuantity: data.stock_quantity || 0,
     imageUrl: data.image_url || null,
   };
@@ -187,15 +188,59 @@ export const getProductDetailService = async (productId) => {
 
   const variants = (data.variants || []).map((variant) => {
     const variantData = variant.toJSON ? variant.toJSON() : variant;
-    const basePrice = parseFloat(data.base_price || 0);
-    const priceAdjustment = parseFloat(variantData.price_adjustment || 0);
 
     return {
       id: variantData.id,
       color: variantData.color || null,
       size: variantData.size || null,
       sku: variantData.sku || null,
-      price: basePrice + priceAdjustment,
+      price: parseFloat(variantData.price || 0),
+      stockQuantity: variantData.stock_quantity || 0,
+      imageUrl: variantData.image_url || null,
+    };
+  });
+
+  return {
+    ...summary,
+    description: data.description || null,
+    variants,
+  };
+};
+
+export const getProductDetailBySlugOrIdService = async (slugOrId) => {
+  if (!slugOrId) {
+    throw new Error("Product slug or ID is required");
+  }
+
+  let product;
+  // Try to parse as integer ID first
+  const possibleId = parseInt(slugOrId, 10);
+  if (!isNaN(possibleId)) {
+    product = await findProductWithRelations(possibleId);
+  }
+  
+  // If not found by ID or not a valid ID, try to find by slug
+  if (!product) {
+    product = await findProductBySlugWithRelations(slugOrId);
+  }
+
+  if (!product) {
+    throw new Error("Product not found");
+  }
+
+  const data = product.toJSON();
+
+  const summary = summarizeProduct(product);
+
+  const variants = (data.variants || []).map((variant) => {
+    const variantData = variant.toJSON ? variant.toJSON() : variant;
+
+    return {
+      id: variantData.id,
+      color: variantData.color || null,
+      size: variantData.size || null,
+      sku: variantData.sku || null,
+      price: parseFloat(variantData.price || 0),
       stockQuantity: variantData.stock_quantity || 0,
       imageUrl: variantData.image_url || null,
     };
@@ -305,5 +350,4 @@ export const searchProductsService = async ({
     totalPages,
   };
 };
-
 

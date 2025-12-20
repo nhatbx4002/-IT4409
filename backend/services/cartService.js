@@ -11,12 +11,58 @@ import { Op, col } from "sequelize";
 /**
  * Hàm nội bộ: Tìm giỏ hàng của user, nếu chưa có thì tạo mới
  */
-const getOrCreateCart = async (userId) => {
+const getOrCreateCart = async ({ userId, sessionId }) => {
+    if (!userId) {
+        throw new Error("Vui lòng đăng nhập để sử dụng giỏ hàng");
+    }
+
     const [cart] = await Cart.findOrCreate({
         where: { user_id: userId },
-        defaults: { user_id: userId },
+        defaults: { user_id: userId, is_guest: false },
     });
     return cart;
+};
+
+const resolveVariant = async ({ productVariantId, productId, transaction }) => {
+    if (productVariantId) {
+        const variant = await ProductVariant.findByPk(productVariantId, {
+            transaction,
+            lock: transaction?.LOCK?.UPDATE,
+        });
+        if (!variant) {
+            throw new Error("Biến thể sản phẩm không tồn tại");
+        }
+        return variant;
+    }
+
+    if (productId) {
+        const variant = await ProductVariant.findOne({
+            where: { product_id: productId },
+            order: [["id", "ASC"]],
+            transaction,
+            lock: transaction?.LOCK?.UPDATE,
+        });
+        if (!variant) {
+            throw new Error("Sản phẩm không có biến thể khả dụng");
+        }
+        return variant;
+    }
+
+    throw new Error("Vui lòng chọn sản phẩm");
+};
+
+const clampQuantityToStock = (requested, stockQuantity) => {
+    const safeStock = Number(stockQuantity) || 0;
+    if (safeStock <= 0) {
+        throw new Error("Sản phẩm không còn trong kho");
+    }
+
+    const safeRequested = Number(requested) || 0;
+    if (safeRequested <= 0) {
+        throw new Error("Số lượng phải là một số dương");
+    }
+
+    return Math.min(safeRequested, safeStock);
 };
 
 /**
@@ -25,32 +71,25 @@ const getOrCreateCart = async (userId) => {
 export const addProductToCart = async (
     userId,
     productVariantId,
-    quantity
+    quantity,
+    productId,
+    sessionId
 ) => {
-    // --- Validations ---
-    if (!productVariantId) {
-        throw new Error("Vui lòng chọn sản phẩm");
-    }
     const addQuantity = parseInt(quantity, 10);
-    if (isNaN(addQuantity) || addQuantity <= 0) {
-        throw new Error("Số lượng phải là một số dương");
-    }
-
-    // --- Tìm giỏ hàng & sản phẩm ---
-    const cart = await getOrCreateCart(userId);
-    const variant = await ProductVariant.findByPk(productVariantId);
-
-    if (!variant) {
-        throw new Error("Sản phẩm không tồn tại");
-    }
-
     // --- Xử lý logic (trong 1 transaction) ---
     const result = await sequelize.transaction(async (t) => {
+        const variant = await resolveVariant({ productVariantId, productId, transaction: t });
+        const resolvedVariantId = variant.id;
+        const quantityToAdd = clampQuantityToStock(addQuantity, variant.stock_quantity);
+
+        // --- Tìm giỏ hàng & sản phẩm ---
+        const cart = await getOrCreateCart({ userId, sessionId });
+
         // Kiểm tra xem item đã có trong giỏ chưa
         let cartItem = await CartItem.findOne({
             where: {
                 cart_id: cart.id,
-                product_variant_id: productVariantId,
+                product_variant_id: resolvedVariantId,
             },
             transaction: t,
         });
@@ -58,15 +97,15 @@ export const addProductToCart = async (
         let newQuantity;
         if (cartItem) {
             // Đã có -> Cập nhật số lượng
-            newQuantity = cartItem.quantity + addQuantity;
+            newQuantity = cartItem.quantity + quantityToAdd;
             cartItem.quantity = newQuantity;
         } else {
             // Chưa có -> Tạo mới
-            newQuantity = addQuantity;
+            newQuantity = quantityToAdd;
             cartItem = await CartItem.create(
                 {
                     cart_id: cart.id,
-                    product_variant_id: productVariantId,
+                    product_variant_id: resolvedVariantId,
                     quantity: newQuantity,
                 },
                 { transaction: t }
@@ -74,11 +113,8 @@ export const addProductToCart = async (
         }
 
         // Kiểm tra tồn kho
-        if (newQuantity > variant.stock_quantity) {
-            throw new Error(
-                `Số lượng trong kho không đủ (Chỉ còn ${variant.stock_quantity} sản phẩm)`
-            );
-        }
+        const clampedQuantity = clampQuantityToStock(newQuantity, variant.stock_quantity);
+        cartItem.quantity = clampedQuantity;
 
         await cartItem.save({ transaction: t });
         return cartItem;
@@ -90,7 +126,7 @@ export const addProductToCart = async (
 /**
  * 2. Cập nhật số lượng sản phẩm trong giỏ
  */
-export const updateItemQuantity = async (userId, cartItemId, quantity) => {
+export const updateItemQuantity = async (userId, cartItemId, quantity, sessionId) => {
     const newQuantity = parseInt(quantity, 10);
     if (isNaN(newQuantity) || newQuantity < 0) {
         throw new Error("Số lượng không hợp lệ");
@@ -98,48 +134,52 @@ export const updateItemQuantity = async (userId, cartItemId, quantity) => {
 
     // Nếu số lượng là 0, gọi hàm xóa
     if (newQuantity === 0) {
-        return await removeItemFromCart(userId, cartItemId);
+        return await removeItemFromCart(userId, cartItemId, sessionId);
     }
 
-    // --- Tìm giỏ hàng & item ---
-    const cart = await getOrCreateCart(userId);
-    const cartItem = await CartItem.findByPk(cartItemId);
+    return sequelize.transaction(async (t) => {
+        // --- Tìm giỏ hàng & item ---
+        const cart = await getOrCreateCart({ userId, sessionId });
+        const cartItem = await CartItem.findByPk(cartItemId, {
+            transaction: t,
+            lock: t.LOCK.UPDATE,
+        });
 
-    if (!cartItem) {
-        throw new Error("Sản phẩm không có trong giỏ hàng");
-    }
-    // --- Security check: Đảm bảo item này thuộc giỏ hàng của user ---
-    if (cartItem.cart_id !== cart.id) {
-        throw new Error("Bạn không có quyền cập nhật sản phẩm này");
-    }
+        if (!cartItem) {
+            throw new Error("Sản phẩm không có trong giỏ hàng");
+        }
+        // --- Security check: Đảm bảo item này thuộc giỏ hàng của user ---
+        if (cartItem.cart_id !== cart.id) {
+            throw new Error("Bạn không có quyền cập nhật sản phẩm này");
+        }
 
-    // --- Kiểm tra tồn kho ---
-    const variant = await ProductVariant.findByPk(cartItem.product_variant_id);
-    if (!variant) {
-        // Nếu sản phẩm đã bị xóa, cũng xóa nó khỏi giỏ
-        await cartItem.destroy();
-        throw new Error(
-            "Sản phẩm không còn tồn tại và đã được xóa khỏi giỏ hàng"
-        );
-    }
+        // --- Kiểm tra tồn kho ---
+        const variant = await ProductVariant.findByPk(cartItem.product_variant_id, {
+            transaction: t,
+            lock: t.LOCK.UPDATE,
+        });
+        if (!variant) {
+            // Nếu sản phẩm đã bị xóa, cũng xóa nó khỏi giỏ
+            await cartItem.destroy({ transaction: t });
+            throw new Error(
+                "Sản phẩm không còn tồn tại và đã được xóa khỏi giỏ hàng"
+            );
+        }
 
-    if (newQuantity > variant.stock_quantity) {
-        throw new Error(
-            `Số lượng trong kho không đủ (Chỉ còn ${variant.stock_quantity} sản phẩm)`
-        );
-    }
+        const clampedQuantity = clampQuantityToStock(newQuantity, variant.stock_quantity);
 
-    // --- Cập nhật ---
-    cartItem.quantity = newQuantity;
-    await cartItem.save();
-    return cartItem;
+        // --- Cập nhật ---
+        cartItem.quantity = clampedQuantity;
+        await cartItem.save({ transaction: t });
+        return cartItem;
+    });
 };
 
 /**
  * 3. Xóa sản phẩm khỏi giỏ
  */
-export const removeItemFromCart = async (userId, cartItemId) => {
-    const cart = await getOrCreateCart(userId);
+export const removeItemFromCart = async (userId, cartItemId, sessionId) => {
+    const cart = await getOrCreateCart({ userId, sessionId });
     const cartItem = await CartItem.findByPk(cartItemId);
 
     if (!cartItem) {
@@ -158,9 +198,9 @@ export const removeItemFromCart = async (userId, cartItemId) => {
 /**
  * 4. Lấy chi tiết giỏ hàng và tính tổng tiền
  */
-export const getCartDetails = async (userId) => {
+export const getCartDetails = async ({ userId, sessionId }) => {
     try {
-        const cart = await getOrCreateCart(userId);
+        const cart = await getOrCreateCart({ userId, sessionId });
 
         // Lấy tất cả item trong giỏ, đồng thời lấy thông tin của
         // ProductVariant (biến thể) và Product (sản phẩm gốc)
@@ -177,7 +217,7 @@ export const getCartDetails = async (userId) => {
                         "color",
                         "size",
                         "sku",
-                        "price_adjustment",
+                        "price",
                         "stock_quantity",
                         "image_url",
                     ],
@@ -212,11 +252,7 @@ export const getCartDetails = async (userId) => {
         const product = variant.product;
 
         // Tính giá cuối cùng của 1 sản phẩm
-        // (Giá gốc + điều chỉnh giá của biến thể)
-        // Đồng nhất với cách tính trong productService
-        const basePrice = parseFloat(product.base_price || 0);
-        const priceAdjustment = parseFloat(variant.price_adjustment || 0);
-        const final_price = basePrice + priceAdjustment;
+        const final_price = parseFloat(variant.price || product.base_price || 0);
 
         // Tính tổng tiền của dòng này
         const line_total = Number((final_price * item.quantity).toFixed(2));
@@ -277,4 +313,105 @@ export const getCartDetails = async (userId) => {
         console.error("Error in getCartDetails:", error);
         throw error;
     }
+};
+
+export const mergeGuestCartToUser = async (userId, sessionId) => {
+    if (!userId || !sessionId) return null;
+
+    const guestCart = await Cart.findOne({
+        where: { session_id: sessionId, is_guest: true },
+    });
+    if (!guestCart) return null;
+
+    const userCart = await getOrCreateCart({ userId });
+
+    await sequelize.transaction(async (t) => {
+        const guestItems = await CartItem.findAll({
+            where: { cart_id: guestCart.id },
+            transaction: t,
+        });
+
+        for (const item of guestItems) {
+            const variant = await ProductVariant.findByPk(item.product_variant_id, {
+                transaction: t,
+            });
+
+            if (!variant || (variant.stock_quantity || 0) <= 0) {
+                await item.destroy({ transaction: t });
+                continue;
+            }
+
+            const existing = await CartItem.findOne({
+                where: { cart_id: userCart.id, product_variant_id: item.product_variant_id },
+                transaction: t,
+            });
+
+            const mergedQuantity = existing ? existing.quantity + item.quantity : item.quantity;
+            const finalQuantity = clampQuantityToStock(mergedQuantity, variant.stock_quantity);
+
+            if (existing) {
+                existing.quantity = finalQuantity;
+                await existing.save({ transaction: t });
+            } else {
+                await CartItem.create(
+                    {
+                        cart_id: userCart.id,
+                        product_variant_id: item.product_variant_id,
+                        quantity: finalQuantity,
+                    },
+                    { transaction: t }
+                );
+            }
+        }
+
+        await guestCart.destroy({ transaction: t });
+    });
+
+    return true;
+};
+
+/**
+ * Dọn dẹp giỏ hàng bị bỏ quên theo số ngày, sử dụng cascade delete trên Cart -> CartItem.
+ * Trả về số cart và cart item bị xóa (ước tính dựa trên count trước khi xóa).
+ */
+export const cleanupAbandonedCarts = async (days = 30) => {
+    const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+    const staleCarts = await Cart.findAll({
+        where: { updated_at: { [Op.lt]: cutoff } },
+        attributes: ["id"],
+        raw: true,
+    });
+
+    if (!staleCarts.length) {
+        console.info(`[cleanupAbandonedCarts] No carts older than ${days} days.`);
+        return { cartsDeleted: 0, cartItemsDeleted: 0 };
+    }
+
+    const cartIds = staleCarts.map((c) => c.id);
+    const cartItemsDeleted = await CartItem.count({ where: { cart_id: { [Op.in]: cartIds } } });
+    const cartsDeleted = await Cart.destroy({
+        where: { id: { [Op.in]: cartIds } },
+    });
+
+    console.info(`[cleanupAbandonedCarts] Deleted ${cartsDeleted} carts and ~${cartItemsDeleted} items (cascade).`);
+    return { cartsDeleted, cartItemsDeleted };
+};
+
+/**
+ * Dọn dẹp CartItem mồ côi (cart_id null hoặc không tồn tại), độc lập với Cart.
+ */
+export const cleanupOrphanedCartItems = async () => {
+    const existingCarts = await Cart.findAll({ attributes: ["id"], raw: true });
+    const cartIds = existingCarts.map((c) => c.id);
+
+    const orphanCondition = cartIds.length
+        ? { [Op.or]: [{ cart_id: null }, { cart_id: { [Op.notIn]: cartIds } }] }
+        : { cart_id: { [Op.not]: null } }; // nếu không có cart nào, xóa tất cả item có cart_id khác null
+
+    const deleted = await CartItem.destroy({
+        where: orphanCondition,
+    });
+
+    console.info(`[cleanupOrphanedCartItems] Deleted ${deleted} orphaned cart items.`);
+    return deleted;
 };

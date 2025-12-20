@@ -1,6 +1,6 @@
 import express from 'express';
 import passport from "passport";
-import { signUp, signIn, signOut,sendOTPEmail, verifyOTPEmail, resetPassword, signInGoogleController, facebookAuth, facebookAuthCallback, updateUser  } from '../controllers/authController.js';
+import { signUp, signIn, signOut, getCurrentUser, sendOTPEmail, verifyOTPEmail, resetPassword, signInGoogleController, facebookAuth, facebookAuthCallback, updateUser, refreshAccessToken  } from '../controllers/authController.js';
 import { authenticateToken } from '../middlewares/auth.js';
 import { redirectOAuthError } from "../utils/oauth.js";
 
@@ -80,6 +80,22 @@ router.post('/auth/signIn', signIn);
  *         description: Unauthorized
  */
 router.get('/auth/signOut', authenticateToken, signOut);
+
+/**
+ * @swagger
+ * /auth/me:
+ *   get:
+ *     summary: Lấy thông tin user hiện tại
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Lấy thông tin thành công
+ *       401:
+ *         description: Unauthorized
+ */
+router.get('/auth/me', authenticateToken, getCurrentUser);
 
 /**
  * @swagger
@@ -179,7 +195,7 @@ router.get("/auth/google", passport.authenticate("google", { scope: ["profile", 
 
 // Callback sau khi Google xác thực
 router.get(
-  "/google/callback",
+  "/auth/google/callback",
   (req, res, next) => {
     passport.authenticate("google", (err, user, info) => {
       const stateParam = typeof req.query?.state === "string" ? req.query.state : undefined;
@@ -270,5 +286,30 @@ router.get(
  *         description: Unauthorized
  */
 router.put("/auth/profile/:id", authenticateToken, updateUser);
+
+/**
+ * @swagger
+ * /auth/refresh:
+ *   post:
+ *     summary: Refresh access token
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - refreshToken
+ *             properties:
+ *               refreshToken:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Token refreshed successfully
+ *       401:
+ *         description: Invalid refresh token
+ */
+router.post('/auth/refresh', refreshAccessToken);
 
 export default router;

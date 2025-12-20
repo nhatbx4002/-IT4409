@@ -9,4 +9,5 @@ export const Review = sequelize.define("reviews", {
   comment: DataTypes.TEXT,
   images: { type: DataTypes.JSONB, defaultValue: [] },
   created_at: { type: DataTypes.DATE, defaultValue: DataTypes.NOW },
+  updated_at: { type: DataTypes.DATE, defaultValue: DataTypes.NOW },
 });

@@ -1,4 +1,5 @@
-import { Promotion, ProductVariant } from "../models/index.js";
+import { Product, ProductVariant, ShippingAddress } from "../models/index.js";
+import discountService from "./discountService.js";
 import { sendOrderStatusEmail } from "./emailService.js";
 import { Op } from "sequelize";
 import crypto from "crypto";
@@ -14,19 +15,53 @@ import {
     clearCartItems,
     findOrdersForUser,
     findOrderForUser,
-    findAllOrders,
     findOrderWithRelations,
     findPaymentByOrderId,
     findOrderById,
     updatePaymentStatus
 } from "../repositories/orderRepository.js";
 import { withTransaction } from "../utils/transactions.js";
+import { Order, User } from "../models/index.js";
 
 const env = loadEnv();
 
 // === CẤU HÌNH ===
 const SHOP_PROVINCE_ID = parseInt(env.SHOP_PROVINCE_ID || "1", 10);
 const SHOP_CITY_NAME = env.SHOP_CITY || "Hà Nội";
+
+const findOrCreateShippingAddress = async ({ userId, addressId, sessionId, guestAddressData, transaction }) => {
+    if (userId && addressId) {
+        const address = await findShippingAddress(addressId, userId, sessionId);
+        if (!address) {
+            const error = new Error("Địa chỉ giao hàng không tồn tại");
+            error.status = 400;
+            throw error;
+        }
+        return address;
+    }
+
+    if (sessionId && guestAddressData) {
+        const requiredFields = ["full_name", "phone", "city", "district", "ward", "address"];
+        const missing = requiredFields.filter((field) => !guestAddressData[field]);
+        if (missing.length) {
+            const error = new Error(`Thiếu thông tin địa chỉ: ${missing.join(", ")}`);
+            error.status = 400;
+            throw error;
+        }
+
+        return ShippingAddress.create(
+            {
+                ...guestAddressData,
+                user_id: null,
+            },
+            { transaction }
+        );
+    }
+
+    const error = new Error("Thiếu thông tin địa chỉ giao hàng");
+    error.status = 400;
+    throw error;
+};
 
 /**
  * Hàm tính phí ship cơ bản (Theo địa chỉ)
@@ -54,66 +89,32 @@ const calculateFeeLogic = (addressData, subtotal) => {
 };
 
 /**
- * LOGIC TÍNH MÃ GIẢM GIÁ (SỬA CHUẨN THEO DB)
- * @param {string} promotionCode 
- * @param {number} subtotal 
- * @param {number} shippingFee 
+ * Wrapper that delegates discount calculation/validation to the new discountService.
+ * Keeps the returned shape compatible with existing callers: { amount, code, id, applicable_to }
  */
 const calculateDiscount = async (promotionCode, subtotal, shippingFee) => {
-    if (!promotionCode) return { amount: 0, code: null, id: null, type: null };
-
-    // 1. Tìm mã trong DB
-    const promotion = await Promotion.findOne({
-        where: {
-            code: promotionCode,
-            start_date: { [Op.lte]: new Date() },
-            end_date: { [Op.gte]: new Date() },
-            usage_limit: { [Op.gt]: 0 }
+    // If a code is provided, validate and compute using discountService
+    if (promotionCode) {
+        const res = await discountService.applyDiscount({ subtotal, shipping_fee: shippingFee }, promotionCode);
+        if (!res.applied) {
+            throw new Error(`Mã "${promotionCode}" không hợp lệ hoặc đã hết hạn.`);
         }
-    });
-
-    if (!promotion) {
-        throw new Error(`Mã "${promotionCode}" không hợp lệ hoặc đã hết hạn.`);
+        return {
+            amount: Math.round(res.amount),
+            code: res.discount && res.discount.code ? res.discount.code : promotionCode,
+            id: res.discount ? res.discount.id : null,
+            applicable_to: res.discount && res.discount.applicable_to ? res.discount.applicable_to : 'order'
+        };
     }
 
-    // 2. Xác định phạm vi áp dụng (Dựa vào cột applicable_to)
-    let baseAmount = 0; // Số tiền gốc để tính giảm giá
-    let maxDiscount = 0; // Mức giảm tối đa (không được âm tiền)
-
-    if (promotion.applicable_to === 'shipping') {
-        // Áp dụng cho Phí Ship
-        baseAmount = shippingFee;
-        maxDiscount = shippingFee;
-    } else {
-        // Áp dụng cho Đơn hàng (applicable_to = 'order' hoặc null)
-        baseAmount = subtotal;
-        maxDiscount = subtotal;
-    }
-
-    // 3. Tính giá trị giảm (Dựa vào discount_type và discount_value)
-    let discountAmount = 0;
-
-    if (promotion.discount_type === 'percentage') {
-        // Giảm theo %
-        discountAmount = baseAmount * (parseFloat(promotion.discount_value) / 100);
-    } else {
-        // Giảm tiền mặt (fixed)
-        discountAmount = parseFloat(promotion.discount_value);
-    }
-
-    // 4. Chốt số tiền giảm (Không vượt quá số tiền gốc)
-    if (discountAmount > maxDiscount) {
-        discountAmount = maxDiscount;
-    }
-
-    // Làm tròn
-    discountAmount = Math.round(discountAmount);
-
+    // No code => try to find best auto discount
+    const auto = await discountService.getBestAutoDiscount({ subtotal, shipping_fee: shippingFee });
+    if (!auto || !auto.discount) return { amount: 0, code: null, id: null, applicable_to: null };
     return {
-        amount: discountAmount,
-        code: promotion.code,
-        id: promotion.id,
-        applicable_to: promotion.applicable_to // Trả về để biết nó giảm vào đâu
+        amount: Math.round(auto.amount),
+        code: auto.discount.code || null,
+        id: auto.discount.id || null,
+        applicable_to: auto.discount.applicable_to || 'order'
     };
 };
 
@@ -173,7 +174,7 @@ export const previewShippingFee = async (userId, locationData, promotionCode) =>
         for (const item of cart.cart_items) {
             const variant = item.product_variant;
             if (variant && variant.product) {
-                const price = parseFloat(variant.product.base_price) + parseFloat(variant.price_adjustment);
+                const price = parseFloat(variant.price || variant.product.base_price || 0);
                 subtotal += price * item.quantity;
             }
         }
@@ -212,16 +213,13 @@ export const previewShippingFee = async (userId, locationData, promotionCode) =>
 };
 
 // 2. Tạo đơn hàng (Checkout)
-export const createOrder = async (userId, shippingAddressId, paymentMethod, notes, promotionCode) => {
+export const createOrder = async (userId, shippingAddressId, paymentMethod, notes, promotionCode, sessionId, guestAddressData) => {
     const validMethods = ['COD', 'VNPAY'];
     if (!validMethods.includes(paymentMethod.toUpperCase())) {
         throw new Error("Phương thức thanh toán không hợp lệ");
     }
 
-    const address = await findShippingAddress(userId, shippingAddressId);
-    if (!address) throw new Error("Địa chỉ giao hàng không tồn tại");
-
-    const cart = await findCartWithItems(userId);
+    const cart = await findCartWithItems(userId, sessionId);
 
     if (!cart || !cart.cart_items.length) throw new Error("Giỏ hàng trống");
 
@@ -229,12 +227,30 @@ export const createOrder = async (userId, shippingAddressId, paymentMethod, note
         let subtotal = 0;
         const orderItemsData = [];
 
-        for (const item of cart.cart_items) {
-            const variant = item.product_variant;
-            if (!variant || !variant.product) continue;
-            if (variant.stock_quantity < item.quantity) throw new Error(`Sản phẩm "${variant.product.name}" hết hàng.`);
+        const ensuredAddress = await findOrCreateShippingAddress({
+            userId,
+            addressId: shippingAddressId,
+            sessionId,
+            guestAddressData,
+            transaction,
+        });
 
-            const unitPrice = parseFloat(variant.product.base_price) + parseFloat(variant.price_adjustment);
+        for (const item of cart.cart_items) {
+            const variantId = item.product_variant?.id || item.product_variant_id;
+            if (!variantId) continue;
+
+            const variant = await ProductVariant.findByPk(variantId, {
+                include: [{ model: Product, as: 'product', required: true }],
+                transaction,
+                lock: transaction.LOCK.UPDATE,
+            });
+
+            if (!variant || !variant.product) continue;
+            if (variant.stock_quantity < item.quantity) {
+                throw new Error(`Sản phẩm "${variant.product.name}" hết hàng.`);
+            }
+
+            const unitPrice = parseFloat(variant.price || variant.product.base_price || 0);
             const lineTotal = unitPrice * item.quantity;
             subtotal += lineTotal;
 
@@ -254,17 +270,20 @@ export const createOrder = async (userId, shippingAddressId, paymentMethod, note
         }
 
         // Tính toán tiền
-        const { fee: shippingFee } = calculateFeeLogic(address, subtotal);
+        const { fee: shippingFee } = calculateFeeLogic(ensuredAddress, subtotal);
 
         const discountInfo = await calculateDiscount(promotionCode, subtotal, shippingFee);
 
-        // Trừ lượt dùng mã
-        if (discountInfo.id) {
-            await Promotion.decrement('usage_limit', {
-                by: 1,
-                where: { id: discountInfo.id },
-                transaction
-            });
+        // Reserve discount usage atomically
+        let discountSnapshot = null;
+        if (discountInfo.code) {
+            const reserve = await discountService.validateAndReserveDiscount(discountInfo.code, transaction);
+            if (!reserve.valid) {
+                const error = new Error("Mã khuyến mãi không còn khả dụng");
+                error.status = 400;
+                throw error;
+            }
+            discountSnapshot = reserve.discount;
         }
 
         let totalAmount = subtotal + shippingFee - discountInfo.amount;
@@ -277,15 +296,20 @@ export const createOrder = async (userId, shippingAddressId, paymentMethod, note
         }
         const finalNotes = (notes ? notes : "") + ` | Ship: ${shippingFee}đ` + promoNote;
 
-        // Tạo Order
+        // Tạo Order (lưu cả trường cũ `promotion_id` để tránh phá vỡ code cũ, và trường `discount_id` mới)
         const newOrder = await createOrderRecord({
             user_id: userId,
-            shipping_address_id: shippingAddressId,
-            promotion_id: discountInfo.id, // FK to Promotion
+            shipping_address_id: ensuredAddress.id,
+            promotion_id: discountInfo.id,
+            discount_id: discountInfo.id,
             subtotal_amount: subtotal,
-            discount_amount: discountInfo.amount, // Lưu số tiền giảm
-            promotion_code: discountInfo.code, // Snapshot of code at order time
+            discount_amount: discountInfo.amount,
+            promotion_code: discountInfo.code,
+            discount_code_snapshot: discountSnapshot ? discountSnapshot.code : discountInfo.code,
+            discount_type_snapshot: discountSnapshot ? discountSnapshot.discount_type : null,
+            discount_value_snapshot: discountSnapshot ? discountSnapshot.discount_value : null,
             total_amount: totalAmount,
+            final_total: null,
             status: 'pending',
             notes: finalNotes,
         }, transaction);
@@ -321,7 +345,6 @@ export const createOrder = async (userId, shippingAddressId, paymentMethod, note
 
     return result;
 };
-// ... (Các import giữ nguyên)
 
 /**
  * 3. Hủy đơn hàng (User tự hủy)
@@ -370,7 +393,78 @@ export const getOrderById = async (userId, orderId) => {
 /**
  * Admin: Lấy danh sách toàn bộ đơn hàng
  */
-export const getAllOrdersAdmin = async () => findAllOrders();
+export const getAllOrdersAdmin = async ({
+    page = 1,
+    limit,
+    pageSize,
+    status,
+    sortBy = "created_at",
+    sortDir = "DESC",
+    startDate,
+    endDate,
+    customer,
+} = {}) => {
+    const normalizedLimit = limit ?? pageSize;
+    const pageNumber = Math.max(parseInt(page, 10) || 1, 1);
+    const pageSizeNumber = Math.min(Math.max(parseInt(normalizedLimit, 10) || 20, 1), 100);
+    const offset = (pageNumber - 1) * pageSizeNumber;
+
+    const where = {};
+    if (status) {
+        where.status = status.toLowerCase();
+    }
+
+    if (startDate || endDate) {
+        where.created_at = {};
+        if (startDate) where.created_at[Op.gte] = new Date(startDate);
+        if (endDate) where.created_at[Op.lte] = new Date(endDate);
+    }
+
+    const orderClauses = [];
+    const allowedSort = ["created_at", "total_amount", "status", "id"];
+    const sortField = allowedSort.includes(sortBy) ? sortBy : "created_at";
+    const direction = sortDir && sortDir.toUpperCase() === "ASC" ? "ASC" : "DESC";
+    orderClauses.push([sortField, direction]);
+
+    const textOp = Op.iLike || Op.like;
+    const userWhere = {};
+    if (customer) {
+        const customerTerm = customer.toString().trim();
+        userWhere[Op.or] = [
+            { full_name: { [textOp]: `%${customerTerm}%` } },
+            { email: { [textOp]: `%${customerTerm}%` } },
+            { phone: { [textOp]: `%${customerTerm}%` } },
+        ];
+        const asNumber = parseInt(customerTerm, 10);
+        if (!isNaN(asNumber)) {
+            userWhere[Op.or].push({ id: asNumber });
+        }
+    }
+
+    const { rows, count } = await Order.findAndCountAll({
+        where,
+        include: [
+            {
+                model: User,
+                attributes: ["id", "full_name", "email", "phone"],
+                where: Object.keys(userWhere).length ? userWhere : undefined,
+            },
+        ],
+        order: orderClauses,
+        limit: pageSizeNumber,
+        offset,
+    });
+
+    return {
+        data: rows,
+        meta: {
+            page: pageNumber,
+            limit: pageSizeNumber,
+            total: count,
+            totalPages: Math.ceil(count / pageSizeNumber) || 1,
+        },
+    };
+};
 
 /**
  * Admin: Cập nhật trạng thái đơn hàng

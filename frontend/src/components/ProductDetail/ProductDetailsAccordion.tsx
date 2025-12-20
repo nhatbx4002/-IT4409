@@ -12,7 +12,7 @@ interface ProductDetailsAccordionProps {
 
 export function ProductDetailsAccordion({ product }: ProductDetailsAccordionProps) {
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="w-full px-4 sm:px-6 lg:px-10">
       <Accordion type="single" collapsible defaultValue="description" className="w-full">
         {/* Description */}
         <AccordionItem value="description" className="border-b border-[#EEEEEE]">

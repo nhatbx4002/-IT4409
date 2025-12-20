@@ -83,7 +83,7 @@ export default function OrdersPage() {
   if (isLoading) {
     return (
       <MainLayout>
-        <div className="mx-auto max-w-4xl px-6 py-16">
+        <div className="w-full px-4 py-16 sm:px-8 lg:px-12 xl:px-16">
           <header className="mb-8 flex items-center gap-3">
             <Package className="h-6 w-6 text-black" />
             <div>
@@ -101,7 +101,7 @@ export default function OrdersPage() {
 
   return (
     <MainLayout>
-      <div className="mx-auto max-w-4xl px-6 py-16">
+      <div className="w-full px-4 py-16 sm:px-8 lg:px-12 xl:px-16">
         <header className="mb-8 flex items-center gap-3">
           <Package className="h-6 w-6 text-black" />
           <div>
