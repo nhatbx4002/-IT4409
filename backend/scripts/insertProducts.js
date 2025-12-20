@@ -15,6 +15,7 @@ const {
   Product,
   ProductVariant,
   CartItem,
+  Wishlist
 } = await import("../models/index.js");
 
 const now = () => new Date();
@@ -165,30 +166,38 @@ async function main() {
   const transaction = await sequelize.transaction();
 
   try {
+    
     // Xóa toàn bộ sản phẩm và variants hiện có
     console.log("🧹 Clearing cart items referencing variants...");
     const deletedCartItems = await CartItem.destroy({ where: {}, transaction });
-
+    console.log("🧹 Clearing wishlists referencing products...");
+const deletedWishlists = await Wishlist.destroy({ where: {}, transaction });
     console.log("🗑️ Deleting all existing products and variants...");
     const deletedVariants = await ProductVariant.destroy({ where: {}, transaction });
     const deletedProducts = await Product.destroy({ where: {}, transaction });
     console.log(
-      `✅ Deleted ${deletedCartItems} cart items, ${deletedVariants} variants and ${deletedProducts} products.`
+      `✅ Deleted ${deletedCartItems} cart items, ${deletedWishlists} wishlists, ${deletedVariants} variants and ${deletedProducts} products.`
     );
 
     let productCount = 0;
     let variantCreated = 0;
     let variantUpdated = 0;
 
-    for (const p of productsInput) {
+    for (const [index, p] of productsInput.entries()) {
       if (!p?.name || p.basePrice == null) {
         console.warn("⚠️ Skipping product without required fields 'name' and 'basePrice'", p);
         continue;
       }
+      console.log(
+        `➡️  [${index + 1}/${productsInput.length}] Inserting: ${p.name} (${p.variants?.length ?? 0} variants)`
+      );
       const { variantsCreated, variantsUpdated } = await upsertProductAndVariants(p, { transaction });
       productCount += 1;
       variantCreated += variantsCreated;
       variantUpdated += variantsUpdated;
+      console.log(
+        `✅  Done: ${p.name} (created ${variantsCreated}, updated ${variantsUpdated})`
+      );
     }
 
     await transaction.commit();

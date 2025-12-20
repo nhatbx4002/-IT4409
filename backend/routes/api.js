@@ -9,6 +9,7 @@ import orderRoutes from "./orderRoute.js";
 import addressRoutes from "./addressRoute.js";
 import categoryRoutes from "./categoryRoutes.js";
 import checkoutRoutes from "./checkoutRoute.js";
+import reviewRoutes from "./reviewRoute.js";
 
 const api = express.Router();
 
@@ -23,5 +24,6 @@ api.use("/cart", cartRoutes);
 api.use("/orders", orderRoutes);
 api.use("/addresses", addressRoutes);
 api.use("/checkout", checkoutRoutes);
+api.use("/reviews", reviewRoutes);
 
 export default api;

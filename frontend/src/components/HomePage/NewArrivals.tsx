@@ -4,14 +4,11 @@ import { ProductCard } from "@/components/ProductsCard";
 import type { ProductSummary } from "@/types/products";
 import { getProducts, addToWishlist } from "@/lib/api";
 import { LoadingState, ErrorState, EmptyState } from "@/components/feedback/AsyncStates";
-import { getStoredUser } from "@/lib/auth";
 
 export function NewArrivals() {
   const [products, setProducts] = useState<ProductSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  const user = getStoredUser();
 
   useEffect(() => {
     const fetchNewArrivals = async () => {
@@ -36,11 +33,6 @@ export function NewArrivals() {
   }, []);
 
   const handleAddToWishlist = async (productId: number) => {
-    if (!user) {
-      alert("Please login to add items to wishlist");
-      return;
-    }
-
     try {
       await addToWishlist(productId);
       alert("Added to wishlist!");

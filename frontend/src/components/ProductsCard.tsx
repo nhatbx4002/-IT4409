@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Heart, Eye, ShoppingBag, Star } from "lucide-react";
 import type { ProductSummary } from "@/types/products";
 import { ImageWithFallback } from "@/components/figma/ImageWithFallback";
+import { formatVnd } from "@/lib/formatCurrency";
 
 interface ProductCardProps {
   product: ProductSummary;
@@ -171,11 +172,11 @@ export function ProductCard({
           <div className="flex items-center gap-3 pt-1">
             {hasDiscount && (
               <span className="text-[14px] text-[#9CA3AF] line-through">
-                ${product.price}
+                {formatVnd(product.price)}
               </span>
             )}
             <span className="font-['Poppins'] text-[18px] font-semibold text-[#111827]">
-              ${displayPrice}
+              {formatVnd(displayPrice)}
             </span>
           </div>
 

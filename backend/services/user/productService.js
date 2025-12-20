@@ -85,6 +85,55 @@ const summarizeProduct = (product) => {
   };
 };
 
+// Build detailed payload for PDP with variant-derived metadata
+const buildProductDetailData = (product) => {
+  const data = product.toJSON ? product.toJSON() : product;
+  const summary = summarizeProduct(product);
+
+  const rawVariants = Array.isArray(data.variants)
+    ? data.variants
+    : Array.isArray(data.ProductVariants)
+    ? data.ProductVariants
+    : [];
+
+  const variants = rawVariants.map(transformVariantDetail);
+  const variantsWithStock = variants.filter((v) => (v.stockQuantity || 0) > 0);
+
+  const availableColors = [
+    ...new Set(variantsWithStock.map((v) => v.color).filter(Boolean)),
+  ];
+  const availableSizes = [
+    ...new Set(variantsWithStock.map((v) => v.size).filter(Boolean)),
+  ];
+
+  const variantPrices = variants
+    .map((v) => Number(v.price))
+    .filter((price) => !Number.isNaN(price));
+
+  const fallbackPrice =
+    summary.price ??
+    (data.price
+      ? parseFloat(data.price)
+      : data.base_price
+      ? parseFloat(data.base_price)
+      : null);
+
+  const minPrice =
+    variantPrices.length > 0 ? Math.min(...variantPrices) : fallbackPrice ?? null;
+  const maxPrice =
+    variantPrices.length > 0 ? Math.max(...variantPrices) : fallbackPrice ?? null;
+
+  return {
+    ...summary,
+    description: data.description || null,
+    variants,
+    availableColors,
+    availableSizes,
+    minPrice,
+    maxPrice,
+  };
+};
+
 const buildBaseWhereClause = ({ collection, brands }) => {
   const whereClause = {};
 
@@ -182,29 +231,7 @@ export const getProductDetailService = async (productId) => {
     throw new Error("Product not found");
   }
 
-  const data = product.toJSON();
-
-  const summary = summarizeProduct(product);
-
-  const variants = (data.variants || []).map((variant) => {
-    const variantData = variant.toJSON ? variant.toJSON() : variant;
-
-    return {
-      id: variantData.id,
-      color: variantData.color || null,
-      size: variantData.size || null,
-      sku: variantData.sku || null,
-      price: parseFloat(variantData.price || 0),
-      stockQuantity: variantData.stock_quantity || 0,
-      imageUrl: variantData.image_url || null,
-    };
-  });
-
-  return {
-    ...summary,
-    description: data.description || null,
-    variants,
-  };
+  return buildProductDetailData(product);
 };
 
 export const getProductDetailBySlugOrIdService = async (slugOrId) => {
@@ -228,29 +255,7 @@ export const getProductDetailBySlugOrIdService = async (slugOrId) => {
     throw new Error("Product not found");
   }
 
-  const data = product.toJSON();
-
-  const summary = summarizeProduct(product);
-
-  const variants = (data.variants || []).map((variant) => {
-    const variantData = variant.toJSON ? variant.toJSON() : variant;
-
-    return {
-      id: variantData.id,
-      color: variantData.color || null,
-      size: variantData.size || null,
-      sku: variantData.sku || null,
-      price: parseFloat(variantData.price || 0),
-      stockQuantity: variantData.stock_quantity || 0,
-      imageUrl: variantData.image_url || null,
-    };
-  });
-
-  return {
-    ...summary,
-    description: data.description || null,
-    variants,
-  };
+  return buildProductDetailData(product);
 };
 
 export const searchProductsService = async ({

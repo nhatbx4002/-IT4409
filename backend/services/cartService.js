@@ -126,19 +126,24 @@ export const addProductToCart = async (
 /**
  * 2. Cập nhật số lượng sản phẩm trong giỏ
  */
-export const updateItemQuantity = async (userId, cartItemId, quantity, sessionId) => {
-    const newQuantity = parseInt(quantity, 10);
-    if (isNaN(newQuantity) || newQuantity < 0) {
+export const updateCartItem = async (userId, cartItemId, payload, sessionId) => {
+    const { quantity, productVariantId } = payload || {};
+    const hasQuantity = quantity !== undefined && quantity !== null;
+
+    if (!hasQuantity && !productVariantId) {
+        throw new Error("Thiếu thông tin cập nhật");
+    }
+
+    const newQuantity = hasQuantity ? parseInt(quantity, 10) : null;
+    if (hasQuantity && (isNaN(newQuantity) || newQuantity < 0)) {
         throw new Error("Số lượng không hợp lệ");
     }
 
-    // Nếu số lượng là 0, gọi hàm xóa
-    if (newQuantity === 0) {
+    if (hasQuantity && newQuantity === 0) {
         return await removeItemFromCart(userId, cartItemId, sessionId);
     }
 
     return sequelize.transaction(async (t) => {
-        // --- Tìm giỏ hàng & item ---
         const cart = await getOrCreateCart({ userId, sessionId });
         const cartItem = await CartItem.findByPk(cartItemId, {
             transaction: t,
@@ -148,27 +153,66 @@ export const updateItemQuantity = async (userId, cartItemId, quantity, sessionId
         if (!cartItem) {
             throw new Error("Sản phẩm không có trong giỏ hàng");
         }
-        // --- Security check: Đảm bảo item này thuộc giỏ hàng của user ---
         if (cartItem.cart_id !== cart.id) {
             throw new Error("Bạn không có quyền cập nhật sản phẩm này");
         }
 
-        // --- Kiểm tra tồn kho ---
-        const variant = await ProductVariant.findByPk(cartItem.product_variant_id, {
+        const currentVariant = await ProductVariant.findByPk(cartItem.product_variant_id, {
             transaction: t,
             lock: t.LOCK.UPDATE,
         });
-        if (!variant) {
-            // Nếu sản phẩm đã bị xóa, cũng xóa nó khỏi giỏ
+        if (!currentVariant) {
             await cartItem.destroy({ transaction: t });
             throw new Error(
                 "Sản phẩm không còn tồn tại và đã được xóa khỏi giỏ hàng"
             );
         }
 
-        const clampedQuantity = clampQuantityToStock(newQuantity, variant.stock_quantity);
+        let targetVariant = currentVariant;
+        if (productVariantId) {
+            const selectedVariant = await ProductVariant.findByPk(productVariantId, {
+                transaction: t,
+                lock: t.LOCK.UPDATE,
+            });
+            if (!selectedVariant) {
+                throw new Error("Biến thể sản phẩm không tồn tại");
+            }
+            if (selectedVariant.product_id !== currentVariant.product_id) {
+                throw new Error("Biến thể không thuộc cùng sản phẩm");
+            }
+            targetVariant = selectedVariant;
+        }
 
-        // --- Cập nhật ---
+        const desiredQuantity = hasQuantity ? newQuantity : cartItem.quantity;
+        const clampedQuantity = clampQuantityToStock(
+            desiredQuantity,
+            targetVariant.stock_quantity
+        );
+
+        if (productVariantId && targetVariant.id !== cartItem.product_variant_id) {
+            const existingItem = await CartItem.findOne({
+                where: {
+                    cart_id: cart.id,
+                    product_variant_id: targetVariant.id,
+                },
+                transaction: t,
+                lock: t.LOCK.UPDATE,
+            });
+
+            if (existingItem && existingItem.id !== cartItem.id) {
+                const mergedQuantity = clampQuantityToStock(
+                    existingItem.quantity + clampedQuantity,
+                    targetVariant.stock_quantity
+                );
+                existingItem.quantity = mergedQuantity;
+                await existingItem.save({ transaction: t });
+                await cartItem.destroy({ transaction: t });
+                return existingItem;
+            }
+
+            cartItem.product_variant_id = targetVariant.id;
+        }
+
         cartItem.quantity = clampedQuantity;
         await cartItem.save({ transaction: t });
         return cartItem;

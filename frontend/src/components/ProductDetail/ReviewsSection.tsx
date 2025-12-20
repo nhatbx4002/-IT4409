@@ -1,41 +1,14 @@
-import { Star, ThumbsUp } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Star } from "lucide-react";
 import type { ProductDetail } from "@/types/products";
+import type { ReviewItem, ReviewRatingStats } from "@/types/reviews";
+import { getProductReviews } from "@/lib/api";
 
 interface ReviewsSectionProps {
   product: ProductDetail;
 }
 
-const mockReviews = [
-  {
-    id: 1,
-    userName: "Luca B.",
-    date: "2024-02-18",
-    rating: 5,
-    comment: "Impeccable craftsmanship. The drape is phenomenal and the shoulder expression rivals my bespoke jackets.",
-    sizeWorn: "Size 40R",
-    helpfulCount: 18,
-  },
-  {
-    id: 2,
-    userName: "Ethan K.",
-    date: "2024-01-29",
-    rating: 4,
-    comment: "Fabric feels luxurious and lightweight. Needed minor tailoring at the waist but worth every visit to the atelier.",
-    sizeWorn: "Size 38R",
-    helpfulCount: 11,
-  },
-  {
-    id: 3,
-    userName: "Marco D.",
-    date: "2024-01-12",
-    rating: 5,
-    comment: "Received compliments at every event. The midnight blue tone has a subtle sheen that feels truly premium.",
-    sizeWorn: "Size 42R",
-    helpfulCount: 24,
-  },
-];
-
-const calculateRatingDistribution = (reviews: typeof mockReviews) => {
+const calculateRatingDistribution = (reviews: ReviewItem[]) => {
   const distribution = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
   reviews.forEach((review) => {
     distribution[review.rating as keyof typeof distribution]++;
@@ -52,9 +25,75 @@ const getInitials = (name: string) =>
     .slice(0, 2);
 
 export function ReviewsSection({ product }: ReviewsSectionProps) {
-  const reviews = mockReviews;
-  const ratingDistribution = calculateRatingDistribution(reviews);
-  const totalReviews = reviews.length || product.reviewCount;
+  const [reviews, setReviews] = useState<ReviewItem[]>([]);
+  const [ratingStats, setRatingStats] = useState<ReviewRatingStats | null>(null);
+  const [totalReviews, setTotalReviews] = useState(0);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+
+  useEffect(() => {
+    const loadReviews = async () => {
+      setIsLoading(true);
+      try {
+        const data = await getProductReviews(product.id, { page: 1, pageSize: 3 });
+        setReviews(data.reviews);
+        setRatingStats(data.ratingStats);
+        setTotalReviews(data.total);
+        setPage(data.page);
+        setTotalPages(data.totalPages);
+      } catch (error) {
+        console.error("Failed to fetch reviews", error);
+        setReviews([]);
+        setRatingStats(null);
+        setTotalReviews(0);
+        setPage(1);
+        setTotalPages(1);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (product?.id) {
+      loadReviews();
+    }
+  }, [product?.id]);
+
+  const handleLoadMore = async () => {
+    if (isLoadingMore || page >= totalPages) return;
+    const nextPage = page + 1;
+    setIsLoadingMore(true);
+    try {
+      const data = await getProductReviews(product.id, { page: nextPage, pageSize: 3 });
+      setReviews((prev) => [...prev, ...data.reviews]);
+      setRatingStats(data.ratingStats);
+      setTotalReviews(data.total);
+      setPage(data.page);
+      setTotalPages(data.totalPages);
+    } catch (error) {
+      console.error("Failed to load more reviews", error);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  };
+
+  const ratingDistribution = useMemo(() => {
+    if (ratingStats?.counts) {
+      return {
+        5: ratingStats.counts[5] || 0,
+        4: ratingStats.counts[4] || 0,
+        3: ratingStats.counts[3] || 0,
+        2: ratingStats.counts[2] || 0,
+        1: ratingStats.counts[1] || 0,
+      };
+    }
+    return calculateRatingDistribution(reviews);
+  }, [ratingStats, reviews]);
+
+  const resolvedTotalReviews = totalReviews || product.reviewCount || reviews.length;
+  const resolvedRating =
+    ratingStats?.averageRating ?? (product.rating ? product.rating : 0);
 
   return (
     <section id="reviews" className="w-full space-y-10 px-4 sm:px-6 lg:px-10">
@@ -66,19 +105,21 @@ export function ReviewsSection({ product }: ReviewsSectionProps) {
           <p className="text-[15px] text-[#6B7280]">Verified feedback from our sartorial community</p>
         </div>
         <div className="flex items-end gap-4">
-          <div className="text-[56px] font-bold leading-none text-[#1A1A1A]">{product.rating.toFixed(1)}</div>
+          <div className="text-[56px] font-bold leading-none text-[#1A1A1A]">
+            {resolvedRating.toFixed(1)}
+          </div>
           <div className="space-y-2">
             <div className="flex items-center gap-1">
               {Array.from({ length: 5 }).map((_, idx) => (
                 <Star
                   key={idx}
-                  className={`h-5 w-5 ${idx < Math.round(product.rating) ? "fill-[#D4AF37] text-[#D4AF37]" : "text-[#E5E7EB]"}`}
-                  strokeWidth={idx < Math.round(product.rating) ? 0 : 1.5}
+                  className={`h-5 w-5 ${idx < Math.round(resolvedRating) ? "fill-[#D4AF37] text-[#D4AF37]" : "text-[#E5E7EB]"}`}
+                  strokeWidth={idx < Math.round(resolvedRating) ? 0 : 1.5}
                 />
               ))}
             </div>
             <p className="text-[14px] text-[#6B7280]">
-              Based on {product.reviewCount || totalReviews} luxury clients
+              Based on {resolvedTotalReviews} luxury clients
             </p>
           </div>
         </div>
@@ -90,7 +131,7 @@ export function ReviewsSection({ product }: ReviewsSectionProps) {
           <div className="space-y-3">
             {[5, 4, 3, 2, 1].map((rating) => {
               const count = ratingDistribution[rating as keyof typeof ratingDistribution];
-              const percentage = totalReviews > 0 ? Math.round((count / totalReviews) * 100) : 0;
+              const percentage = resolvedTotalReviews > 0 ? Math.round((count / resolvedTotalReviews) * 100) : 0;
               return (
                 <div key={rating} className="flex items-center gap-3">
                   <span className="w-6 text-[13px] text-[#6B7280]">{rating}</span>
@@ -105,11 +146,23 @@ export function ReviewsSection({ product }: ReviewsSectionProps) {
         </div>
 
         <div className="space-y-6">
-          {reviews.slice(0, 3).map((review) => (
+          {isLoading && (
+            <div className="rounded-[24px] border border-[#E5E7EB] bg-white/90 p-6 text-[14px] text-[#6B7280] shadow-sm">
+              Loading reviews...
+            </div>
+          )}
+
+          {!isLoading && reviews.length === 0 && (
+            <div className="rounded-[24px] border border-[#E5E7EB] bg-white/90 p-6 text-[14px] text-[#6B7280] shadow-sm">
+              No reviews yet.
+            </div>
+          )}
+
+          {reviews.map((review) => (
             <article key={review.id} className="rounded-[24px] border border-[#E5E7EB] bg-white/90 p-6 shadow-sm">
               <div className="flex items-start gap-4">
                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#D4AF37] text-[15px] font-semibold text-white">
-                  {getInitials(review.userName)}
+                  {getInitials(review.user.name)}
                 </div>
                 <div className="flex-1 space-y-3">
                   <div className="flex flex-wrap items-center gap-3">
@@ -122,32 +175,33 @@ export function ReviewsSection({ product }: ReviewsSectionProps) {
                         />
                       ))}
                     </div>
-                    <span className="text-[15px] font-semibold text-[#1A1A1A]">{review.userName}</span>
+                    <span className="text-[15px] font-semibold text-[#1A1A1A]">{review.user.name}</span>
                     <span className="text-[13px] text-[#9CA3AF]">
-                      {new Date(review.date).toLocaleDateString("en-US", {
+                      {new Date(review.createdAt).toLocaleDateString("en-US", {
                         year: "numeric",
                         month: "short",
                         day: "numeric",
                       })}
                     </span>
                   </div>
-                  <p className="text-[15px] leading-relaxed text-[#4B5563]">{review.comment}</p>
-                  <div className="flex flex-wrap items-center gap-4 text-[13px] text-[#6B7280]">
-                    <span className="rounded-full bg-[#F9FAFB] px-3 py-1">Size Worn: {review.sizeWorn}</span>
-                    <button className="inline-flex items-center gap-1 text-[#1A1A1A] transition hover:text-[#D4AF37]">
-                      <ThumbsUp className="h-4 w-4" />
-                      Helpful ({review.helpfulCount})
-                    </button>
-                  </div>
+                  <p className="text-[15px] leading-relaxed text-[#4B5563]">
+                    {review.comment || "No comment provided."}
+                  </p>
                 </div>
               </div>
             </article>
           ))}
-          <div className="text-center">
-            <button className="inline-flex items-center justify-center rounded-[14px] border border-[#1A1A1A] px-8 py-3 text-[14px] font-semibold uppercase tracking-[0.2em] text-[#1A1A1A] transition hover:bg-[#1A1A1A] hover:text-white">
-              Load More Reviews
-            </button>
-          </div>
+          {page < totalPages && (
+            <div className="text-center">
+              <button
+                onClick={handleLoadMore}
+                disabled={isLoadingMore}
+                className="inline-flex items-center justify-center rounded-[14px] border border-[#1A1A1A] px-8 py-3 text-[14px] font-semibold uppercase tracking-[0.2em] text-[#1A1A1A] transition hover:bg-[#1A1A1A] hover:text-white disabled:opacity-60"
+              >
+                {isLoadingMore ? "Loading..." : "Load More Reviews"}
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </section>

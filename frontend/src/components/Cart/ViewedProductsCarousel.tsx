@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { getProductById, addToWishlist } from "@/lib/api";
 import { getViewedProductIds } from "@/lib/viewedProducts";
-import { getStoredUser } from "@/lib/auth";
 import type { ProductSummary } from "@/types/products";
 import { ProductCard } from "@/components/ProductsCard";
 
@@ -15,7 +14,6 @@ export function ViewedProductsCarousel({
 }: ViewedProductsCarouselProps) {
   const [products, setProducts] = useState<ProductSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const user = getStoredUser();
 
   useEffect(() => {
     const fetchViewedProducts = async () => {
@@ -56,10 +54,6 @@ export function ViewedProductsCarousel({
   };
 
   const handleAddToWishlist = async (productId: number) => {
-    if (!user) {
-      alert("Please login to add items to wishlist");
-      return;
-    }
     try {
       await addToWishlist(productId);
       alert("Added to wishlist!");

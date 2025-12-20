@@ -73,7 +73,7 @@ router.post('/', addItem);
  * @swagger
  * /cart/{cartItemId}:
  *   put:
- *     summary: Cập nhật số lượng sản phẩm trong giỏ hàng
+ *     summary: Cập nhật số lượng hoặc biến thể sản phẩm trong giỏ hàng
  *     tags: [Cart]
  *     security:
  *       - bearerAuth: []
@@ -89,10 +89,10 @@ router.post('/', addItem);
  *         application/json:
  *           schema:
  *             type: object
- *             required:
- *               - quantity
  *             properties:
  *               quantity:
+ *                 type: integer
+ *               productVariantId:
  *                 type: integer
  *     responses:
  *       200:

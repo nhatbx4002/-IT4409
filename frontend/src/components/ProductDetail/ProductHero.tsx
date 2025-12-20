@@ -18,6 +18,7 @@ import {
 import type { ProductDetail } from "@/types/products";
 import { ImageWithFallback } from "@/components/figma/ImageWithFallback";
 import { addToCart } from "@/lib/api";
+import { formatVnd } from "@/lib/formatCurrency";
 import { toast } from "sonner";
 
 interface ProductHeroProps {
@@ -34,20 +35,16 @@ const COLOR_HEX_MAP: Record<string, string> = {
   brown: "#5C4433",
 };
 
-const FALLBACK_SWATCHES = [
-  { name: "Midnight Blue", hex: "#0F1F3D" },
-  { name: "Navy", hex: "#0A0F2D" },
-  { name: "Charcoal", hex: "#3A3A3A" },
-  { name: "Black", hex: "#111111" },
-  { name: "Gray", hex: "#A0A0A0" },
-];
-
 const SIZE_ORDER = ["XS", "S", "M", "L", "XL", "XXL"];
 
-const formatColorLabel = (value: string | null) =>
-  value ? value.replace(/-/g, " ").replace(/\b\w/g, (char) => char.toUpperCase()) : "Select";
-
 export function ProductHero({ product }: ProductHeroProps) {
+  const productDetail = product as ProductDetail & {
+    availableColors?: string[];
+    availableSizes?: string[];
+    minPrice?: number;
+    maxPrice?: number;
+  };
+
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
@@ -58,26 +55,18 @@ export function ProductHero({ product }: ProductHeroProps) {
   const [isZoomEnabled, setIsZoomEnabled] = useState(false);
   const [zoomPosition, setZoomPosition] = useState({ x: 50, y: 50 });
 
-  const { colors, sizes, colorImageMap, baseImages } = useMemo(() => {
-    const colorSet = new Set<string>();
-    const sizeSet = new Set<string>();
+  const { colorImageMap, baseImages } = useMemo(() => {
     const map: Record<string, string> = {};
 
     product.variants.forEach((variant) => {
       if (variant.color) {
-        colorSet.add(variant.color);
         if (variant.imageUrl && !map[variant.color]) {
           map[variant.color] = variant.imageUrl;
         }
       }
-      if (variant.size) {
-        sizeSet.add(variant.size);
-      }
     });
 
     return {
-      colors: Array.from(colorSet),
-      sizes: Array.from(sizeSet),
       colorImageMap: map,
       baseImages: product.images || [],
     };
@@ -96,30 +85,16 @@ export function ProductHero({ product }: ProductHeroProps) {
     return merged.filter((img, idx) => merged.indexOf(img) === idx);
   }, [baseImages, colorImageMap, product.variants, selectedColor]);
 
-  const availableVariants = useMemo(
+  const selectedVariant = useMemo(
     () =>
-      selectedColor
-        ? product.variants.filter((v) => v.color === selectedColor)
-        : product.variants,
-    [product.variants, selectedColor]
+      product.variants.find(
+        (v) => v.color === selectedColor && v.size === selectedSize
+      ) || null,
+    [product.variants, selectedColor, selectedSize]
   );
-
-  const availableColors = useMemo(
-    () =>
-      colors.length > 0
-        ? colors
-        : Array.from(new Set(product.variants.map((v) => v.color).filter((c): c is string => !!c))),
-    [colors, product.variants]
-  );
-
-  useEffect(() => {
-    if (availableColors.length > 0 && !selectedColor) {
-      setSelectedColor(availableColors[0]);
-    }
-  }, [availableColors, selectedColor]);
 
   const orderedSizes = useMemo(() => {
-    const combinedSizes = Array.from(new Set([...SIZE_ORDER, ...sizes]));
+    const combinedSizes = Array.from(new Set(productDetail.availableSizes ?? []));
     return combinedSizes.sort((a, b) => {
       const aIndex = SIZE_ORDER.indexOf(a);
       const bIndex = SIZE_ORDER.indexOf(b);
@@ -128,27 +103,38 @@ export function ProductHero({ product }: ProductHeroProps) {
       if (bIndex === -1) return -1;
       return aIndex - bIndex;
     });
-  }, [sizes]);
+  }, [productDetail.availableSizes]);
 
   const sizeStates = useMemo(
     () =>
       orderedSizes.map((size) => {
-        const variantForSize = availableVariants.find((variant) => variant.size === size);
-        const inStock = variantForSize ? variantForSize.stockQuantity > 0 : false;
-        return { size, inStock };
+        const isAvailable = selectedColor
+          ? product.variants.some(
+              (variant) =>
+                variant.color === selectedColor &&
+                variant.size === size &&
+                variant.stockQuantity > 0
+            )
+          : product.variants.some(
+              (variant) => variant.size === size && variant.stockQuantity > 0
+            );
+        return { size, isAvailable };
       }),
-    [availableVariants, orderedSizes]
+    [orderedSizes, product.variants, selectedColor]
   );
 
   useEffect(() => {
-    const existingSelectionValid = sizeStates.find(
-      (state) => state.size === selectedSize && state.inStock
+    if (!selectedColor || !selectedSize) return;
+    const stillAvailable = product.variants.some(
+      (variant) =>
+        variant.color === selectedColor &&
+        variant.size === selectedSize &&
+        variant.stockQuantity > 0
     );
-    if (existingSelectionValid) return;
-
-    const firstAvailable = sizeStates.find((state) => state.inStock);
-    setSelectedSize(firstAvailable?.size ?? null);
-  }, [selectedColor, sizeStates, selectedSize]);
+    if (!stillAvailable) {
+      setSelectedSize(null);
+    }
+  }, [product.variants, selectedColor, selectedSize]);
 
   useEffect(() => {
     if (selectedImageIndex >= galleryImages.length) {
@@ -166,22 +152,30 @@ export function ProductHero({ product }: ProductHeroProps) {
     return () => clearTimeout(timeout);
   }, [selectedImageIndex, galleryImages]);
 
-  const currentVariant = product.variants.find(
-    (v) => v.color === selectedColor && v.size === selectedSize
-  );
+  const minPrice = typeof productDetail.minPrice === "number" ? productDetail.minPrice : product.price;
+  const maxPrice = typeof productDetail.maxPrice === "number" ? productDetail.maxPrice : product.price;
 
-  const displayPrice = product.salePrice || product.price;
-  const hasDiscount = !!product.salePrice;
-  const discountAmount = hasDiscount ? product.price - (product.salePrice || 0) : 0;
-  const klarnaSplit = (displayPrice / 4).toFixed(2);
+  const displayPriceText = selectedVariant
+    ? formatVnd(selectedVariant.price)
+    : minPrice === maxPrice
+    ? formatVnd(minPrice)
+    : `${formatVnd(minPrice)} - ${formatVnd(maxPrice)}`;
+
+  const stockStatusText = selectedVariant
+    ? selectedVariant.stockQuantity === 0
+      ? "Hết hàng"
+      : selectedVariant.stockQuantity <= 5
+      ? `Sắp hết (Còn ${selectedVariant.stockQuantity} sản phẩm)`
+      : "Còn hàng"
+    : "Vui lòng chọn màu sắc và kích cỡ";
 
   const handleAddToCart = async () => {
-    if (!currentVariant) {
-      toast.error("Please select a color and size");
+    if (!selectedVariant) {
+      toast.error("Vui lòng chọn màu sắc và kích cỡ");
       return;
     }
 
-    if (!currentVariant.id) {
+    if (!selectedVariant.id) {
       toast.error("Invalid product variant");
       return;
     }
@@ -191,14 +185,14 @@ export function ProductHero({ product }: ProductHeroProps) {
       return;
     }
 
-    if (currentVariant.stockQuantity < quantity) {
-      toast.error(`Only ${currentVariant.stockQuantity} items available in stock`);
+    if (selectedVariant.stockQuantity < quantity) {
+      toast.error(`Chỉ còn ${selectedVariant.stockQuantity} sản phẩm trong kho`);
       return;
     }
 
     try {
       setIsAddingToCart(true);
-      await addToCart(currentVariant.id, quantity);
+      await addToCart(selectedVariant.id, quantity);
       toast.success("Product added to cart successfully!");
       setQuantity(1);
     } catch (error) {
@@ -217,27 +211,29 @@ export function ProductHero({ product }: ProductHeroProps) {
     console.log("Add to wishlist", product.id);
   };
 
-  const isVariantInStock = currentVariant ? currentVariant.stockQuantity > 0 : false;
-  const hasValidSelection = Boolean(selectedColor && selectedSize && currentVariant && isVariantInStock);
-  const primarySku = currentVariant?.sku || product.variants[0]?.sku || `AWS-${product.id}`;
+  const isVariantInStock = selectedVariant ? selectedVariant.stockQuantity > 0 : false;
+  const hasValidSelection = Boolean(selectedColor && selectedSize && selectedVariant && isVariantInStock);
+  const primarySku = selectedVariant?.sku || product.variants[0]?.sku || `AWS-${product.id}`;
   const colorSwatches =
-    availableColors.length > 0
-      ? availableColors.map((color) => ({
-          name: formatColorLabel(color),
-          value: color,
-          hex: COLOR_HEX_MAP[color.toLowerCase()] || color,
-        }))
-      : FALLBACK_SWATCHES.map((swatch) => ({
-          name: swatch.name,
-          value: swatch.name.toLowerCase(),
-          hex: swatch.hex,
-        }));
+    (productDetail.availableColors ?? []).map((color) => ({
+      name: color,
+      value: color,
+      hex: COLOR_HEX_MAP[color.toLowerCase()] || color,
+    }));
+
+  const defaultColor = useMemo(() => {
+    if (productDetail.availableColors && productDetail.availableColors.length > 0) {
+      return productDetail.availableColors[0];
+    }
+    const firstVariantColor = product.variants.find((variant) => variant.color)?.color ?? null;
+    return firstVariantColor;
+  }, [product.variants, productDetail.availableColors]);
 
   useEffect(() => {
-    if (!selectedColor && colorSwatches.length > 0) {
-      setSelectedColor(colorSwatches[0].value);
+    if (!selectedColor && defaultColor) {
+      setSelectedColor(defaultColor);
     }
-  }, [colorSwatches, orderedSizes, selectedColor, selectedSize]);
+  }, [defaultColor, selectedColor]);
 
   const leadImage = galleryImages[selectedImageIndex] || galleryImages[0];
   const secondaryImages = galleryImages.filter((_, idx) => idx !== selectedImageIndex);
@@ -355,20 +351,12 @@ export function ProductHero({ product }: ProductHeroProps) {
           <div className="space-y-2">
             <div className="flex flex-wrap items-end gap-4">
               <span className="font-['Playfair_Display'] text-[32px] font-semibold text-[#1A1A1A]">
-                ${displayPrice.toFixed(2)}
+                {displayPriceText}
               </span>
-              {hasDiscount && (
-                <>
-                  <span className="text-[24px] text-[#9CA3AF] line-through">${product.price.toFixed(2)}</span>
-                  <span className="rounded-full bg-[#E11D48] px-4 py-1 text-[12px] font-semibold uppercase tracking-wide text-white">
-                    -{Math.round((discountAmount / product.price) * 100)}% Off
-                  </span>
-                </>
-              )}
             </div>
             <div className="flex items-center gap-2 text-[14px] text-[#6B7280]">
               <CreditCard className="h-4 w-4 text-[#D4AF37]" />
-              <span>or 4 payments of ${klarnaSplit} with Klarna</span>
+              <span>{stockStatusText}</span>
             </div>
           </div>
 
@@ -376,9 +364,9 @@ export function ProductHero({ product }: ProductHeroProps) {
             <section className="space-y-4">
               <div className="flex items-center justify-between text-[14px] font-medium text-[#1A1A1A]">
                 <span className="uppercase tracking-[0.22em] text-[#6B7280]">
-                  Color
+                  Màu sắc
                   <span className="ml-2 text-[#1A1A1A] normal-case tracking-normal">
-                    {formatColorLabel(selectedColor)}
+                    {selectedColor || "Chưa chọn"}
                   </span>
                 </span>
                 <span className="text-[#D4AF37]">Premium dye</span>
@@ -386,22 +374,33 @@ export function ProductHero({ product }: ProductHeroProps) {
               <div className="flex flex-wrap gap-4">
                 {colorSwatches.map((swatch) => {
                   const isActive = selectedColor === swatch.value || (!selectedColor && swatch === colorSwatches[0]);
+                  const swatchImage = colorImageMap[swatch.value];
                   return (
                     <button
                       key={swatch.value}
                       onMouseEnter={() => {
                         setSelectedColor(swatch.value);
-                        const colorImage = colorImageMap[swatch.value];
-                        if (colorImage) {
-                          const idx = galleryImages.indexOf(colorImage);
+                        if (swatchImage) {
+                          const idx = galleryImages.indexOf(swatchImage);
                           if (idx >= 0) setSelectedImageIndex(idx);
                         }
                       }}
                       onClick={() => setSelectedColor(swatch.value)}
-                      className={`relative h-12 w-12 rounded-full border-2 transition-all duration-300 ${isActive ? "border-[#D4AF37] scale-110" : "border-transparent hover:border-[#D4AF37]"}`}
-                      style={{ backgroundColor: swatch.hex }}
+                      className={`relative h-12 w-12 overflow-hidden rounded-full border-2 transition-all duration-300 ${isActive ? "border-[#D4AF37] scale-110" : "border-transparent hover:border-[#D4AF37]"}`}
+                      style={
+                        swatchImage
+                          ? {
+                              backgroundImage: `url(${swatchImage})`,
+                              backgroundSize: "cover",
+                              backgroundPosition: "center",
+                            }
+                          : { backgroundColor: swatch.hex }
+                      }
                       aria-label={swatch.name}
                     >
+                      {swatchImage && (
+                        <span className="absolute inset-0 bg-black/10" aria-hidden="true" />
+                      )}
                       {isActive && (
                         <span className="absolute inset-0 flex items-center justify-center">
                           <Check className="h-5 w-5 text-white drop-shadow" />
@@ -418,20 +417,20 @@ export function ProductHero({ product }: ProductHeroProps) {
             <section className="space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-[13px] font-semibold uppercase tracking-[0.24em] text-[#6B7280]">
-                  Size
+                  Kích cỡ
                 </span>
                 <button className="text-[13px] font-medium text-[#D4AF37] underline">Size Guide</button>
               </div>
               <div className="flex flex-wrap gap-3">
-                {sizeStates.map(({ size, inStock }) => {
+                {sizeStates.map(({ size, isAvailable }) => {
                   const isActive = selectedSize === size;
                   return (
                     <button
                       key={size}
-                      onClick={() => inStock && setSelectedSize(size)}
-                      disabled={!inStock}
+                      onClick={() => isAvailable && setSelectedSize(size)}
+                      disabled={!isAvailable}
                       className={`h-11 min-w-[56px] rounded-lg border text-[13px] font-semibold uppercase tracking-[0.12em] transition-all ${
-                        !inStock
+                        !isAvailable
                           ? "border-[#E5E7EB] bg-[#F9FAFB] text-[#9CA3AF] line-through cursor-not-allowed"
                           : isActive
                           ? "border-[#111827] bg-[#111827] text-white shadow-sm"
@@ -461,7 +460,9 @@ export function ProductHero({ product }: ProductHeroProps) {
               </div>
               <button
                 onClick={() => setQuantity((q) => q + 1)}
-                disabled={!isVariantInStock || (currentVariant && quantity >= currentVariant.stockQuantity)}
+                disabled={
+                  !isVariantInStock || (selectedVariant && quantity >= selectedVariant.stockQuantity)
+                }
                 className="flex h-10 w-10 items-center justify-center rounded-full border border-gray-300 text-[#1A1A1A] transition hover:border-[#D4AF37] disabled:opacity-50"
               >
                 <Plus className="h-4 w-4" />

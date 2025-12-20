@@ -60,12 +60,17 @@ export const updateItem = async (req, res) => {
             throw new Error("Vui lòng đăng nhập để cập nhật giỏ hàng");
         }
         const { cartItemId } = req.params; // Lấy ID item từ URL
-        const { quantity } = req.body; // Lấy số lượng mới từ body
+        const { quantity, productVariantId } = req.body; // Lấy số lượng/biến thể mới từ body
 
-        const updatedItem = await cartService.updateItemQuantity(userId, cartItemId, quantity, null);
+        const updatedItem = await cartService.updateCartItem(
+            userId,
+            cartItemId,
+            { quantity, productVariantId },
+            null
+        );
 
         sendSuccess(res, {
-            message: "Cập nhật số lượng thành công",
+            message: "Cập nhật giỏ hàng thành công",
             item: updatedItem,
         });
     } catch (error) {

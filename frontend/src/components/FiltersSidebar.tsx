@@ -24,8 +24,10 @@ export function FilterSidebar({
   isMobileOpen = false,
   onMobileClose
 }: FilterSidebarProps) {
-  // Pending filters for "Apply" mode
+  const isMobile = typeof onMobileClose === "function";
+  // Pending filters for "Apply" mode (mobile only)
   const [pendingFilters, setPendingFilters] = useState<ProductFiltersState>(filters);
+  const activeFilters = isMobile ? pendingFilters : filters;
   
   const [expandedSections, setExpandedSections] = useState<string[]>([
     'category', 'size', 'color', 'brand'
@@ -38,8 +40,10 @@ export function FilterSidebar({
 
   // Update pending filters when actual filters change from outside
   useEffect(() => {
-    setPendingFilters(filters);
-  }, [filters]);
+    if (isMobile) {
+      setPendingFilters(filters);
+    }
+  }, [filters, isMobile]);
 
   const toggleSection = (section: string) => {
     setExpandedSections(prev => 
@@ -52,32 +56,30 @@ export function FilterSidebar({
   const sizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
 
   const handleApplyFilters = () => {
+    if (!isMobile) return;
     onFilterChange(pendingFilters);
-    if (onMobileClose) {
-      onMobileClose();
-    }
+    onMobileClose?.();
   };
 
   const handleCancel = () => {
+    if (!isMobile) return;
     setPendingFilters(filters);
-    if (onMobileClose) {
-      onMobileClose();
-    }
+    onMobileClose?.();
   };
 
-  // Get active count for each section using pending filters
+  // Get active count for each section using active filters
   const getFilterCount = (id: string) => {
     switch (id) {
       case 'category':
-        return pendingFilters.categories.length;
+        return activeFilters.categories.length;
       case 'size':
-        return pendingFilters.sizes.length;
+        return activeFilters.sizes.length;
       case 'color':
-        return pendingFilters.colors.length;
+        return activeFilters.colors.length;
       case 'brand':
-        return pendingFilters.brands.length;
+        return activeFilters.brands.length;
       case 'price':
-        return (pendingFilters.priceRange[0] !== 0 || pendingFilters.priceRange[1] !== 500) ? 1 : 0;
+        return (activeFilters.priceRange[0] !== 0 || activeFilters.priceRange[1] !== 500) ? 1 : 0;
       default:
         return 0;
     }
@@ -154,14 +156,19 @@ export function FilterSidebar({
             <div key={category.slug} className="flex items-center space-x-2">
               <Checkbox
                 id={`category-${category.slug}`}
-                checked={pendingFilters.categories.includes(category.slug)}
+                checked={activeFilters.categories.includes(category.slug)}
                 onCheckedChange={(checked) => {
-                  setPendingFilters({
-                    ...pendingFilters,
+                  const nextFilters = {
+                    ...activeFilters,
                     categories: checked
-                      ? [...pendingFilters.categories, category.slug]
-                      : pendingFilters.categories.filter(c => c !== category.slug)
-                  });
+                      ? [...activeFilters.categories, category.slug]
+                      : activeFilters.categories.filter(c => c !== category.slug)
+                  };
+                  if (isMobile) {
+                    setPendingFilters(nextFilters);
+                  } else {
+                    onFilterChange(nextFilters);
+                  }
                 }}
                 className="border-2 border-black/20 data-[state=checked]:bg-black data-[state=checked]:border-black w-5 h-5"
               />
@@ -191,19 +198,24 @@ export function FilterSidebar({
       <FilterSection title="Size" id="size">
         <div className="grid grid-cols-3 gap-2">
           {sizes.map((size) => (
-            <button
-              key={size}
-              onClick={() => {
-                setPendingFilters({
-                  ...pendingFilters,
-                  sizes: pendingFilters.sizes.includes(size)
-                    ? pendingFilters.sizes.filter(s => s !== size)
-                    : [...pendingFilters.sizes, size]
-                });
+              <button
+                key={size}
+                onClick={() => {
+                const nextFilters = {
+                  ...activeFilters,
+                  sizes: activeFilters.sizes.includes(size)
+                    ? activeFilters.sizes.filter(s => s !== size)
+                    : [...activeFilters.sizes, size]
+                };
+                if (isMobile) {
+                  setPendingFilters(nextFilters);
+                } else {
+                  onFilterChange(nextFilters);
+                }
               }}
               className={`
                 py-2.5 px-1 rounded-lg border-2 font-semibold text-sm transition-all duration-300
-                ${pendingFilters.sizes.includes(size)
+                ${activeFilters.sizes.includes(size)
                   ? 'border-black bg-black text-white shadow-md'
                   : 'border-black/15 text-black/70 hover:border-black/30 active:border-black'
                 }
@@ -225,16 +237,21 @@ export function FilterSidebar({
             <div key={color.name} className="flex flex-col items-center gap-2">
               <button
                 onClick={() => {
-                  setPendingFilters({
-                    ...pendingFilters,
-                    colors: pendingFilters.colors.includes(color.name)
-                      ? pendingFilters.colors.filter(c => c !== color.name)
-                      : [...pendingFilters.colors, color.name]
-                  });
+                  const nextFilters = {
+                    ...activeFilters,
+                    colors: activeFilters.colors.includes(color.name)
+                      ? activeFilters.colors.filter(c => c !== color.name)
+                      : [...activeFilters.colors, color.name]
+                  };
+                  if (isMobile) {
+                    setPendingFilters(nextFilters);
+                  } else {
+                    onFilterChange(nextFilters);
+                  }
                 }}
                 className={`
                   relative w-12 h-12 rounded-full border-3 transition-all duration-300
-                  ${pendingFilters.colors.includes(color.name)
+                  ${activeFilters.colors.includes(color.name)
                     ? 'border-black ring-2 ring-black ring-offset-2 shadow-lg'
                     : 'border-gray-300 hover:border-black/50'
                   }
@@ -266,24 +283,29 @@ export function FilterSidebar({
           <div className="flex items-center justify-between mb-2">
             <div className="flex-1">
               <span className="text-xs text-black/50 uppercase tracking-wider font-semibold">Min</span>
-              <div className="text-lg font-bold text-black">${pendingFilters.priceRange[0]}</div>
+              <div className="text-lg font-bold text-black">${activeFilters.priceRange[0]}</div>
             </div>
             <div className="w-px h-8 bg-black/10" />
             <div className="flex-1 text-right">
               <span className="text-xs text-black/50 uppercase tracking-wider font-semibold">Max</span>
-              <div className="text-lg font-bold text-black">${pendingFilters.priceRange[1]}+</div>
+              <div className="text-lg font-bold text-black">${activeFilters.priceRange[1]}+</div>
             </div>
           </div>
 
           {/* Slider - Improved thickness and styling */}
           <div className="py-2">
             <Slider
-              value={pendingFilters.priceRange}
+              value={activeFilters.priceRange}
               onValueChange={(value) => {
-                setPendingFilters({
-                  ...pendingFilters,
+                const nextFilters = {
+                  ...activeFilters,
                   priceRange: value as [number, number]
-                });
+                };
+                if (isMobile) {
+                  setPendingFilters(nextFilters);
+                } else {
+                  onFilterChange(nextFilters);
+                }
               }}
               min={0}
               max={500}
@@ -299,13 +321,18 @@ export function FilterSidebar({
                 type="number"
                 min={0}
                 max={500}
-                value={pendingFilters.priceRange[0]}
+                value={activeFilters.priceRange[0]}
                 onChange={(e) => {
-                  const val = Math.min(Number(e.target.value), pendingFilters.priceRange[1]);
-                  setPendingFilters({
-                    ...pendingFilters,
-                    priceRange: [Math.max(val, 0), pendingFilters.priceRange[1]]
-                  });
+                  const val = Math.min(Number(e.target.value), activeFilters.priceRange[1]);
+                  const nextFilters = {
+                    ...activeFilters,
+                    priceRange: [Math.max(val, 0), activeFilters.priceRange[1]]
+                  };
+                  if (isMobile) {
+                    setPendingFilters(nextFilters);
+                  } else {
+                    onFilterChange(nextFilters);
+                  }
                 }}
                 className="w-full px-3 py-2 border-2 border-black/15 rounded-lg text-sm font-medium focus:border-black focus:outline-none transition-colors"
                 placeholder="Min"
@@ -316,13 +343,18 @@ export function FilterSidebar({
                 type="number"
                 min={0}
                 max={500}
-                value={pendingFilters.priceRange[1]}
+                value={activeFilters.priceRange[1]}
                 onChange={(e) => {
-                  const val = Math.max(Number(e.target.value), pendingFilters.priceRange[0]);
-                  setPendingFilters({
-                    ...pendingFilters,
-                    priceRange: [pendingFilters.priceRange[0], Math.min(val, 500)]
-                  });
+                  const val = Math.max(Number(e.target.value), activeFilters.priceRange[0]);
+                  const nextFilters = {
+                    ...activeFilters,
+                    priceRange: [activeFilters.priceRange[0], Math.min(val, 500)]
+                  };
+                  if (isMobile) {
+                    setPendingFilters(nextFilters);
+                  } else {
+                    onFilterChange(nextFilters);
+                  }
                 }}
                 className="w-full px-3 py-2 border-2 border-black/15 rounded-lg text-sm font-medium focus:border-black focus:outline-none transition-colors"
                 placeholder="Max"
@@ -358,14 +390,19 @@ export function FilterSidebar({
                 <div key={brand} className="flex items-center space-x-2">
                   <Checkbox
                     id={`brand-${brand}`}
-                    checked={pendingFilters.brands.includes(brand)}
+                    checked={activeFilters.brands.includes(brand)}
                     onCheckedChange={(checked) => {
-                      setPendingFilters({
-                        ...pendingFilters,
+                      const nextFilters = {
+                        ...activeFilters,
                         brands: checked
-                          ? [...pendingFilters.brands, brand]
-                          : pendingFilters.brands.filter(b => b !== brand)
-                      });
+                          ? [...activeFilters.brands, brand]
+                          : activeFilters.brands.filter(b => b !== brand)
+                      };
+                      if (isMobile) {
+                        setPendingFilters(nextFilters);
+                      } else {
+                        onFilterChange(nextFilters);
+                      }
                     }}
                     className="border-2 border-black/20 data-[state=checked]:bg-black data-[state=checked]:border-black w-5 h-5"
                   />
@@ -392,29 +429,31 @@ export function FilterSidebar({
       </FilterSection>
 
       {/* Action Buttons - Primary Ghost Style */}
-      <div className="mt-8 pt-6 border-t border-black/10 flex gap-3 items-center">
-        {/* Primary Button - Apply Filters */}
-        <button
-          onClick={handleApplyFilters}
-          className="flex-1 py-3 bg-black text-white font-semibold text-sm transition-all duration-300 hover:bg-black/90 active:shadow-inner shadow-md rounded-lg"
-          style={{
-            fontFamily: FONT_SANS
-          }}
-        >
-          APPLY
-        </button>
+      {isMobile && (
+        <div className="mt-8 pt-6 border-t border-black/10 flex gap-3 items-center">
+          {/* Primary Button - Apply Filters */}
+          <button
+            onClick={handleApplyFilters}
+            className="flex-1 py-3 bg-black text-white font-semibold text-sm transition-all duration-300 hover:bg-black/90 active:shadow-inner shadow-md rounded-lg"
+            style={{
+              fontFamily: FONT_SANS
+            }}
+          >
+            APPLY
+          </button>
 
-        {/* Ghost Button - Clear/Cancel */}
-        <button
-          onClick={handleCancel}
-          className="text-xs font-semibold text-black/60 hover:text-black transition-colors duration-300 underline decoration-1 underline-offset-2 py-3 px-4"
-          style={{
-            fontFamily: FONT_SANS
-          }}
-        >
-          Clear
-        </button>
-      </div>
+          {/* Ghost Button - Clear/Cancel */}
+          <button
+            onClick={handleCancel}
+            className="text-xs font-semibold text-black/60 hover:text-black transition-colors duration-300 underline decoration-1 underline-offset-2 py-3 px-4"
+            style={{
+              fontFamily: FONT_SANS
+            }}
+          >
+            Clear
+          </button>
+        </div>
+      )}
     </>
   );
 

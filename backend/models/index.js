@@ -101,6 +101,8 @@ Review.belongsTo(Product, { foreignKey: 'product_id' });
 User.hasMany(Review, { foreignKey: 'user_id' });
 Review.belongsTo(User, { foreignKey: 'user_id' });
 
+
+
 export {
   sequelize,
   User,

@@ -3,7 +3,6 @@ import {
   AlertCircle,
   ArrowRight,
   CheckCircle2,
-  Check,
   Minus,
   Plus,
   ShoppingBag,
@@ -12,7 +11,7 @@ import {
 import { useMemo, useState, useEffect } from "react";
 import { ProductsCarousel } from "@/components/Cart/ProductsCarousel";
 import { ViewedProductsCarousel } from "@/components/Cart/ViewedProductsCarousel";
-import { getCart, updateCartItem, removeCartItem, validateDiscountCode } from "@/lib/api";
+import { getCart, getProductDetail, updateCartItem, removeCartItem, validateDiscountCode } from "@/lib/api";
 import type { CartItem as ApiCartItem, CartResponse } from "@/types/cart";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
@@ -30,6 +29,9 @@ type CartItem = {
   image: string;
   quantity: number;
   cartItemId: number;
+  productId: number;
+  productVariantId: number;
+  stockQuantity: number;
 };
 
 type RecommendedProduct = {
@@ -39,17 +41,17 @@ type RecommendedProduct = {
   image: string;
 };
 
+type VariantOption = {
+  id: number;
+  color: string;
+  size: string;
+  stockQuantity: number;
+};
+
 const TAX_RATE = 0.1;
 const SHIPPING_FEE = 15;
 const FREE_SHIPPING_THRESHOLD = 200;
 const PROMO = { code: "LUXE50", label: "Code applied! -$50", amount: 50 };
-const SIZE_OPTIONS = ["S", "M", "L", "XL"];
-const COLOR_OPTIONS = [
-  { label: "Navy Blue", value: "Navy Blue", swatch: "#1A365D" },
-  { label: "Charcoal", value: "Charcoal", swatch: "#2F2F2F" },
-  { label: "Espresso", value: "Espresso", swatch: "#4B2E2B" },
-  { label: "Ivory", value: "Ivory", swatch: "#F4F1DE", border: "#E5E7EB" },
-];
 
 const mapApiCartItemToCartItem = (apiItem: ApiCartItem): CartItem => {
   return {
@@ -64,6 +66,9 @@ const mapApiCartItemToCartItem = (apiItem: ApiCartItem): CartItem => {
     originalPrice: undefined,
     image: apiItem.image_url || "https://via.placeholder.com/420",
     quantity: apiItem.quantity,
+    productId: apiItem.product_id,
+    productVariantId: apiItem.product_variant_id,
+    stockQuantity: apiItem.stock_quantity,
   };
 };
 
@@ -100,6 +105,37 @@ const formatCurrency = (value: number) =>
     maximumFractionDigits: 0,
   }).format(value);
 
+const normalizeVariantOption = (variant: {
+  id: number;
+  color: string | null;
+  size: string | null;
+  stockQuantity: number;
+}): VariantOption => ({
+  id: variant.id,
+  color: variant.color || "N/A",
+  size: variant.size || "N/A",
+  stockQuantity: variant.stockQuantity,
+});
+
+const resolveVariantSelection = (
+  variants: VariantOption[],
+  size: string,
+  color: string
+) => {
+  const exact = variants.find(
+    (variant) => variant.size === size && variant.color === color
+  );
+  if (exact) return exact;
+
+  const sizeMatch = variants.find((variant) => variant.size === size);
+  if (sizeMatch) return sizeMatch;
+
+  const colorMatch = variants.find((variant) => variant.color === color);
+  if (colorMatch) return colorMatch;
+
+  return variants[0] || null;
+};
+
 export default function CartPage() {
   const navigate = useNavigate();
   const [items, setItems] = useState<CartItem[]>([]);
@@ -113,6 +149,7 @@ export default function CartPage() {
   );
   const [isPromoExpanded, setIsPromoExpanded] = useState(false);
   const [updatingItems, setUpdatingItems] = useState<Set<number>>(new Set());
+  const [variantsByProduct, setVariantsByProduct] = useState<Record<number, VariantOption[]>>({});
 
   useEffect(() => {
     const fetchCart = async () => {
@@ -143,9 +180,46 @@ export default function CartPage() {
     fetchCart();
   }, [navigate]);
 
+  useEffect(() => {
+    const productIds = Array.from(new Set(items.map((item) => item.productId)));
+    const missingIds = productIds.filter((id) => !(id in variantsByProduct));
+    if (missingIds.length === 0) return;
+
+    let isCancelled = false;
+
+    const fetchVariants = async () => {
+      try {
+        const details = await Promise.all(
+          missingIds.map((id) => getProductDetail(String(id)))
+        );
+        if (isCancelled) return;
+
+        setVariantsByProduct((prev) => {
+          const next = { ...prev };
+          details.forEach((detail, index) => {
+            const productId = missingIds[index];
+            if (!detail) return;
+            next[productId] = detail.variants.map(normalizeVariantOption);
+          });
+          return next;
+        });
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : "Failed to load variants";
+        toast.error(message);
+      }
+    };
+
+    fetchVariants();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [items, variantsByProduct]);
+
   const subtotal = useMemo(
-    () => cartData?.subtotal_amount || 0,
-    [cartData],
+    () => items.reduce((acc, item) => acc + item.price * item.quantity, 0),
+    [items],
   );
   const discount = useMemo(
     () => (appliedPromo ? cartData?.discount_amount || 0 : 0),
@@ -156,6 +230,20 @@ export default function CartPage() {
   const total = Math.max(subtotal + shipping - discount, 0);
   const itemCount = items.reduce((acc, item) => acc + item.quantity, 0);
 
+  const refreshCartData = async () => {
+    const cart = await getCart();
+    setCartData(cart);
+    setItems(cart.items.map(mapApiCartItemToCartItem));
+  };
+
+  const updateLocalQuantity = (cartItemId: number, quantity: number) => {
+    setItems((prev) =>
+      prev.map((item) =>
+        item.cartItemId === cartItemId ? { ...item, quantity } : item
+      )
+    );
+  };
+
   const handleQuantityChange = async (id: string, delta: 1 | -1) => {
     const item = items.find((i) => i.id === id);
     if (!item) return;
@@ -165,14 +253,14 @@ export default function CartPage() {
 
     try {
       setUpdatingItems((prev) => new Set(prev).add(item.cartItemId));
-      await updateCartItem(item.cartItemId, nextQuantity);
-      
-      // Refresh cart data
-      const cart = await getCart();
-      setCartData(cart);
-      setItems(cart.items.map(mapApiCartItemToCartItem));
+      updateLocalQuantity(item.cartItemId, nextQuantity);
+      const updated = await updateCartItem(item.cartItemId, nextQuantity);
+      if (updated.quantity !== nextQuantity) {
+        updateLocalQuantity(item.cartItemId, updated.quantity);
+      }
       toast.success("Cart updated successfully");
     } catch (err) {
+      updateLocalQuantity(item.cartItemId, item.quantity);
       const errorMessage = err instanceof Error ? err.message : "Failed to update quantity";
       toast.error(errorMessage);
     } finally {
@@ -184,22 +272,75 @@ export default function CartPage() {
     }
   };
 
-  const handleSizeChange = (id: string, size: string) => {
-    // Note: Changing size/color would require changing the variant, which is a more complex operation
-    // For now, we'll just update the display but show a message
-    toast.info("To change size or color, please remove this item and add the desired variant");
-    setItems((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, size } : item)),
-    );
+  const handleQuantitySet = async (item: CartItem, nextQuantity: number) => {
+    const safeQuantity = Math.max(1, Math.floor(nextQuantity));
+    if (!Number.isFinite(safeQuantity) || safeQuantity === item.quantity) {
+      return;
+    }
+
+    try {
+      setUpdatingItems((prev) => new Set(prev).add(item.cartItemId));
+      updateLocalQuantity(item.cartItemId, safeQuantity);
+      const updated = await updateCartItem(item.cartItemId, safeQuantity);
+      if (updated.quantity !== safeQuantity) {
+        updateLocalQuantity(item.cartItemId, updated.quantity);
+      }
+      toast.success("Cart updated successfully");
+    } catch (err) {
+      updateLocalQuantity(item.cartItemId, item.quantity);
+      const errorMessage = err instanceof Error ? err.message : "Failed to update quantity";
+      toast.error(errorMessage);
+    } finally {
+      setUpdatingItems((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(item.cartItemId);
+        return newSet;
+      });
+    }
   };
 
-  const handleColorChange = (id: string, color: string) => {
-    // Note: Changing size/color would require changing the variant, which is a more complex operation
-    // For now, we'll just update the display but show a message
-    toast.info("To change size or color, please remove this item and add the desired variant");
-    setItems((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, color } : item)),
+  const handleVariantChange = async (
+    item: CartItem,
+    next: { size?: string; color?: string }
+  ) => {
+    const variants = variantsByProduct[item.productId];
+    if (!variants || variants.length === 0) {
+      toast.error("No variants available for this product");
+      return;
+    }
+
+    const targetVariant = resolveVariantSelection(
+      variants,
+      next.size ?? item.size,
+      next.color ?? item.color
     );
+    if (!targetVariant) {
+      toast.error("Selected variant is not available");
+      return;
+    }
+
+    if (targetVariant.id === item.productVariantId) {
+      return;
+    }
+
+    try {
+      setUpdatingItems((prev) => new Set(prev).add(item.cartItemId));
+      await updateCartItem(item.cartItemId, {
+        productVariantId: targetVariant.id,
+        quantity: item.quantity,
+      });
+      await refreshCartData();
+      toast.success("Variant updated successfully");
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to update variant";
+      toast.error(errorMessage);
+    } finally {
+      setUpdatingItems((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(item.cartItemId);
+        return newSet;
+      });
+    }
   };
 
   const handleRemoveItem = async (id: string) => {
@@ -209,11 +350,7 @@ export default function CartPage() {
     try {
       setUpdatingItems((prev) => new Set(prev).add(item.cartItemId));
       await removeCartItem(item.cartItemId);
-      
-      // Refresh cart data
-      const cart = await getCart();
-      setCartData(cart);
-      setItems(cart.items.map(mapApiCartItemToCartItem));
+      await refreshCartData();
       toast.success("Item removed from cart");
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Failed to remove item";
@@ -324,8 +461,11 @@ export default function CartPage() {
               key={item.id}
               item={item}
               isUpdating={updatingItems.has(item.cartItemId)}
+              variantOptions={variantsByProduct[item.productId] ?? []}
               onDecrease={() => handleQuantityChange(item.id, -1)}
               onIncrease={() => handleQuantityChange(item.id, 1)}
+              onQuantitySet={(nextQuantity) => handleQuantitySet(item, nextQuantity)}
+              onVariantChange={(next) => handleVariantChange(item, next)}
               onRemove={() => handleRemoveItem(item.id)}
             />
           ))
@@ -374,16 +514,22 @@ const stockStyles = {
 type CartItemCardProps = {
   item: CartItem;
   isUpdating?: boolean;
+  variantOptions: VariantOption[];
   onIncrease: () => void;
   onDecrease: () => void;
+  onQuantitySet: (quantity: number) => void;
+  onVariantChange: (next: { size?: string; color?: string }) => void;
   onRemove: () => void;
 };
 
 const CartItemCard = ({
   item,
   isUpdating = false,
+  variantOptions,
   onIncrease,
   onDecrease,
+  onQuantitySet,
+  onVariantChange,
   onRemove,
 }: CartItemCardProps) => (
   <article className="grid grid-cols-[120px_minmax(0,1fr)] gap-8 py-10">
@@ -414,18 +560,14 @@ const CartItemCard = ({
         </button>
       </div>
       <div className="space-y-3">
-        <p className="text-xs text-[#999999]">
-          Color: {item.color} / Size: {item.size}{" "}
-          <button
-            type="button"
-            className="ml-2 text-[11px] uppercase tracking-[0.2em] text-[#C2A26F] underline underline-offset-2 transition hover:text-[#a88953]"
-            onClick={() =>
-              toast.info("To edit color/size, please remove and re-add the variant.")
-            }
-          >
-            Edit
-          </button>
-        </p>
+        <VariantControls
+          size={item.size}
+          color={item.color}
+          variantOptions={variantOptions}
+          isUpdating={isUpdating}
+          onSizeChange={(value) => onVariantChange({ size: value })}
+          onColorChange={(value) => onVariantChange({ color: value })}
+        />
         <span
           className={`text-[11px] uppercase tracking-[0.3em] ${stockStyles[item.stockStatus]}`}
         >
@@ -438,6 +580,7 @@ const CartItemCard = ({
           isUpdating={isUpdating}
           onIncrease={onIncrease}
           onDecrease={onDecrease}
+          onQuantitySet={onQuantitySet}
         />
         <PriceStack item={item} />
       </div>
@@ -450,104 +593,140 @@ const QuantityControl = ({
   isUpdating = false,
   onIncrease,
   onDecrease,
+  onQuantitySet,
 }: {
   quantity: number;
   isUpdating?: boolean;
   onIncrease: () => void;
   onDecrease: () => void;
-}) => (
-  <div className="flex items-center gap-4 text-sm text-[#333333]">
-    <button
-      type="button"
-      aria-label="Decrease quantity"
-      disabled={quantity === 1 || isUpdating}
-      onClick={onDecrease}
-      className="text-lg transition hover:text-[#000000] disabled:cursor-not-allowed disabled:opacity-30"
-    >
-      {isUpdating ? (
-        <Loader2 className="h-4 w-4 animate-spin" />
-      ) : (
-        <Minus className="h-4 w-4" />
-      )}
-    </button>
-    <span aria-label="Current quantity" className="text-base font-semibold">
-      {quantity}
-    </span>
-    <button
-      type="button"
-      aria-label="Increase quantity"
-      disabled={isUpdating}
-      onClick={onIncrease}
-      className="text-lg transition hover:text-[#000000] disabled:cursor-not-allowed disabled:opacity-30"
-    >
-      {isUpdating ? (
-        <Loader2 className="h-4 w-4 animate-spin" />
-      ) : (
-        <Plus className="h-4 w-4" />
-      )}
-    </button>
-  </div>
-);
+  onQuantitySet: (quantity: number) => void;
+}) => {
+  const [draftQuantity, setDraftQuantity] = useState(String(quantity));
+
+  useEffect(() => {
+    setDraftQuantity(String(quantity));
+  }, [quantity]);
+
+  const commitQuantity = () => {
+    const parsed = Number.parseInt(draftQuantity, 10);
+    if (Number.isNaN(parsed)) {
+      setDraftQuantity(String(quantity));
+      return;
+    }
+    onQuantitySet(parsed);
+  };
+
+  return (
+    <div className="flex items-center gap-3 text-sm text-[#333333]">
+      <button
+        type="button"
+        aria-label="Decrease quantity"
+        disabled={quantity === 1 || isUpdating}
+        onClick={onDecrease}
+        className="text-lg transition hover:text-[#000000] disabled:cursor-not-allowed disabled:opacity-30"
+      >
+        {isUpdating ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : (
+          <Minus className="h-4 w-4" />
+        )}
+      </button>
+      <input
+        type="number"
+        inputMode="numeric"
+        min={1}
+        value={draftQuantity}
+        onChange={(event) => setDraftQuantity(event.target.value)}
+        onBlur={commitQuantity}
+        onKeyDown={(event) => {
+          if (event.key === "Enter") {
+            commitQuantity();
+            event.currentTarget.blur();
+          }
+        }}
+        disabled={isUpdating}
+        className="h-9 w-16 rounded-md border border-[#E5E5E5] bg-white text-center text-base font-semibold text-black focus:border-[#C2A26F] focus:outline-none"
+        aria-label="Current quantity"
+      />
+      <button
+        type="button"
+        aria-label="Increase quantity"
+        disabled={isUpdating}
+        onClick={onIncrease}
+        className="text-lg transition hover:text-[#000000] disabled:cursor-not-allowed disabled:opacity-30"
+      >
+        {isUpdating ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : (
+          <Plus className="h-4 w-4" />
+        )}
+      </button>
+    </div>
+  );
+};
 
 const VariantControls = ({
   size,
   color,
+  variantOptions,
+  isUpdating = false,
   onSizeChange,
   onColorChange,
 }: {
   size: string;
   color: string;
+  variantOptions: VariantOption[];
+  isUpdating?: boolean;
   onSizeChange: (value: string) => void;
   onColorChange: (value: string) => void;
-}) => (
-  <div className="mt-2 flex flex-wrap gap-4 text-xs text-[#999999]">
-    <label className="flex items-center gap-2">
-      <span>Size</span>
-      <select
-        value={size}
-        onChange={(event) => onSizeChange(event.target.value)}
-        className="border-b border-[#E5E5E5] bg-transparent px-1 py-0.5 text-[#333333] focus:border-[#C2A26F] focus:outline-none"
-      >
-        {SIZE_OPTIONS.map((option) => (
-          <option key={option} value={option}>
-            {option}
-          </option>
-        ))}
-      </select>
-    </label>
-    <div className="flex items-center gap-2">
-      <span>Color</span>
-      <div className="flex items-center gap-2">
-        {COLOR_OPTIONS.map((option) => {
-          const isSelected = option.value === color;
-          return (
-            <button
-              key={option.value}
-              type="button"
-              aria-label={option.label}
-              aria-pressed={isSelected}
-              onClick={() => onColorChange(option.value)}
-              className={`relative flex h-7 w-7 items-center justify-center rounded-full border border-[#E5E5E5] transition ${
-                isSelected ? "border-[#C2A26F]" : "border-[#E5E5E5]"
-              }`}
-            >
-              <span
-                className="h-5 w-5 rounded-full"
-                style={{
-                  backgroundColor: option.swatch,
-                  border: option.border ? `1px solid ${option.border}` : "none",
-                }}
-              />
-              {isSelected && (
-                <Check className="absolute h-3 w-3 text-white drop-shadow" />
-              )}
-            </button>
-          );
-        })}
-      </div>
+}) => {
+  const availableVariants = variantOptions.filter(
+    (variant) => variant.stockQuantity > 0 || variant.size === size || variant.color === color
+  );
+  const sizes = Array.from(
+    new Set(availableVariants.map((variant) => variant.size))
+  );
+  const colors = Array.from(
+    new Set(availableVariants.map((variant) => variant.color))
+  );
+  const sizeOptions = sizes.length > 0 ? sizes : [size];
+  const colorOptions = colors.length > 0 ? colors : [color];
+
+  return (
+    <div className="mt-2 flex flex-wrap gap-4 text-xs text-[#999999]">
+      <label className="flex items-center gap-2">
+        <span>Size</span>
+        <select
+          value={size}
+          onChange={(event) => onSizeChange(event.target.value)}
+          disabled={isUpdating || sizeOptions.length <= 1}
+          className="border-b border-[#E5E5E5] bg-transparent px-1 py-0.5 text-[#333333] focus:border-[#C2A26F] focus:outline-none disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {sizeOptions.map((option) => (
+            <option key={option} value={option}>
+              {option}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="flex items-center gap-2">
+        <span>Color</span>
+        <select
+          value={color}
+          onChange={(event) => onColorChange(event.target.value)}
+          disabled={isUpdating || colorOptions.length <= 1}
+          className="border-b border-[#E5E5E5] bg-transparent px-1 py-0.5 text-[#333333] focus:border-[#C2A26F] focus:outline-none disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {colorOptions.map((option) => (
+            <option key={option} value={option}>
+              {option}
+            </option>
+          ))}
+        </select>
+      </label>
     </div>
-  </div>
-);
+  );
+};
 
 const PriceStack = ({
   item,

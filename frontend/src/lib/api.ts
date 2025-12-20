@@ -2,6 +2,7 @@ import axios, { type AxiosError, type AxiosRequestConfig, type AxiosRequestHeade
 import type {
   ProductDetail,
   ProductFilterParams,
+  ProductFiltersMeta,
   ProductsListResponse,
 } from '@/types/products';
 import type { ApiErrorResponse, ApiResponse } from '@/types/api';
@@ -19,6 +20,7 @@ import type {
   AddToWishlistResponse,
   RemoveFromWishlistResponse,
 } from '@/types/wishlist';
+import type { ProductReviewsResponse, ReviewItem } from '@/types/reviews';
 import { clearAuthSession, getAccessToken, getStoredUser, getRefreshToken, setAuthSession } from './auth';
 
 const getApiBaseUrl = (): string => {
@@ -40,7 +42,14 @@ let refreshQueue: Array<(token: string | null) => void> = [];
 
 const redirectToLogin = () => {
   clearAuthSession();
-  window.location.href = '/login';
+  if (typeof window === 'undefined') return;
+
+  const { pathname, search, hash } = window.location;
+  const currentPath = `${pathname}${search}${hash}`;
+  const isLoginPage = pathname.startsWith('/login');
+  const redirectParam = isLoginPage ? '' : `?redirect=${encodeURIComponent(currentPath)}`;
+
+  window.location.href = `/login${redirectParam}`;
 };
 
 export const apiClient = axios.create({
@@ -323,8 +332,54 @@ export async function getProductsByCategory(
   });
 }
 
-export async function getProductById(productId: number): Promise<ProductDetail> {
-  return getRequest<ProductDetail>(`/products/${productId}`);
+type ProductVariantApi = {
+  id: number;
+  color: string | null;
+  size: string | null;
+  sku: string | null;
+  price: number;
+  stock_quantity?: number | null;
+  stockQuantity?: number | null;
+  image_url?: string | null;
+  imageUrl?: string | null;
+};
+
+type ProductDetailApi = Omit<ProductDetail, 'variants'> & {
+  variants?: ProductVariantApi[];
+};
+
+export async function getProductDetail(slugOrId: string): Promise<ProductDetail | null> {
+  try {
+    const response = await apiClient.get<ApiResponse<ProductDetailApi>>(
+      `/products/${encodeURIComponent(slugOrId)}`
+    );
+    const payload = unwrapResponse(response.data);
+
+    const mappedVariants = (payload.variants ?? []).map((variant) => ({
+      id: variant.id,
+      color: variant.color ?? null,
+      size: variant.size ?? null,
+      sku: variant.sku ?? null,
+      price: variant.price,
+      stockQuantity: variant.stock_quantity ?? variant.stockQuantity ?? 0,
+      imageUrl: variant.image_url ?? variant.imageUrl ?? null,
+    }));
+
+    return {
+      ...payload,
+      variants: mappedVariants,
+    };
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response?.status === 404) {
+      return null;
+    }
+
+    throw error;
+  }
+}
+
+export async function getProductById(productId: number): Promise<ProductDetail | null> {
+  return getProductDetail(String(productId));
 }
 
 export async function searchProducts(
@@ -334,6 +389,37 @@ export async function searchProducts(
   return getRequest<ProductsListResponse>('/products/search', {
     params: buildFilterParams({ ...filters, q: query }),
   });
+}
+
+export async function getProductFilters(
+  filters: Pick<ProductFilterParams, 'collection'> = {}
+): Promise<ProductFiltersMeta> {
+  return getRequest<ProductFiltersMeta>('/products/filters', {
+    params: filters,
+  });
+}
+
+// ==============================
+// REVIEWS API
+// ==============================
+
+export async function getProductReviews(
+  productId: number,
+  params: { page?: number; pageSize?: number } = {}
+): Promise<ProductReviewsResponse> {
+  return getRequest<ProductReviewsResponse>(`/reviews/product/${productId}`, {
+    params,
+  });
+}
+
+export async function createReview(payload: {
+  productId: number;
+  rating: number;
+  comment?: string;
+  images?: string[];
+}): Promise<ReviewItem> {
+  const response = await apiClient.post<ApiResponse<ReviewItem>>('/reviews', payload);
+  return unwrapResponse(response.data);
 }
 
 // ==============================
@@ -368,13 +454,22 @@ export async function getCart(): Promise<CartResponse> {
   return response.data.cart;
 }
 
+export type UpdateCartItemPayload = {
+  quantity?: number;
+  productVariantId?: number;
+};
+
 export async function updateCartItem(
   cartItemId: number,
-  quantity: number
+  payloadOrQuantity: number | UpdateCartItemPayload
 ): Promise<UpdateCartItemResponse> {
+  const payload = typeof payloadOrQuantity === 'number'
+    ? { quantity: payloadOrQuantity }
+    : payloadOrQuantity;
+
   const response = await apiClient.put<{ success: boolean; message?: string; item: UpdateCartItemResponse }>(
     `/cart/${cartItemId}`,
-    { quantity }
+    payload
   );
   if (!response.data.success) {
     throw new Error(response.data.message || 'Failed to update cart item');
@@ -396,6 +491,7 @@ export async function removeCartItem(cartItemId: number): Promise<void> {
 export async function addToWishlist(productId: number): Promise<AddToWishlistResponse> {
   const user = getStoredUser();
   if (!user?.id) {
+    redirectToLogin();
     throw new Error('User not authenticated');
   }
   

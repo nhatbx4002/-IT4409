@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { useNavigate, Link } from "react-router-dom";
+import { useLocation, useNavigate, Link } from "react-router-dom";
 import { Eye, EyeOff, Mail, Lock, AlertCircle } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { signIn, signInWithGoogle, signInWithFacebook } from "@/lib/api";
@@ -21,6 +21,7 @@ export function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
+  const location = useLocation();
 
   const {
     register,
@@ -49,8 +50,11 @@ export function LoginForm() {
         response.user
       );
 
-      // Redirect về home
-      navigate("/");
+      const params = new URLSearchParams(location.search);
+      const redirect = params.get("redirect");
+      const safeRedirect = redirect && redirect.startsWith("/") ? redirect : "/";
+
+      navigate(safeRedirect);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Login failed. Please try again.";
       setError(errorMessage);
