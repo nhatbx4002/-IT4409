@@ -246,8 +246,39 @@ router.get("/auth/facebook", facebookAuth);
 // Callback sau khi Facebook xác thực
 router.get(
   "/auth/facebook/callback",
-  passport.authenticate("facebook", { failureRedirect: "/login" }),
-  facebookAuthCallback
+  (req, res, next) => {
+    passport.authenticate("facebook", (err, user, info) => {
+      const stateParam = typeof req.query?.state === "string" ? req.query.state : undefined;
+
+      if (err) {
+        console.error("Facebook OAuth error:", err);
+        return redirectOAuthError(
+          res,
+          "Đăng nhập Facebook thất bại, vui lòng thử lại sau.",
+          stateParam
+        );
+      }
+
+      if (!user) {
+        const message =
+          info?.message ||
+          "Email này đã được đăng ký bằng tài khoản local, vui lòng đăng nhập bằng email & mật khẩu.";
+        return redirectOAuthError(res, message, stateParam);
+      }
+
+      req.logIn(user, (loginErr) => {
+        if (loginErr) {
+          console.error("Facebook OAuth session error:", loginErr);
+          return redirectOAuthError(
+            res,
+            "Không thể hoàn tất đăng nhập, vui lòng thử lại.",
+            stateParam
+          );
+        }
+        return facebookAuthCallback(req, res);
+      });
+    })(req, res, next);
+  }
 );
 
 /**

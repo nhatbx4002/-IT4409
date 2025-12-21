@@ -242,13 +242,12 @@ export const signInFacebookController = {
   //Xử lý callback sau khi Facebook xác thực thành công
   facebookCallback: async (req, res) => {
     try {
-      const frontendUrl = APP_CONSTANTS.frontendUrl;
-      
       if (!req.user) {
-        const errorMessage = encodeURIComponent(
-          "Email này đã được đăng ký bằng tài khoản local, vui lòng đăng nhập bằng email & mật khẩu."
+        return redirectOAuthError(
+          res,
+          "Email này đã được đăng ký bằng tài khoản local, vui lòng đăng nhập bằng email & mật khẩu.",
+          typeof req.query?.state === "string" ? req.query.state : undefined
         );
-        return res.redirect(`${frontendUrl}/auth/callback?error=true&errorMessage=${errorMessage}`);
       }
 
       const user = req.user;
@@ -261,20 +260,26 @@ export const signInFacebookController = {
       await signInFacebook.saveTokensToDatabase(user, accessToken, refreshToken);
 
       // Redirect về frontend với tokens trong URL params
-      const params = new URLSearchParams({
+      const params = {
         accessToken,
         refreshToken,
         userId: user.id.toString(),
         email: user.email,
         fullName: user.full_name,
-      });
+      };
 
-      return res.redirect(`${frontendUrl}/auth/callback?${params.toString()}`);
+      if (typeof req.query?.state === "string" && req.query.state.length > 0) {
+        params.state = req.query.state;
+      }
+
+      return res.redirect(buildOAuthCallbackUrl(params));
     } catch (error) {
       console.error(" Lỗi khi đăng nhập Facebook:", error);
-      const frontendUrl = APP_CONSTANTS.frontendUrl;
-      const errorMessage = encodeURIComponent("Đăng nhập Facebook thất bại, vui lòng thử lại sau.");
-      return res.redirect(`${frontendUrl}/auth/callback?error=true&errorMessage=${errorMessage}`);
+      return redirectOAuthError(
+        res,
+        "Đăng nhập Facebook thất bại, vui lòng thử lại sau.",
+        typeof req.query?.state === "string" ? req.query.state : undefined
+      );
     }
   },
 };

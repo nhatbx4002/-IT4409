@@ -25,12 +25,12 @@ passport.use(
                     const existingEmailUser = await User.findOne({ where : { email: googleEmail} });
 
                     if(existingEmailUser){
-                        //Neu trung email tu choi dang nhap banmg google
-                        return done(
-                            null,
-                            false,
-                            { message : "Email nay da ton tai. Vui long dang nhap bang phuong thuc khac"}
-                        );
+                        existingEmailUser.provider = "google";
+                        existingEmailUser.provider_id = profile.id;
+                        existingEmailUser.access_token = accessToken;
+                        existingEmailUser.refresh_token = refreshToken;
+                        await existingEmailUser.save();
+                        return done (null, existingEmailUser);
                     }
 
                     //Neu chua co user nao thi tao tai khoan moi
