@@ -1,4 +1,4 @@
-import { apiClient } from "./api";
+import { adminApiClient, getPaginatedAdminData } from "./api";
 
 export type DiscountPayload = {
   name: string;
@@ -17,21 +17,23 @@ export type DiscountPayload = {
 };
 
 export async function listDiscounts(params?: { apply_type?: string; is_active?: boolean }) {
-  const res = await apiClient.get('/admin/discounts', { params });
-  return res.data?.data ?? res.data;
+  const queryParams: Record<string, any> = {};
+  if (params?.apply_type) queryParams.apply_type = params.apply_type;
+  if (typeof params?.is_active === 'boolean') queryParams.is_active = params.is_active;
+
+  return getPaginatedAdminData<any>("/discounts", queryParams);
 }
 
 export async function createDiscount(payload: DiscountPayload) {
-  const res = await apiClient.post('/admin/discounts', payload);
-  return res.data?.data ?? res.data;
+  const res = await adminApiClient.post('/discounts', payload);
+  return res.data;
 }
 
 export async function updateDiscount(id: number, payload: Partial<DiscountPayload>) {
-  const res = await apiClient.put(`/admin/discounts/${id}`, payload);
-  return res.data?.data ?? res.data;
+  const res = await adminApiClient.put(`/discounts/${id}`, payload);
+  return res.data;
 }
 
 export async function deleteDiscount(id: number) {
-  const res = await apiClient.delete(`/admin/discounts/${id}`);
-  return res.data?.data ?? res.data;
+  await adminApiClient.delete(`/discounts/${id}`);
 }

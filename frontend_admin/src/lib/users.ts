@@ -1,4 +1,4 @@
-import { apiClient } from "./api";
+import { adminApiClient, getPaginatedAdminData } from "./api";
 
 export type Role = "ADMIN" | "CUSTOMER" | "SUPER_ADMIN" | "customer" | "admin" | "super_admin";
 
@@ -53,45 +53,32 @@ const unwrap = <T>(payload: ApiEnvelope<T> | T): T => {
 };
 
 export async function listUsers(params: ListUserParams = {}): Promise<PaginatedResponse<User>> {
-  const query: Record<string, any> = {};
-  if (params.page) query.page = params.page;
-  if (params.limit) query.limit = params.limit;
-  if (params.search) query.search = params.search;
-  if (params.role) query.role = params.role;
-  if (typeof params.isLocked === "boolean") query.is_locked = params.isLocked;
+  const queryParams: Record<string, any> = {};
+  if (params.page) queryParams.page = params.page;
+  if (params.limit) queryParams.limit = params.limit;
+  if (params.search) queryParams.search = params.search;
+  if (params.role) queryParams.role = params.role;
+  if (typeof params.isLocked === "boolean") queryParams.is_locked = params.isLocked;
 
-  const res = await apiClient.get<ApiEnvelope<{ users?: User[]; items?: User[]; data?: User[] }>>(
-    "/admin/users",
-    { params: query }
-  );
-
-  const data = unwrap(res.data);
-  const items = (data as any)?.users ?? (data as any)?.items ?? (data as any)?.data ?? [];
-  const pagination = res.data?.pagination;
-
-  return {
-    items,
-    pagination,
-  };
+  return getPaginatedAdminData<User>("/users", queryParams);
 }
 
 export async function getUserById(id: number | string): Promise<User> {
-  const res = await apiClient.get<ApiEnvelope<User>>(`/admin/users/${id}`);
-  return unwrap(res.data);
+  const res = await adminApiClient.get<User>(`/users/${id}`);
+  return res.data;
 }
 
 export async function updateUserRole(id: number | string, role: Role): Promise<User> {
-  const res = await apiClient.patch<ApiEnvelope<User>>(`/admin/users/${id}/role`, { role });
-  return unwrap(res.data);
+  const res = await adminApiClient.patch<User>(`/users/${id}/role`, { role });
+  return res.data;
 }
 
 export async function lockUser(id: number | string, isLocked: boolean): Promise<User> {
-  const res = await apiClient.patch<ApiEnvelope<User>>(`/admin/users/${id}/lock`, { is_locked: isLocked });
-  return unwrap(res.data);
+  const res = await adminApiClient.patch<User>(`/users/${id}/lock`, { is_locked: isLocked });
+  return res.data;
 }
 
 export async function deleteUser(id: number | string): Promise<void> {
-  const res = await apiClient.delete<ApiEnvelope<unknown>>(`/admin/users/${id}`);
-  unwrap(res.data);
+  await adminApiClient.delete(`/users/${id}`);
 }
 

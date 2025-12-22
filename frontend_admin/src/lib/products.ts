@@ -1,4 +1,4 @@
-import { apiClient } from "./api";
+import { adminApiClient, getPaginatedAdminData } from "./api";
 
 export type ProductStatus = "active" | "inactive" | "draft";
 
@@ -111,31 +111,19 @@ const buildFormData = (fields: Record<string, any>): FormData => {
 };
 
 export async function listProducts(params: ListProductParams = {}): Promise<PaginatedResponse<Product>> {
-  const query: Record<string, any> = {};
-  if (params.page) query.page = params.page;
-  if (params.limit) query.limit = params.limit;
-  if (params.search) query.search = params.search;
-  if (params.categoryId) query.category_id = params.categoryId;
-  if (params.status) query.status = params.status;
+  const queryParams: any = {};
+  if (params.page) queryParams.page = params.page;
+  if (params.limit) queryParams.limit = params.limit;
+  if (params.search) queryParams.search = params.search;
+  if (params.categoryId) queryParams.category_id = params.categoryId;
+  if (params.status) queryParams.status = params.status;
 
-  const res = await apiClient.get<ApiEnvelope<{ items?: Product[]; products?: Product[]; data?: Product[] }>>(
-    "/admin/products",
-    { params: query }
-  );
-
-  const data = unwrap(res.data);
-  const items = (data as any)?.items ?? (data as any)?.products ?? (data as any)?.data ?? [];
-  const pagination = res.data?.pagination;
-
-  return {
-    items,
-    pagination,
-  };
+  return getPaginatedAdminData<Product>("/products", queryParams);
 }
 
 export async function getProductById(id: number | string): Promise<Product> {
-  const res = await apiClient.get<ApiEnvelope<Product>>(`/admin/products/${id}`);
-  return unwrap(res.data);
+  const res = await adminApiClient.get<Product>(`/products/${id}`);
+  return res.data;
 }
 
 export async function createProduct(payload: CreateProductPayload): Promise<Product> {
@@ -146,10 +134,10 @@ export async function createProduct(payload: CreateProductPayload): Promise<Prod
     images.forEach((img) => formData.append("images", img));
   }
 
-  const res = await apiClient.post<ApiEnvelope<Product>>("/admin/products", formData, {
+  const res = await adminApiClient.post<Product>("/products", formData, {
     headers: { "Content-Type": "multipart/form-data" },
   });
-  return unwrap(res.data);
+  return res.data;
 }
 
 export async function updateProduct(id: number | string, payload: UpdateProductPayload): Promise<Product> {
@@ -160,15 +148,14 @@ export async function updateProduct(id: number | string, payload: UpdateProductP
     images.forEach((img) => formData.append("images", img));
   }
 
-  const res = await apiClient.patch<ApiEnvelope<Product>>(`/admin/products/${id}`, formData, {
+  const res = await adminApiClient.patch<Product>(`/products/${id}`, formData, {
     headers: { "Content-Type": "multipart/form-data" },
   });
-  return unwrap(res.data);
+  return res.data;
 }
 
 export async function deleteProduct(id: number | string): Promise<void> {
-  const res = await apiClient.delete<ApiEnvelope<unknown>>(`/admin/products/${id}`);
-  unwrap(res.data);
+  await adminApiClient.delete(`/products/${id}`);
 }
 
 export async function createProductVariant(
@@ -176,13 +163,13 @@ export async function createProductVariant(
   payload: CreateVariantPayload
 ): Promise<ProductVariant> {
   const formData = buildFormData(payload as Record<string, any>);
-  const res = await apiClient.post<ApiEnvelope<ProductVariant>>(
-    `/admin/products/${productId}/variants`,
+  const res = await adminApiClient.post<ProductVariant>(
+    `/products/${productId}/variants`,
     formData,
     {
       headers: { "Content-Type": "multipart/form-data" },
     }
   );
-  return unwrap(res.data);
+  return res.data;
 }
 

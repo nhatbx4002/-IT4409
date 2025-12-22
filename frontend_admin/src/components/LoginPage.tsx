@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-
-import { signIn } from '../lib/auth';
+import { useAuth } from '../hooks/useAuth';
 
 interface LoginPageProps {
   onAuthenticated: (user: any) => void;
@@ -12,27 +11,22 @@ export default function LoginPage({ onAuthenticated }: LoginPageProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [remember, setRemember] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+
+  const { login, error, isLoading, clearError } = useAuth();
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setError(null);
-    setLoading(true);
+    clearError();
 
-    try {
-      const res = await signIn(email, password);
-      // Ensure user data exists before calling callback
-      if (res && res.user) {
-        onAuthenticated(res.user);
-      } else {
-        throw new Error('Invalid response from server');
+    const success = await login(email, password);
+
+    if (success) {
+      // Get current user data after successful login
+      const { getCurrentUser } = await import('../lib/auth');
+      const user = await getCurrentUser();
+      if (user) {
+        onAuthenticated(user);
       }
-    } catch (err: any) {
-      console.error('Login failed', err);
-      setError(err?.response?.data?.error || err?.message || 'Đăng nhập thất bại, vui lòng thử lại.');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -128,10 +122,10 @@ export default function LoginPage({ onAuthenticated }: LoginPageProps) {
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={isLoading}
               className="w-full bg-[#C8A97E] hover:bg-[#b09269] text-black font-bold tracking-[0.08em] py-4 uppercase transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed shadow-[0_12px_30px_rgba(200,169,126,0.18)]"
             >
-              {loading ? 'Authenticating...' : 'Sign in dashboard'}
+              {isLoading ? 'Authenticating...' : 'Sign in dashboard'}
             </button>
           </form>
 

@@ -5,7 +5,7 @@ import {
 } from "../../services/admin/productService.js";
 import { getAllProductsSimple } from "../../services/admin/simpleProductsService.js";
 import { findProductWithRelations, findProductBySlugWithRelations } from "../../repositories/productRepository.js";
-import { sendSuccess, sendError } from "../../utils/response.js";
+import { sendSuccess, sendError } from "../controllerUtils.js";
 
 export const listProductsController = async (req, res) => {
     try {
@@ -18,7 +18,7 @@ export const listProductsController = async (req, res) => {
         );
 
         return sendSuccess(res, {
-            data: result.products,
+            items: result.products,
             pagination: result.pagination,
             message: "Products fetched successfully"
         });

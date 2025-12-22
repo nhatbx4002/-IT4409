@@ -95,9 +95,9 @@ const products = [
 export function ProductList() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
-  const totalPages = Math.ceil(products.length / itemsPerPage);
+  const totalPages = Math.ceil((products?.length || 0) / itemsPerPage);
   
-  const currentProducts = products.slice(
+  const currentProducts = (products || []).slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
@@ -213,7 +213,7 @@ export function ProductList() {
         {/* Pagination */}
         <div className="flex items-center justify-between px-6 py-4 border-t border-border-light">
           <p className="text-sm text-gray-600">
-            Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, products.length)} of {products.length} products
+            Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, products?.length || 0)} of {products?.length || 0} products
           </p>
           <div className="flex items-center gap-2">
             <button

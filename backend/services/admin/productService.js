@@ -1,4 +1,4 @@
-import { sequelize, Product } from "../../models/index.js";
+import { sequelize, Product, Category } from "../../models/index.js";
 import { Op } from "sequelize";
 import { resolveCategoryId } from "./product/categoryService.js";
 import {

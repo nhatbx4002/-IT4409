@@ -78,10 +78,12 @@ export const getTopProducts = async({ from, to , limit = 10}) => {
         include: [
             {
                 model: Product,
+                as: 'product',
                 attributes: ["id", "name", "slug"],
             },
             {
                 model: Order,
+                as: 'order',
                 attributes: [],
                 where: {
                     status: {
@@ -94,13 +96,18 @@ export const getTopProducts = async({ from, to , limit = 10}) => {
                 },
             },
         ],
-        group: ["product_id", "Product.id", "Product.name", "Product.slug"],
+        group: ["product_id", "product.id", "product.name", "product.slug"],
         order: [[literal("total_quantity"), "DESC"]],
         limit: Number(limit),
         raw: true,
         nest: true,
     });
-    return rows;
+    return rows.map(row => ({
+        product_id: row.product_id,
+        total_quantity: parseInt(row.total_quantity) || 0,
+        total_revenue: parseFloat(row.total_revenue) || 0,
+        product: row.product
+    }));
 }
 
 // Dashboard KPIs overview

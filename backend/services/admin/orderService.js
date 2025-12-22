@@ -8,100 +8,69 @@ const normalizeDate = ({ from, to }) => {
     return { fromDate, toDate };
 };
 
-export const listOrders = async ({ 
-    page = 1, 
-    limit = 10, 
-    status = null, 
-    startDate = null, 
+export const listOrders = async ({
+    page = 1,
+    limit = 10,
+    status = null,
+    startDate = null,
     endDate = null,
     customer = null,
     sortBy = 'created_at',
     sortDir = 'DESC'
 }) => {
-    const { fromDate, toDate } = normalizeDate({ from: startDate, to: endDate });
-    
+    const offset = (parseInt(page) - 1) * parseInt(limit);
+
+    // Simple where clause for now
     const whereClause = {};
-    
-    // Add status filter if provided
     if (status) {
         whereClause.status = status;
     }
-    
-    // Add date range filter if provided
-    if (fromDate || toDate) {
-        whereClause.created_at = {};
-        if (fromDate) {
-            whereClause.created_at[Op.gte] = fromDate;
-        }
-        if (toDate) {
-            whereClause.created_at[Op.lte] = toDate;
-        }
-    }
-    
-    // Add customer search if provided
-    if (customer) {
-        whereClause[Op.or] = [
-            { '$user.name$': { [Op.iLike]: `%${customer}%` } },
-            { '$user.email$': { [Op.iLike]: `%${customer}%` } }
-        ];
-    }
-    
-    // Add order by clause
-    const orderClause = [];
-    if (sortBy === 'total_amount') {
-        orderClause.push([literal('order_items.quantity * order_items.unit_price'), sortDir.toUpperCase()]);
-    } else {
-        orderClause.push([`Order.${sortBy}`, sortDir.toUpperCase()]);
-    }
-    
-    const offset = (parseInt(page) - 1) * parseInt(limit);
-    
-    const { count, rows } = await Order.findAndCountAll({
-        where: whereClause,
-        include: [
-            {
-                model: User,
-                as: 'user',
-                attributes: ['id', 'name', 'email'],
-                required: false
-            },
-            {
-                model: OrderItem,
-                as: 'order_items',
-                attributes: ['id', 'product_id', 'quantity', 'unit_price', 'line_total'],
-                include: [
-                    {
-                        model: Product,
-                        as: 'product',
-                        attributes: ['id', 'name', 'slug']
-                    }
-                ],
-                required: false
-            },
-            {
-                model: ShippingAddress,
-                as: 'shipping_address',
-                attributes: ['id', 'full_name', 'phone', 'address', 'city', 'province'],
-                required: false
-            }
-        ],
-        order: orderClause,
-        limit: parseInt(limit),
-        offset,
-        distinct: true
-    });
-    
-    const totalPages = Math.ceil(count / limit);
-    
-    return {
-        orders: rows,
-        pagination: {
-            page: parseInt(page),
+
+    try {
+        const { count, rows } = await Order.findAndCountAll({
+            where: whereClause,
+            include: [
+                {
+                    model: User,
+                    as: 'user',
+                    attributes: ['id', 'full_name', 'email'],
+                    required: false
+                }
+            ],
+            order: [[sortBy, sortDir.toUpperCase()]],
             limit: parseInt(limit),
-            total: count,
-            totalPages
-        }
-    };
+            offset
+        });
+
+        const totalPages = Math.ceil(count / limit);
+
+        // Transform orders to match frontend expected format
+        const transformedOrders = rows.map(order => ({
+            id: order.id,
+            code: order.order_number,
+            status: order.status,
+            customer_id: order.user_id,
+            customer_name: order.user?.full_name || null,
+            email: order.user?.email || null,
+            total_amount: order.final_total || order.total_amount,
+            created_at: order.created_at,
+            updated_at: order.updated_at,
+            items: [] // Will be populated when fetching individual order
+        }));
+
+        return {
+            items: transformedOrders,
+            pagination: {
+                page: parseInt(page),
+                limit: parseInt(limit),
+                total: count,
+                totalPages
+            }
+        };
+    } catch (error) {
+        console.error('Error in listOrders:', error);
+        throw error;
+    }
 };
 
 export const getOrderDetail = async (orderId) => {
@@ -110,7 +79,7 @@ export const getOrderDetail = async (orderId) => {
             {
                 model: User,
                 as: 'user',
-                attributes: ['id', 'name', 'email']
+                attributes: ['id', 'full_name', 'email']
             },
             {
                 model: OrderItem,
@@ -127,16 +96,46 @@ export const getOrderDetail = async (orderId) => {
             {
                 model: ShippingAddress,
                 as: 'shipping_address',
-                attributes: ['id', 'full_name', 'phone', 'address', 'city', 'province']
+                attributes: ['id', 'full_name', 'phone', 'address', 'city', 'district']
             }
         ]
     });
-    
+
     if (!order) {
         throw new Error("Order not found");
     }
-    
-    return order;
+
+    // Transform order to match frontend expected format
+    const transformedOrder = {
+        id: order.id,
+        code: order.order_number,
+        status: order.status,
+        customer_id: order.user_id,
+        customer_name: order.user?.full_name || null,
+        email: order.user?.email || null,
+        phone: order.shipping_address?.phone || null,
+        address: order.shipping_address ?
+            `${order.shipping_address.address}, ${order.shipping_address.city}, ${order.shipping_address.district}` : null,
+        payment_method: null, // Add when Payment model is integrated
+        total_amount: order.final_total || order.total_amount,
+        subtotal_amount: order.subtotal_amount,
+        discount_amount: order.discount_amount,
+        notes: order.notes,
+        created_at: order.created_at,
+        updated_at: order.updated_at,
+        items: order.order_items?.map(item => ({
+            id: item.id,
+            order_id: item.order_id,
+            product_id: item.product_id,
+            quantity: item.quantity,
+            unit_price: item.unit_price,
+            line_total: item.line_total,
+            product_name: item.product?.name || null,
+            variant_name: null // Add variant when ProductVariant is integrated
+        })) || []
+    };
+
+    return transformedOrder;
 };
 
 const validStatusTransitions = {
@@ -148,45 +147,83 @@ const validStatusTransitions = {
 };
 
 export const updateOrderStatus = async (orderId, newStatus) => {
-    const order = await Order.findByPk(orderId);
-    
+    const order = await Order.findByPk(orderId, {
+        include: [
+            {
+                model: User,
+                as: 'user',
+                attributes: ['id', 'full_name', 'email']
+            }
+        ]
+    });
+
     if (!order) {
         throw new Error("Order not found");
     }
-    
+
     const currentStatus = order.status;
     const allowedNewStatuses = validStatusTransitions[currentStatus] || [];
-    
+
     if (!allowedNewStatuses.includes(newStatus)) {
         throw new Error(`Cannot change order status from ${currentStatus} to ${newStatus}`);
     }
-    
+
     order.status = newStatus;
     await order.save();
-    
-    return order;
+
+    // Return transformed order to match frontend format
+    return {
+        id: order.id,
+        code: order.order_number,
+        status: order.status,
+        customer_id: order.user_id,
+        customer_name: order.user?.full_name || null,
+        email: order.user?.email || null,
+        total_amount: order.final_total || order.total_amount,
+        created_at: order.created_at,
+        updated_at: order.updated_at
+    };
 };
 
 export const processRefund = async (orderId, refundData) => {
-    const order = await Order.findByPk(orderId);
-    
+    const order = await Order.findByPk(orderId, {
+        include: [
+            {
+                model: User,
+                as: 'user',
+                attributes: ['id', 'full_name', 'email']
+            }
+        ]
+    });
+
     if (!order) {
         throw new Error("Order not found");
     }
-    
+
     // For now, just update status to 'refunded' and save refund data
     order.status = 'refunded';
     // In a real implementation, you would process the refund through payment gateway
     // and store refund details in a separate refunds table
-    
+
     // For simplicity, we'll store refund data in notes field
-    const refundNote = refundData.reason 
+    const refundNote = refundData.reason
         ? `Refund processed: ${refundData.reason}. Amount: ${refundData.amount}`
         : 'Refund processed';
-    
+
     order.notes = refundNote;
     await order.save();
-    
-    return order;
-};
 
+    // Return transformed order to match frontend format
+    return {
+        id: order.id,
+        code: order.order_number,
+        status: order.status,
+        customer_id: order.user_id,
+        customer_name: order.user?.full_name || null,
+        email: order.user?.email || null,
+        total_amount: order.final_total || order.total_amount,
+        notes: order.notes,
+        created_at: order.created_at,
+        updated_at: order.updated_at
+    };
+};

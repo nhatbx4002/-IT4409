@@ -1,4 +1,4 @@
-import { apiClient } from "./api";
+import { adminApiClient, getPaginatedAdminData } from "./api";
 
 export type OrderStatus =
   | "pending"
@@ -78,46 +78,34 @@ const unwrap = <T>(payload: ApiEnvelope<T> | T): T => {
 };
 
 export async function listOrders(params: ListOrderParams = {}): Promise<PaginatedResponse<Order>> {
-  const query: Record<string, any> = {};
-  if (params.page) query.page = params.page;
-  if (params.limit) query.limit = params.limit;
-  if (params.status) query.status = params.status;
-  if (params.search) query.customer = params.search;
-  if (params.startDate) query.startDate = params.startDate;
-  if (params.endDate) query.endDate = params.endDate;
-  if (params.sortBy) query.sortBy = params.sortBy;
-  if (params.sortDir) query.sortDir = params.sortDir;
+  const queryParams: Record<string, any> = {};
+  if (params.page) queryParams.page = params.page;
+  if (params.limit) queryParams.limit = params.limit;
+  if (params.status) queryParams.status = params.status;
+  if (params.search) queryParams.customer = params.search;
+  if (params.startDate) queryParams.startDate = params.startDate;
+  if (params.endDate) queryParams.endDate = params.endDate;
+  if (params.sortBy) queryParams.sortBy = params.sortBy;
+  if (params.sortDir) queryParams.sortDir = params.sortDir;
 
-  const res = await apiClient.get<ApiEnvelope<{ orders?: Order[]; items?: Order[]; data?: Order[] }>>(
-    "/admin/orders",
-    { params: query }
-  );
-
-  const data = unwrap(res.data);
-  const items = (data as any)?.orders ?? (data as any)?.items ?? (data as any)?.data ?? [];
-  const pagination = res.data?.pagination;
-
-  return {
-    items,
-    pagination,
-  };
+  return getPaginatedAdminData<Order>("/orders", queryParams);
 }
 
 export async function getOrderById(id: number | string): Promise<Order> {
-  const res = await apiClient.get<ApiEnvelope<Order>>(`/admin/orders/${id}`);
-  return unwrap(res.data);
+  const res = await adminApiClient.get<Order>(`/orders/${id}`);
+  return res.data;
 }
 
 export async function updateOrderStatus(id: number | string, status: OrderStatus): Promise<Order> {
-  const res = await apiClient.patch<ApiEnvelope<Order>>(`/admin/orders/${id}`, { status });
-  return unwrap(res.data);
+  const res = await adminApiClient.patch<Order>(`/orders/${id}`, { status });
+  return res.data;
 }
 
 export async function processRefund(
   id: number | string,
   payload: { reason: string; amount: number }
 ): Promise<Order> {
-  const res = await apiClient.post<ApiEnvelope<Order>>(`/admin/orders/${id}/refund`, payload);
-  return unwrap(res.data);
+  const res = await adminApiClient.post<Order>(`/orders/${id}/refund`, payload);
+  return res.data;
 }
 

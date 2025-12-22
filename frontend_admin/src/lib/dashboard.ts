@@ -1,4 +1,4 @@
-import { apiClient } from "./api";
+import { adminApiClient } from "./api";
 import type { Order } from "./orders";
 
 export type KPIStats = {
@@ -69,8 +69,8 @@ const unwrap = <T>(payload: ApiEnvelope<T> | T): T => {
 };
 
 export async function getKPIStats(): Promise<KPIStats> {
-  const res = await apiClient.get<ApiEnvelope<KPIStats>>("/admin/dashboard/stats");
-  const stats = unwrap(res.data);
+  const res = await adminApiClient.get<KPIStats>("/dashboard/stats");
+  const stats = res.data;
   const averageOrderValue =
     stats?.revenue?.thisMonth && stats?.orders?.thisMonth
       ? stats.revenue.thisMonth / Math.max(1, stats.orders.thisMonth)
@@ -84,17 +84,17 @@ export async function getRevenueChart(params: RevenueChartParams = {}): Promise<
   if (params.to) query.to = params.to;
   if (params.granularity) query.groupBy = params.granularity;
 
-  const res = await apiClient.get<ApiEnvelope<TimeSeriesPoint[]>>("/admin/dashboard/revenue", {
+  const res = await adminApiClient.get<TimeSeriesPoint[]>("/dashboard/revenue", {
     params: query,
   });
-  return unwrap(res.data) ?? [];
+  return res.data ?? [];
 }
 
 export async function getRecentOrders(limit = 5): Promise<Order[]> {
-  const res = await apiClient.get<ApiEnvelope<Order[]>>("/admin/dashboard/recent-orders", {
+  const res = await adminApiClient.get<Order[]>("/dashboard/recent-orders", {
     params: { limit },
   });
-  return unwrap(res.data) ?? [];
+  return res.data ?? [];
 }
 
 export async function getBestSellers(params: { limit?: number; from?: string; to?: string } = {}): Promise<
@@ -105,16 +105,16 @@ export async function getBestSellers(params: { limit?: number; from?: string; to
   if (params.from) query.from = params.from;
   if (params.to) query.to = params.to;
 
-  const res = await apiClient.get<ApiEnvelope<BestSeller[]>>("/admin/dashboard/best-sellers", {
+  const res = await adminApiClient.get<BestSeller[]>("/dashboard/best-sellers", {
     params: query,
   });
-  return unwrap(res.data) ?? [];
+  return res.data ?? [];
 }
 
 export async function getAnalyticsData(params: { from: string; to: string }): Promise<AnalyticsData> {
-  const res = await apiClient.get<ApiEnvelope<AnalyticsData>>("/admin/stats/revenue", {
+  const res = await adminApiClient.get<AnalyticsData>("/stats/revenue", {
     params,
   });
-  return unwrap(res.data) ?? {};
+  return res.data ?? {};
 }
 

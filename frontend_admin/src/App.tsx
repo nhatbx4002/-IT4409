@@ -1,34 +1,35 @@
-import React, { useEffect, useState } from 'react';
-import { 
-  LayoutDashboard, 
-  ShoppingBag, 
-  Package, 
-  Users, 
-  BarChart3, 
+import React from 'react';
+import { useState, useEffect } from 'react';
+import {
+  LayoutDashboard,
+  ShoppingBag,
+  Package,
+  Users,
+  BarChart3,
   Settings,
   Search,
   Bell,
   Menu,
   X,
-  TrendingUp, 
-  TrendingDown, 
-  DollarSign, 
+  TrendingUp,
+  TrendingDown,
+  DollarSign,
   ShoppingCart,
-  Plus, 
-  Filter, 
-  ChevronLeft, 
+  Plus,
+  Filter,
+  ChevronLeft,
   ChevronRight,
   Edit2,
   Trash2,
   MoreHorizontal
 } from 'lucide-react';
-import { 
-  AreaChart, 
-  Area, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
   ResponsiveContainer,
   BarChart,
   Bar,
@@ -40,7 +41,8 @@ import {
   Legend
 } from 'recharts';
 import LoginPage from './components/LoginPage';
-import { getCurrentUser, getStoredUser, type User as AuthUser } from './lib/auth';
+import { useAuth } from './hooks/useAuth';
+import { adminApiClient, getPaginatedAdminData } from './lib/api';
 import { getKPIStats, getRevenueChart, getRecentOrders, getBestSellers, getAnalyticsData, type BestSeller } from './lib/dashboard';
 import { listProducts, createProduct, updateProduct, deleteProduct, type Product } from './lib/products';
 import { listOrders, getOrderById, updateOrderStatus, processRefund, type Order, type OrderStatus } from './lib/orders';
@@ -78,36 +80,13 @@ const formatDate = (value?: string | null) => {
 };
 
 export default function App() {
-  const [currentPage, setCurrentPage] = useState<Page>('dashboard');
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [isCollapsed, setIsCollapsed] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(Boolean(getStoredUser()));
-  const [isAuthenticating, setIsAuthenticating] = useState(true);
-  const [currentUser, setCurrentUser] = useState<AuthUser | null>(getStoredUser());
+  const [currentPage, setCurrentPage] = React.useState<Page>('dashboard');
+  const [sidebarOpen, setSidebarOpen] = React.useState(false);
+  const [isCollapsed, setIsCollapsed] = React.useState(false);
 
-  useEffect(() => {
-    let mounted = true;
-    (async () => {
-      try {
-        const user = await getCurrentUser();
-        if (!mounted) return;
-        if (user) {
-          setCurrentUser(user);
-          setIsAuthenticated(true);
-        } else {
-          setIsAuthenticated(false);
-          setCurrentUser(null);
-        }
-      } finally {
-        if (mounted) setIsAuthenticating(false);
-      }
-    })();
-    return () => {
-      mounted = false;
-    };
-  }, []);
+  const { user, isAuthenticated, isLoading } = useAuth();
 
-  if (isAuthenticating) {
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#0A0A0A] text-white">
         <div className="text-center space-y-3">
@@ -118,10 +97,10 @@ export default function App() {
     );
   }
 
-  if (!isAuthenticated || !currentUser) {
-    return <LoginPage onAuthenticated={(user) => {
-      setCurrentUser(user);
-      setIsAuthenticated(true);
+  if (!isAuthenticated || !user) {
+    return <LoginPage onAuthenticated={() => {
+      // Auth state is managed by useAuth hook
+      window.location.reload();
     }} />;
   }
 
@@ -889,7 +868,7 @@ function ProductsPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-2">
            <span className="text-gray-400 text-sm">
-            Showing <b className="text-[#0A0A0A]">{products.length}</b>
+            Showing <b className="text-[#0A0A0A]">{products?.length || 0}</b>
             {typeof total === 'number' ? <> of <b className="text-[#0A0A0A]">{total}</b></> : null} products
            </span>
         </div>
@@ -928,13 +907,17 @@ function ProductsPage() {
         {error && !loading && (
           <div className="col-span-full text-center text-sm text-red-600 py-6">{error}</div>
         )}
-        {!loading && !error && products.map((product) => (
+        {!loading && !error && (products || []).map((product) => (
           <div key={product.id} className="group relative bg-white rounded-xl overflow-hidden shadow-[0_5px_15px_rgba(0,0,0,0.05)] hover:shadow-[0_20px_40px_rgba(0,0,0,0.1)] transition-all duration-500">
             {/* Image Container */}
             <div className="aspect-[3/4] overflow-hidden relative">
-              <img 
-                src={(product.images && product.images[0]) || 'https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=400&h=500&fit=crop'} 
-                alt={product.name} 
+              <img
+                src={
+                  (product.images && product.images[0]) ||
+                  ((product as any)?.variants?.[0]?.image_url) ||
+                  'https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=400&h=500&fit=crop'
+                }
+                alt={product.name}
                 className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
               />
               {/* Overlay on Hover */}
@@ -954,11 +937,18 @@ function ProductsPage() {
               </div>
               
               {/* Badge */}
-              {typeof (product as any)?.stock_quantity === 'number' && (product as any).stock_quantity < 20 && (
-                <div className="absolute top-4 left-4 bg-red-600 text-white text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-sm">
-                  Low Stock
-                </div>
-              )}
+              {(() => {
+                const totalStock = (product as any)?.variants?.reduce((sum: number, variant: any) => sum + (variant.stock_quantity || 0), 0) || 0;
+                return totalStock < 20 && totalStock > 0 ? (
+                  <div className="absolute top-4 left-4 bg-red-600 text-white text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-sm">
+                    Low Stock
+                  </div>
+                ) : totalStock === 0 ? (
+                  <div className="absolute top-4 left-4 bg-gray-600 text-white text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-sm">
+                    Out of Stock
+                  </div>
+                ) : null;
+              })()}
             </div>
 
             {/* Content */}
@@ -1452,7 +1442,7 @@ function CustomersPage() {
       setError(null);
       const { listUsers } = await import('./lib/users');
       const res = await listUsers({ page: nextPage, limit, search: nextSearch });
-      setUsers(res.items);
+      setUsers(res.items || []);
       setTotal(res.pagination?.total);
       setPage(res.pagination?.page ?? nextPage);
     } catch (err: any) {
@@ -1504,7 +1494,7 @@ function CustomersPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-2">
            <span className="text-gray-400 text-sm">
-            Showing <b className="text-[#0A0A0A]">{users.length}</b>
+            Showing <b className="text-[#0A0A0A]">{(users || []).length}</b>
             {typeof total === 'number' ? <> of <b className="text-[#0A0A0A]">{total}</b></> : null} users
            </span>
         </div>

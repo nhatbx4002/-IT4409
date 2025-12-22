@@ -30,7 +30,7 @@ export const listUsers = async (req, res) => {
         return res.status(200).json({
             success: true,
             data: {
-                users: rows,
+                items: rows,
                 pagination: {
                     page: parseInt(page),
                     limit: parseInt(limit),

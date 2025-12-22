@@ -1,4 +1,4 @@
-import { Product, Category } from "../../models/index.js";
+import { Product, Category, ProductVariant } from "../../models/index.js";
 import { Op } from "sequelize";
 
 export const getAllProductsSimple = async (page = 1, limit = 10, search = "") => {
@@ -21,6 +21,11 @@ export const getAllProductsSimple = async (page = 1, limit = 10, search = "") =>
           model: Category,
           as: 'category',
           attributes: ['id', 'name']
+        },
+        {
+          model: ProductVariant,
+          as: 'variants',
+          attributes: ['id', 'color', 'size', 'sku', 'price', 'stock_quantity', 'image_url']
         }
       ],
       order: [['created_at', 'DESC']],
