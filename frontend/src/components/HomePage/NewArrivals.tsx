@@ -73,14 +73,14 @@ export function NewArrivals() {
         {!isLoading && !error && products.length > 0 && (
           <div className="mb-12 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
             {products.map((product) => (
-              <ProductCard
-                key={product.id}
-                product={product}
-                onAddToWishlist={() => handleAddToWishlist(product.id)}
-                onAddToCart={() => {
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                  onAddToWishlist={() => handleAddToWishlist(product.id)}
+                onAddToCart={(product) => {
                   // TODO: connect to cart API
                 }}
-              />
+                />
             ))}
           </div>
         )}

@@ -34,8 +34,8 @@ export function ProductsCarousel({ title, filters = {} }: ProductsCarouselProps)
     fetchProducts();
   }, [filters]);
 
-  const handleAddToCart = (productId: number) => {
-    console.log("Add to cart", productId);
+  const handleAddToCart = (product: ProductSummary) => {
+    console.log("Add to cart", product);
   };
 
   const handleAddToWishlist = (productId: number) => {

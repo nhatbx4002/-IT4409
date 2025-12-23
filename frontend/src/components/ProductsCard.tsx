@@ -8,7 +8,7 @@ import { formatVnd } from "@/lib/formatCurrency";
 interface ProductCardProps {
   product: ProductSummary;
   onAddToWishlist: (productId: number) => void;
-  onAddToCart: (productId: number) => void;
+  onAddToCart: (product: ProductSummary) => void;
 }
 
 export function ProductCard({
@@ -101,7 +101,7 @@ export function ProductCard({
               View detail
             </button>
             <button
-              onClick={() => onAddToCart(product.id)}
+              onClick={() => onAddToCart(product)}
               className="inline-flex items-center gap-2 rounded-full bg-[#111827] px-3 py-2 text-[12px] font-semibold uppercase tracking-[0.18em] text-white transition hover:bg-black"
               disabled={!product.inStock}
             >

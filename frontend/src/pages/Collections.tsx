@@ -158,10 +158,14 @@ export function Collections() {
     }
   };
 
-  const handleAddToCart = async (productId: number) => {
+  const handleAddToCart = async (product: ProductSummary) => {
     try {
-      // NOTE: API expects variantId; using product id as fallback with qty=1.
-      await addToCart(productId, 1);
+      if (!product.defaultVariantId) {
+        toast.error("Vui lòng chọn phiên bản sản phẩm");
+        return;
+      }
+
+      await addToCart(product.defaultVariantId, 1);
       toast.success("Đã thêm vào giỏ");
     } catch (err) {
       const message = err instanceof Error ? err.message : "Không thể thêm vào giỏ";

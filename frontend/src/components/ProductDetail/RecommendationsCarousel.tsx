@@ -69,8 +69,8 @@ export function RecommendationsCarousel({
     }
   }, [product, variant, excludeProductId]);
 
-  const handleAddToCart = (productId: number) => {
-    console.log("Add to cart", productId);
+  const handleAddToCart = (product: ProductSummary) => {
+    console.log("Add to cart", product);
   };
 
   const handleAddToWishlist = async (productId: number) => {

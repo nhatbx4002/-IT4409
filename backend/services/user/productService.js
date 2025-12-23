@@ -36,6 +36,22 @@ const transformVariantDetail = (variant) => {
   };
 };
 
+const pickDefaultVariantId = (variants) => {
+  const list = Array.isArray(variants) ? variants : [];
+  const inStock = list.filter((variant) => (variant.stock_quantity || 0) > 0);
+  const pool = inStock.length ? inStock : list;
+
+  if (!pool.length) return null;
+
+  const sorted = [...pool].sort((a, b) => {
+    const priceA = parseFloat(a.price || 0);
+    const priceB = parseFloat(b.price || 0);
+    return priceA - priceB;
+  });
+
+  return sorted[0]?.id ?? null;
+};
+
 const summarizeProduct = (product) => {
   const data = product.toJSON();
   const images = Array.isArray(data.images) ? data.images : [];
@@ -82,6 +98,7 @@ const summarizeProduct = (product) => {
     tags,
     createdAt: data.created_at ? new Date(data.created_at).toISOString() : null,
     updatedAt: data.updated_at ? new Date(data.updated_at).toISOString() : null,
+    defaultVariantId: pickDefaultVariantId(variants),
   };
 };
 

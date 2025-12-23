@@ -70,8 +70,9 @@ export const findOrdersForUser = (userId) =>
     where: { user_id: userId },
     order: [["created_at", "DESC"]],
     include: [
+      { model: ShippingAddress, as: "shipping_address" },
       { model: Payment },
-      { model: OrderItem },
+      { model: OrderItem, as: "order_items" },
       { model: Discount, as: "discount", attributes: ["id", "name", "code", "discount_type", "discount_value"] }
     ],
   });
@@ -80,9 +81,9 @@ export const findOrderForUser = (userId, orderId) =>
   Order.findOne({
     where: { id: orderId, user_id: userId },
     include: [
-      { model: ShippingAddress },
+      { model: ShippingAddress, as: "shipping_address" },
       { model: Payment, required: false }, // required: false để không fail nếu chưa có payment
-      { model: OrderItem },
+      { model: OrderItem, as: "order_items" },
       { model: Discount, as: "discount", attributes: ["id", "name", "code", "discount_type", "discount_value"], required: false }
     ],
   });
@@ -95,15 +96,20 @@ export const findAllOrders = () =>
         model: User,
         attributes: ["id", "full_name", "email", "phone"],
       },
+      { model: ShippingAddress, as: "shipping_address" },
       { model: Payment },
-      { model: OrderItem },
+      { model: OrderItem, as: "order_items" },
       { model: Discount, as: "discount", attributes: ["id", "name", "code", "discount_type", "discount_value"] }
     ],
   });
 
 export const findOrderWithRelations = (orderId) =>
   Order.findByPk(orderId, {
-    include: [{ model: User }, { model: OrderItem }],
+    include: [
+      { model: User },
+      { model: ShippingAddress, as: "shipping_address" },
+      { model: OrderItem, as: "order_items" }
+    ],
   });
 
 export const findPaymentByOrderId = (orderId) =>
@@ -115,6 +121,7 @@ export const findPaymentByOrderId = (orderId) =>
 export const findOrderById = (orderId) =>
   Order.findByPk(orderId, {
     include: [
+      { model: ShippingAddress, as: "shipping_address" },
       { model: Payment },
       { model: User },
       { model: Discount, as: "discount", attributes: ["id", "name", "code", "discount_type", "discount_value"] }

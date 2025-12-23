@@ -28,6 +28,7 @@ export interface ProductSummary {
   tags: string[];
   createdAt: string | null;
   updatedAt: string | null;
+  defaultVariantId: number | null;
 }
 
 export interface ProductVariantDetail {

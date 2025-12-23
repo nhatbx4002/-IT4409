@@ -366,8 +366,8 @@ export const cancelOrder = async (userId, orderId) => {
         await order.save({ transaction });
 
         // 2. Hoàn lại tồn kho (Back stock)
-        if (order.OrderItems) {
-            for (const item of order.OrderItems) {
+        if (order.order_items) {
+            for (const item of order.order_items) {
                 const variant = await ProductVariant.findByPk(item.product_variant_id);
                 if (variant) {
                     await variant.increment('stock_quantity', {
@@ -486,7 +486,7 @@ export const updateOrderStatusAdmin = async (orderId, newStatus) => {
     // LOGIC HOÀN KHO: Nếu Admin HỦY đơn
     if (newStatus === 'canceled' && order.status !== 'canceled') {
         await withTransaction(async (transaction) => {
-            const items = order.OrderItems;
+            const items = order.order_items;
 
             if (items) {
                 for (const item of items) {

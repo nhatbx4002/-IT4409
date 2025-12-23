@@ -24,8 +24,11 @@ const transformToProductSummary = (item: ApiWishlistItem): ProductSummary | null
     new Set(variants.filter(v => v.size).map(v => v.size))
   );
   
-  // Check if product has stock
   const hasStock = variants.some(v => v.stock_quantity > 0);
+
+  const inStockVariants = variants.filter(v => v.stock_quantity > 0);
+  const defaultVariant = (inStockVariants.length ? inStockVariants : variants)
+    .sort((a, b) => (a.price || 0) - (b.price || 0))[0];
   
   return {
     id: product.id,
@@ -42,6 +45,7 @@ const transformToProductSummary = (item: ApiWishlistItem): ProductSummary | null
     reviewCount: 0, // Review count calculated from reviews, not stored directly
     inStock: hasStock,
     isNew: product.is_new === true,
+    defaultVariantId: defaultVariant?.id ?? null,
   };
 };
 
@@ -115,7 +119,11 @@ export default function Wishlist() {
 
       // For now, we'll use a default quantity and variant
       // In a real implementation, you'd show a modal to select variant/quantity
-      const defaultVariantId = productId; // This would need to be the actual variant ID
+      const defaultVariantId = product.defaultVariantId;
+      if (!defaultVariantId) {
+        alert("Vui lòng chọn phiên bản sản phẩm");
+        return;
+      }
       
       // Add to cart
       await addToCart(defaultVariantId, 1);
