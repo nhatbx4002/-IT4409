@@ -20,7 +20,7 @@ interface FilterSidebarProps {
 export function FilterSidebar({ 
   filters, 
   onFilterChange, 
-  onClearFilters,
+  onClearFilters: _onClearFilters,
   isMobileOpen = false,
   onMobileClose
 }: FilterSidebarProps) {
@@ -241,47 +241,76 @@ export function FilterSidebar({
 
       {/* Color Filter */}
       <FilterSection title="Màu sắc" id="color">
-        <div className="flex gap-4 flex-wrap">
-          {COLOR_OPTIONS.map((color) => (
-            <div key={color.name} className="flex flex-col items-center gap-2">
-              <button
-                onClick={() => {
-                  const nextFilters = {
-                    ...activeFilters,
-                    colors: activeFilters.colors.includes(color.name)
-                      ? activeFilters.colors.filter(c => c !== color.name)
-                      : [...activeFilters.colors, color.name]
-                  };
-                  if (isMobile) {
-                    setPendingFilters(nextFilters);
-                  } else {
-                    onFilterChange(nextFilters);
-                  }
-                }}
-                className={`
-                  relative w-12 h-12 rounded-full border-3
-                  transition-all duration-200 ease-out
-                  hover:scale-110 active:scale-95
-                  ${activeFilters.colors.includes(color.name)
-                    ? 'border-black ring-2 ring-black ring-offset-2 shadow-lg scale-110'
-                    : 'border-gray-300 hover:border-black/50'
-                  }
-                  ${['#FFFFFF', '#F5F5DC'].includes(color.hex) ? 'border-black/30' : ''}
-                `}
-                style={{
-                  backgroundColor: color.hex,
-                  boxShadow: ['#FFFFFF', '#F5F5DC'].includes(color.hex)
-                    ? 'inset 0 0 0 1px rgba(0,0,0,0.1)'
-                    : undefined
-                }}
-                title={color.name}
-                aria-label={color.name}
-              />
-              <span className="text-xs text-black/70 font-medium text-center w-12 truncate">
-                {color.name}
-              </span>
-            </div>
-          ))}
+        <div className="flex gap-5 flex-wrap p-3 overflow-visible">
+          {COLOR_OPTIONS.map((color) => {
+            const isSelected = activeFilters.colors.includes(color.name);
+            return (
+              <div key={color.name} className="flex flex-col items-center gap-2">
+                <button
+                  onClick={() => {
+                    const nextFilters = {
+                      ...activeFilters,
+                      colors: isSelected
+                        ? activeFilters.colors.filter(c => c !== color.name)
+                        : [...activeFilters.colors, color.name]
+                    };
+                    if (isMobile) {
+                      setPendingFilters(nextFilters);
+                    } else {
+                      onFilterChange(nextFilters);
+                    }
+                  }}
+                  className={`
+                    relative w-11 h-11 rounded-full
+                    hover:scale-110 active:scale-90
+                    transition-transform duration-200
+                    ${isSelected ? 'scale-110' : 'scale-100'}
+                  `}
+                  style={{
+                    backgroundColor: color.hex,
+                    boxShadow: ['#FFFFFF', '#F5F5DC'].includes(color.hex)
+                      ? 'inset 0 0 0 1px rgba(0,0,0,0.1), 0 2px 8px rgba(0,0,0,0.1)'
+                      : isSelected
+                        ? '0 4px 12px rgba(0,0,0,0.15), 0 2px 4px rgba(0,0,0,0.1)'
+                        : '0 2px 6px rgba(0,0,0,0.08)',
+                    }}
+                  >
+                    {/* Expanding selection ring - spring animation */}
+                    <span
+                      className={`
+                        absolute inset-0 rounded-full border-2 border-black
+                        transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]
+                        ${isSelected
+                          ? 'scale-125 opacity-100'
+                          : 'scale-100 opacity-0'
+                        }
+                      `}
+                      style={{
+                        transformOrigin: 'center',
+                      }}
+                    />
+
+                    {/* Inner press feedback ring */}
+                    <span
+                      className={`
+                        absolute inset-0 rounded-full border border-black/20
+                        transition-all duration-150 ease-out
+                        ${isSelected ? 'opacity-100' : 'opacity-0'}
+                      `}
+                      style={{
+                        transform: 'scale(0.7)',
+                      }}
+                    />
+                  </button>
+                  <span className={`
+                    text-xs font-medium text-center w-12 truncate transition-colors duration-200
+                    ${isSelected ? 'text-black font-semibold' : 'text-black/60'}
+                  `}>
+                    {color.name}
+                  </span>
+              </div>
+            );
+          })}
         </div>
       </FilterSection>
 
@@ -308,7 +337,7 @@ export function FilterSidebar({
             <Slider
               value={activeFilters.priceRange}
               onValueChange={(value) => {
-                const nextFilters = {
+                const nextFilters: ProductFiltersState = {
                   ...activeFilters,
                   priceRange: value as [number, number]
                 };
@@ -335,9 +364,9 @@ export function FilterSidebar({
                 value={activeFilters.priceRange[0]}
                 onChange={(e) => {
                   const val = Math.min(Number(e.target.value), activeFilters.priceRange[1]);
-                  const nextFilters = {
+                  const nextFilters: ProductFiltersState = {
                     ...activeFilters,
-                    priceRange: [Math.max(val, PRICE_RANGE[0]), activeFilters.priceRange[1]]
+                    priceRange: [Math.max(val, PRICE_RANGE[0]), activeFilters.priceRange[1]] as [number, number]
                   };
                   if (isMobile) {
                     setPendingFilters(nextFilters);
@@ -357,9 +386,9 @@ export function FilterSidebar({
                 value={activeFilters.priceRange[1]}
                 onChange={(e) => {
                   const val = Math.max(Number(e.target.value), activeFilters.priceRange[0]);
-                  const nextFilters = {
+                  const nextFilters: ProductFiltersState = {
                     ...activeFilters,
-                    priceRange: [activeFilters.priceRange[0], Math.min(val, PRICE_RANGE[1])]
+                    priceRange: [activeFilters.priceRange[0], Math.min(val, PRICE_RANGE[1])] as [number, number]
                   };
                   if (isMobile) {
                     setPendingFilters(nextFilters);
@@ -471,7 +500,7 @@ export function FilterSidebar({
   // Desktop version (no mobile props passed)
   if (isMobileOpen === undefined || onMobileClose === undefined) {
     return (
-      <div className="bg-white rounded-2xl p-1 h-screen flex flex-col">
+      <div className="bg-white rounded-2xl p-1 flex flex-col max-h-[calc(100vh-2rem)] overflow-y-auto">
         <div className="mb-6">
           <h2 
             className="mb-3 text-black"
@@ -520,13 +549,17 @@ export function FilterSidebar({
           }
         `}
         style={{
-          transition: 'transform 0.4s cubic-bezier(0.32, 0.72, 0, 1)',
+          transition: 'transform 0.5s cubic-bezier(0.32, 0.72, 0, 1)',
           scrollbarWidth: 'thin',
           scrollbarColor: 'rgba(212, 175, 55, 0.3) rgba(0, 0, 0, 0.03)'
         }}
       >
         {/* Mobile Header */}
-        <div className="sticky top-0 bg-white border-b border-black/10 px-6 py-4 flex items-center justify-between z-10">
+        <div className={`
+          sticky top-0 bg-white border-b border-black/10 px-6 py-4 flex items-center justify-between z-10
+          transition-opacity duration-300 delay-100
+          ${isMobileOpen ? 'opacity-100' : 'opacity-0'}
+        `}>
           <h2
             style={{
               fontFamily: "'Playfair Display', serif",
@@ -546,7 +579,11 @@ export function FilterSidebar({
           </button>
         </div>
 
-        <div className="p-6">
+        <div className={`
+          p-6
+          transition-opacity duration-300 delay-150
+          ${isMobileOpen ? 'opacity-100' : 'opacity-0'}
+        `}>
           {filterContent}
         </div>
       </div>

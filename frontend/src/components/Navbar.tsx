@@ -30,7 +30,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 import { getStoredUser, isAuthenticated, logout } from "@/lib/auth";
 import type { AuthUser } from "@/types/auth";
@@ -42,6 +42,7 @@ export function Navbar() {
   const [cartOpen, setCartOpen] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
   const [user, setUser] = useState<AuthUser | null>(null);
   const [cartCount, setCartCount] = useState(0);
   const [wishlistCount, setWishlistCount] = useState(0);
@@ -275,7 +276,13 @@ export function Navbar() {
                 variant="ghost"
                 size="icon"
                 className="relative hover:bg-transparent hover:text-[#D4AF37] transition-colors"
-                onClick={() => setCartOpen(true)}
+                onClick={() => {
+                  // Don't open cart sidebar if already on cart page
+                  if (location.pathname === "/cart") {
+                    return;
+                  }
+                  setCartOpen(true);
+                }}
               >
                 <ShoppingBag className="h-5 w-5" />
                 {cartCount > 0 && (

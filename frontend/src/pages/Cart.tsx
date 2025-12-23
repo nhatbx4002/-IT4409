@@ -2,6 +2,7 @@ import MainLayout from "@/layout/MainLayout";
 import {
   AlertCircle,
   ArrowRight,
+  Check,
   CheckCircle2,
   Minus,
   Plus,
@@ -16,6 +17,7 @@ import type { CartItem as ApiCartItem, CartResponse } from "@/types/cart";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { isAuthenticated } from "@/lib/auth";
+import { COLOR_OPTIONS } from "@/data/filter-options";
 
 type CartItem = {
   id: string;
@@ -46,12 +48,12 @@ type VariantOption = {
   color: string;
   size: string;
   stockQuantity: number;
+  price: number;
 };
 
-const TAX_RATE = 0.1;
 const SHIPPING_FEE = 15;
 const FREE_SHIPPING_THRESHOLD = 200;
-const PROMO = { code: "LUXE50", label: "Code applied! -$50", amount: 50 };
+const PROMO = { code: "LUXE50", label: "Đã áp dụng mã! -$50", amount: 50 };
 
 const mapApiCartItemToCartItem = (apiItem: ApiCartItem): CartItem => {
   return {
@@ -59,8 +61,8 @@ const mapApiCartItemToCartItem = (apiItem: ApiCartItem): CartItem => {
     cartItemId: apiItem.cart_item_id,
     brand: "ARISTINO",
     name: apiItem.product_name,
-    size: apiItem.size || "N/A",
-    color: apiItem.color || "N/A",
+    size: apiItem.size || "Không có",
+    color: apiItem.color || "Không có",
     stockStatus: apiItem.stock_quantity > 5 ? "in" : "low",
     price: apiItem.unit_price,
     originalPrice: undefined,
@@ -96,7 +98,6 @@ const RECOMMENDED: RecommendedProduct[] = [
   },
 ];
 
-const PAYMENT_LOGOS = ["Visa", "Mastercard", "Amex", "PayPal"];
 
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat("en-US", {
@@ -110,12 +111,26 @@ const normalizeVariantOption = (variant: {
   color: string | null;
   size: string | null;
   stockQuantity: number;
+  price: number;
 }): VariantOption => ({
   id: variant.id,
-  color: variant.color || "N/A",
-  size: variant.size || "N/A",
+  color: variant.color || "Không có",
+  size: variant.size || "Không có",
   stockQuantity: variant.stockQuantity,
+  price: variant.price,
 });
+
+const COLOR_HEX_MAP = COLOR_OPTIONS.reduce<Record<string, string>>((acc, option) => {
+  acc[option.name.toLowerCase()] = option.hex;
+  return acc;
+}, {});
+
+const getColorHex = (colorName: string): string => {
+  const normalized = String(colorName || "").trim().toLowerCase();
+  if (!normalized) return "#E5E7EB";
+  if (normalized.startsWith("#")) return normalized;
+  return COLOR_HEX_MAP[normalized] ?? "#E5E7EB";
+};
 
 const resolveVariantSelection = (
   variants: VariantOption[],
@@ -148,7 +163,6 @@ export default function CartPage() {
     null,
   );
   const [isPromoExpanded, setIsPromoExpanded] = useState(false);
-  const [updatingItems, setUpdatingItems] = useState<Set<number>>(new Set());
   const [variantsByProduct, setVariantsByProduct] = useState<Record<number, VariantOption[]>>({});
 
   useEffect(() => {
@@ -169,7 +183,7 @@ export default function CartPage() {
           setPromoCode(cart.applied_promotion_code);
         }
       } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : "Failed to load cart";
+        const errorMessage = err instanceof Error ? err.message : "Không thể tải giỏ hàng";
         setError(errorMessage);
         toast.error(errorMessage);
       } finally {
@@ -205,7 +219,7 @@ export default function CartPage() {
         });
       } catch (err) {
         const message =
-          err instanceof Error ? err.message : "Failed to load variants";
+          err instanceof Error ? err.message : "Không thể tải danh sách phiên bản";
         toast.error(message);
       }
     };
@@ -248,27 +262,26 @@ export default function CartPage() {
     const item = items.find((i) => i.id === id);
     if (!item) return;
 
+    const previousQuantity = item.quantity;
     const nextQuantity = Math.max(item.quantity + delta, 1);
     if (nextQuantity === item.quantity) return;
 
+    // Optimistic update - instant UI change
+    updateLocalQuantity(item.cartItemId, nextQuantity);
+
+    // Background API call
     try {
-      setUpdatingItems((prev) => new Set(prev).add(item.cartItemId));
-      updateLocalQuantity(item.cartItemId, nextQuantity);
       const updated = await updateCartItem(item.cartItemId, nextQuantity);
+      // Only update if server returned different value (e.g., stock limit)
       if (updated.quantity !== nextQuantity) {
         updateLocalQuantity(item.cartItemId, updated.quantity);
+        toast.info(`Chỉ còn ${updated.quantity} sản phẩm`);
       }
-      toast.success("Cart updated successfully");
     } catch (err) {
-      updateLocalQuantity(item.cartItemId, item.quantity);
-      const errorMessage = err instanceof Error ? err.message : "Failed to update quantity";
+      // Revert on error
+      updateLocalQuantity(item.cartItemId, previousQuantity);
+      const errorMessage = err instanceof Error ? err.message : "Không thể cập nhật số lượng";
       toast.error(errorMessage);
-    } finally {
-      setUpdatingItems((prev) => {
-        const newSet = new Set(prev);
-        newSet.delete(item.cartItemId);
-        return newSet;
-      });
     }
   };
 
@@ -278,24 +291,24 @@ export default function CartPage() {
       return;
     }
 
+    const previousQuantity = item.quantity;
+
+    // Optimistic update - instant UI change
+    updateLocalQuantity(item.cartItemId, safeQuantity);
+
+    // Background API call
     try {
-      setUpdatingItems((prev) => new Set(prev).add(item.cartItemId));
-      updateLocalQuantity(item.cartItemId, safeQuantity);
       const updated = await updateCartItem(item.cartItemId, safeQuantity);
+      // Only update if server returned different value (e.g., stock limit)
       if (updated.quantity !== safeQuantity) {
         updateLocalQuantity(item.cartItemId, updated.quantity);
+        toast.info(`Chỉ còn ${updated.quantity} sản phẩm`);
       }
-      toast.success("Cart updated successfully");
     } catch (err) {
-      updateLocalQuantity(item.cartItemId, item.quantity);
-      const errorMessage = err instanceof Error ? err.message : "Failed to update quantity";
+      // Revert on error
+      updateLocalQuantity(item.cartItemId, previousQuantity);
+      const errorMessage = err instanceof Error ? err.message : "Không thể cập nhật số lượng";
       toast.error(errorMessage);
-    } finally {
-      setUpdatingItems((prev) => {
-        const newSet = new Set(prev);
-        newSet.delete(item.cartItemId);
-        return newSet;
-      });
     }
   };
 
@@ -305,7 +318,7 @@ export default function CartPage() {
   ) => {
     const variants = variantsByProduct[item.productId];
     if (!variants || variants.length === 0) {
-      toast.error("No variants available for this product");
+      toast.error("Không có phiên bản cho sản phẩm này");
       return;
     }
 
@@ -315,7 +328,7 @@ export default function CartPage() {
       next.color ?? item.color
     );
     if (!targetVariant) {
-      toast.error("Selected variant is not available");
+      toast.error("Phiên bản được chọn không khả dụng");
       return;
     }
 
@@ -323,23 +336,40 @@ export default function CartPage() {
       return;
     }
 
+    const previousItem = { ...item };
+    const optimisticUpdate: Pick<CartItem, "productVariantId" | "size" | "color" | "stockQuantity" | "stockStatus" | "price"> = {
+      productVariantId: targetVariant.id,
+      size: targetVariant.size,
+      color: targetVariant.color,
+      stockQuantity: targetVariant.stockQuantity,
+      stockStatus: (targetVariant.stockQuantity > 5 ? "in" : "low") as CartItem["stockStatus"],
+      price: targetVariant.price,
+    };
+
+    // Optimistic update - instant UI change
+    setItems((prev) =>
+      prev.map((entry) =>
+        entry.cartItemId === item.cartItemId
+          ? ({ ...entry, ...optimisticUpdate } as CartItem)
+          : entry
+      )
+    );
+
+    // Background API call
     try {
-      setUpdatingItems((prev) => new Set(prev).add(item.cartItemId));
       await updateCartItem(item.cartItemId, {
         productVariantId: targetVariant.id,
         quantity: item.quantity,
       });
-      await refreshCartData();
-      toast.success("Variant updated successfully");
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to update variant";
+      // Revert on error
+      setItems((prev) =>
+        prev.map((entry) =>
+          entry.cartItemId === item.cartItemId ? { ...previousItem } : entry
+        )
+      );
+      const errorMessage = err instanceof Error ? err.message : "Không thể cập nhật phiên bản";
       toast.error(errorMessage);
-    } finally {
-      setUpdatingItems((prev) => {
-        const newSet = new Set(prev);
-        newSet.delete(item.cartItemId);
-        return newSet;
-      });
     }
   };
 
@@ -347,20 +377,21 @@ export default function CartPage() {
     const item = items.find((i) => i.id === id);
     if (!item) return;
 
+    const previousItems = [...items];
+
+    // Optimistic update - remove instantly from UI
+    setItems((prev) => prev.filter((i) => i.id !== id));
+
+    // Background API call
     try {
-      setUpdatingItems((prev) => new Set(prev).add(item.cartItemId));
       await removeCartItem(item.cartItemId);
       await refreshCartData();
-      toast.success("Item removed from cart");
+      toast.success("Đã xóa sản phẩm khỏi giỏ");
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to remove item";
+      // Revert on error
+      setItems(previousItems);
+      const errorMessage = err instanceof Error ? err.message : "Không thể xóa sản phẩm";
       toast.error(errorMessage);
-    } finally {
-      setUpdatingItems((prev) => {
-        const newSet = new Set(prev);
-        newSet.delete(item.cartItemId);
-        return newSet;
-      });
     }
   };
 
@@ -369,7 +400,7 @@ export default function CartPage() {
     if (!code) {
       setPromoState("error");
       setAppliedPromo(false);
-      toast.error("Please enter a code");
+      toast.error("Vui lòng nhập mã");
       return;
     }
 
@@ -378,16 +409,16 @@ export default function CartPage() {
       if (result.valid) {
         setAppliedPromo(true);
         setPromoState("success");
-        toast.success("Discount code is valid");
+        toast.success("Mã giảm giá hợp lệ");
       } else {
         setAppliedPromo(false);
         setPromoState("error");
-        toast.error("Invalid or expired code");
+        toast.error("Mã không hợp lệ hoặc đã hết hạn");
       }
     } catch (err) {
       setAppliedPromo(false);
       setPromoState("error");
-      const message = err instanceof Error ? err.message : "Failed to validate code";
+      const message = err instanceof Error ? err.message : "Không thể kiểm tra mã";
       toast.error(message);
     }
   };
@@ -418,7 +449,7 @@ export default function CartPage() {
                 onClick={() => window.location.reload()}
                 className="rounded-md bg-black px-6 py-3 font-semibold uppercase tracking-wide text-white transition hover:bg-gray-800"
               >
-                Retry
+                Thử lại
               </button>
             </div>
           </div>
@@ -437,7 +468,7 @@ export default function CartPage() {
                 aria-label="Breadcrumb"
                 className="text-xs uppercase tracking-[0.3em] text-[#999999]"
               >
-                Home <span className="mx-1">/</span> Shopping Bag
+                Trang chủ <span className="mx-1">/</span> Giỏ hàng
               </nav>
               <header className="mt-8 flex items-end justify-between">
                 <div>
@@ -445,11 +476,11 @@ export default function CartPage() {
                     Aristino
                   </p>
                   <h1 className="text-4xl font-bold leading-none text-black sm:text-5xl">
-                    Shopping Bag
+                    Giỏ hàng
                   </h1>
                 </div>
                 <p className="text-sm text-[#999999]">
-                  {itemCount} {itemCount === 1 ? "item" : "items"}
+                  {itemCount} {itemCount === 1 ? "sản phẩm" : "sản phẩm"}
                 </p>
               </header>
               <div className="mt-10 h-px w-full bg-[#E5E5E5]" />
@@ -460,7 +491,6 @@ export default function CartPage() {
             <CartItemCard
               key={item.id}
               item={item}
-              isUpdating={updatingItems.has(item.cartItemId)}
               variantOptions={variantsByProduct[item.productId] ?? []}
               onDecrease={() => handleQuantityChange(item.id, -1)}
               onIncrease={() => handleQuantityChange(item.id, 1)}
@@ -494,10 +524,10 @@ export default function CartPage() {
           {/* Product Carousels */}
           <div className="mt-20 space-y-16">
             <ProductsCarousel 
-              title="Other Products" 
+              title="Sản phẩm khác" 
               filters={{ sort: "newest" }}
             />
-            <ViewedProductsCarousel title="Recently Viewed" />
+            <ViewedProductsCarousel title="Đã xem gần đây" />
           </div>
         </div>
         <SiteFooter />
@@ -513,7 +543,6 @@ const stockStyles = {
 
 type CartItemCardProps = {
   item: CartItem;
-  isUpdating?: boolean;
   variantOptions: VariantOption[];
   onIncrease: () => void;
   onDecrease: () => void;
@@ -524,7 +553,6 @@ type CartItemCardProps = {
 
 const CartItemCard = ({
   item,
-  isUpdating = false,
   variantOptions,
   onIncrease,
   onDecrease,
@@ -552,11 +580,11 @@ const CartItemCard = ({
         </div>
         <button
           type="button"
-          aria-label={`Remove ${item.name}`}
+          aria-label={`Xóa ${item.name}`}
           onClick={onRemove}
           className="text-[11px] uppercase tracking-[0.3em] text-[#999999] underline underline-offset-4 transition hover:text-[#000000]"
         >
-          Remove
+          Xóa
         </button>
       </div>
       <div className="space-y-3">
@@ -564,20 +592,18 @@ const CartItemCard = ({
           size={item.size}
           color={item.color}
           variantOptions={variantOptions}
-          isUpdating={isUpdating}
           onSizeChange={(value) => onVariantChange({ size: value })}
           onColorChange={(value) => onVariantChange({ color: value })}
         />
         <span
           className={`text-[11px] uppercase tracking-[0.3em] ${stockStyles[item.stockStatus]}`}
         >
-          {item.stockStatus === "in" ? "In Stock" : "Low Stock"}
+          {item.stockStatus === "in" ? "Còn hàng" : "Sắp hết"}
         </span>
       </div>
       <div className="mt-auto flex flex-wrap items-center justify-between gap-6">
         <QuantityControl
           quantity={item.quantity}
-          isUpdating={isUpdating}
           onIncrease={onIncrease}
           onDecrease={onDecrease}
           onQuantitySet={onQuantitySet}
@@ -590,13 +616,11 @@ const CartItemCard = ({
 
 const QuantityControl = ({
   quantity,
-  isUpdating = false,
   onIncrease,
   onDecrease,
   onQuantitySet,
 }: {
   quantity: number;
-  isUpdating?: boolean;
   onIncrease: () => void;
   onDecrease: () => void;
   onQuantitySet: (quantity: number) => void;
@@ -620,16 +644,12 @@ const QuantityControl = ({
     <div className="flex items-center gap-3 text-sm text-[#333333]">
       <button
         type="button"
-        aria-label="Decrease quantity"
-        disabled={quantity === 1 || isUpdating}
+        aria-label="Giảm số lượng"
+        disabled={quantity === 1}
         onClick={onDecrease}
         className="text-lg transition hover:text-[#000000] disabled:cursor-not-allowed disabled:opacity-30"
       >
-        {isUpdating ? (
-          <Loader2 className="h-4 w-4 animate-spin" />
-        ) : (
-          <Minus className="h-4 w-4" />
-        )}
+        <Minus className="h-4 w-4" />
       </button>
       <input
         type="number"
@@ -644,22 +664,16 @@ const QuantityControl = ({
             event.currentTarget.blur();
           }
         }}
-        disabled={isUpdating}
         className="h-9 w-16 rounded-md border border-[#E5E5E5] bg-white text-center text-base font-semibold text-black focus:border-[#C2A26F] focus:outline-none"
-        aria-label="Current quantity"
+        aria-label="Số lượng hiện tại"
       />
       <button
         type="button"
-        aria-label="Increase quantity"
-        disabled={isUpdating}
+        aria-label="Tăng số lượng"
         onClick={onIncrease}
-        className="text-lg transition hover:text-[#000000] disabled:cursor-not-allowed disabled:opacity-30"
+        className="text-lg transition hover:text-[#000000]"
       >
-        {isUpdating ? (
-          <Loader2 className="h-4 w-4 animate-spin" />
-        ) : (
-          <Plus className="h-4 w-4" />
-        )}
+        <Plus className="h-4 w-4" />
       </button>
     </div>
   );
@@ -669,61 +683,92 @@ const VariantControls = ({
   size,
   color,
   variantOptions,
-  isUpdating = false,
   onSizeChange,
   onColorChange,
 }: {
   size: string;
   color: string;
   variantOptions: VariantOption[];
-  isUpdating?: boolean;
   onSizeChange: (value: string) => void;
   onColorChange: (value: string) => void;
 }) => {
-  const availableVariants = variantOptions.filter(
-    (variant) => variant.stockQuantity > 0 || variant.size === size || variant.color === color
-  );
-  const sizes = Array.from(
-    new Set(availableVariants.map((variant) => variant.size))
-  );
-  const colors = Array.from(
-    new Set(availableVariants.map((variant) => variant.color))
-  );
-  const sizeOptions = sizes.length > 0 ? sizes : [size];
+  const colors = Array.from(new Set(variantOptions.map((variant) => variant.color)));
+  const sizes = Array.from(new Set(variantOptions.map((variant) => variant.size)));
   const colorOptions = colors.length > 0 ? colors : [color];
+  const sizeOptions = sizes.length > 0 ? sizes : [size];
+
+  const sizeStates = sizeOptions.map((option) => {
+    const isAvailable = variantOptions.some(
+      (variant) =>
+        variant.size === option &&
+        (variant.stockQuantity > 0 || option === size) &&
+        (color ? variant.color === color : true)
+    );
+    return { value: option, isAvailable };
+  });
 
   return (
-    <div className="mt-2 flex flex-wrap gap-4 text-xs text-[#999999]">
-      <label className="flex items-center gap-2">
-        <span>Size</span>
-        <select
-          value={size}
-          onChange={(event) => onSizeChange(event.target.value)}
-          disabled={isUpdating || sizeOptions.length <= 1}
-          className="border-b border-[#E5E5E5] bg-transparent px-1 py-0.5 text-[#333333] focus:border-[#C2A26F] focus:outline-none disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {sizeOptions.map((option) => (
-            <option key={option} value={option}>
-              {option}
-            </option>
-          ))}
-        </select>
-      </label>
-      <label className="flex items-center gap-2">
-        <span>Color</span>
-        <select
-          value={color}
-          onChange={(event) => onColorChange(event.target.value)}
-          disabled={isUpdating || colorOptions.length <= 1}
-          className="border-b border-[#E5E5E5] bg-transparent px-1 py-0.5 text-[#333333] focus:border-[#C2A26F] focus:outline-none disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {colorOptions.map((option) => (
-            <option key={option} value={option}>
-              {option}
-            </option>
-          ))}
-        </select>
-      </label>
+    <div className="mt-2 space-y-4">
+      <div className="space-y-2">
+        <div className="flex items-center justify-between text-[11px] uppercase tracking-[0.25em] text-[#9CA3AF]">
+          <span>Màu sắc</span>
+          <span className="text-[#111827] normal-case tracking-normal">{color}</span>
+        </div>
+        <div className="flex flex-wrap gap-3">
+          {colorOptions.map((option) => {
+            const isActive = option === color;
+            return (
+              <button
+                key={option}
+                type="button"
+                onClick={() => onColorChange(option)}
+                disabled={colorOptions.length <= 1}
+                className={`relative h-9 w-9 rounded-full border-2 transition-all duration-200 ${
+                  isActive ? "border-[#D4AF37] scale-110" : "border-transparent hover:border-[#D4AF37]"
+                } ${colorOptions.length <= 1 ? "cursor-not-allowed opacity-60" : ""}`}
+                style={{ backgroundColor: getColorHex(option) }}
+                title={option}
+                aria-label={option}
+              >
+                {isActive && (
+                  <span className="absolute inset-0 flex items-center justify-center">
+                    <Check className="h-4 w-4 text-white drop-shadow" />
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <div className="flex items-center justify-between text-[11px] uppercase tracking-[0.25em] text-[#9CA3AF]">
+          <span>Kích cỡ</span>
+          <span className="text-[#111827] normal-case tracking-normal">{size}</span>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {sizeStates.map(({ value, isAvailable }) => {
+            const isActive = value === size;
+            return (
+              <button
+                key={value}
+                type="button"
+                onClick={() => isAvailable && onSizeChange(value)}
+                disabled={!isAvailable || sizeOptions.length <= 1}
+                className={`h-9 min-w-[48px] rounded-lg border text-[11px] font-semibold uppercase tracking-[0.2em] transition-all ${
+                  !isAvailable
+                    ? "border-[#E5E7EB] bg-[#F9FAFB] text-[#9CA3AF] line-through cursor-not-allowed"
+                    : isActive
+                    ? "border-[#111827] bg-[#111827] text-white shadow-sm"
+                    : "border-[#D1D5DB] bg-white text-[#111827] hover:border-[#D4AF37]"
+                } ${sizeOptions.length <= 1 ? "cursor-not-allowed opacity-60" : ""}`}
+              >
+                {value}
+              </button>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 };
@@ -753,16 +798,16 @@ const EmptyCartState = () => {
       <div className="flex h-20 w-20 items-center justify-center rounded-full bg-[#E5E7EB]/40 text-[#9CA3AF]">
         <ShoppingBag className="h-10 w-10" />
       </div>
-      <p className="mt-6 text-xl text-[#6B7280]">Your cart is empty</p>
+      <p className="mt-6 text-xl text-[#6B7280]">Giỏ hàng của bạn đang trống</p>
       <button
         type="button"
         onClick={() => navigate("/collections")}
         className="mt-6 rounded-md bg-black px-8 py-3 text-sm font-semibold uppercase tracking-wide text-white transition hover:bg-gray-800"
       >
-        Continue Shopping
+        Tiếp tục mua sắm
       </button>
       <div className="mt-8 w-full">
-        <p className="text-sm font-medium text-[#1A1A1A]">Recommended for you</p>
+        <p className="text-sm font-medium text-[#1A1A1A]">Gợi ý cho bạn</p>
         <div className="mt-4 grid gap-4 sm:grid-cols-3">
           {RECOMMENDED.map((product) => (
             <div
@@ -813,7 +858,7 @@ const PromoCodeToggle = ({
       onClick={onToggle}
       className="text-xs font-semibold text-black/70 hover:text-black active:text-black/50 transition duration-300"
     >
-      {isExpanded ? "Hide promo code" : "Do you have a promo code?"}
+      {isExpanded ? "Ẩn mã khuyến mãi" : "Bạn có mã khuyến mãi?"}
     </button>
     
     {/* Expandable Section */}
@@ -826,7 +871,7 @@ const PromoCodeToggle = ({
         <div className="mt-3 space-y-3">
           {/* Label */}
           <label className="block text-[10px] uppercase tracking-[0.2em] font-bold text-black/40 ml-1">
-            Promo Code
+            Mã khuyến mãi
           </label>
 
           {/* Seamless Input Block */}
@@ -835,7 +880,7 @@ const PromoCodeToggle = ({
               type="text"
               value={promoCode}
               onChange={(event) => onChange(event.target.value)}
-              placeholder="Enter your code"
+              placeholder="Nhập mã của bạn"
               disabled={status === "success" && isApplied}
               className={`
                 w-full rounded-full py-3.5 pl-6 pr-28 text-sm font-medium tracking-tight outline-none transition-all
@@ -878,7 +923,7 @@ const PromoCodeToggle = ({
                 }
               `}
             >
-              {status === "success" && isApplied ? "✓" : "Apply"}
+              {status === "success" && isApplied ? "✓" : "Áp dụng"}
             </button>
           </div>
 
@@ -893,7 +938,7 @@ const PromoCodeToggle = ({
             {status === "error" && (
               <div className="flex items-center gap-2 text-xs font-semibold text-[#7F1D1D] bg-[#FEE2E2] px-4 py-2 rounded-lg">
                 <AlertCircle className="h-4 w-4 flex-shrink-0" />
-                <span>Invalid or expired code</span>
+                <span>Mã không hợp lệ hoặc đã hết hạn</span>
               </div>
             )}
           </div>
@@ -932,19 +977,19 @@ const OrderSummaryCard = ({
 }) => (
   <aside className="h-fit space-y-6 rounded-lg border border-gray-200 bg-gray-50 p-6 lg:sticky lg:top-5">
     <h2 className="text-xl font-bold text-black">
-      Order Summary
+      Tóm tắt đơn hàng
     </h2>
     <div className="space-y-4">
-      <SummaryRow label="Subtotal" value={formatCurrency(subtotal)} />
+      <SummaryRow label="Tạm tính" value={formatCurrency(subtotal)} />
       <SummaryRow
-        label="Shipping"
+        label="Phí vận chuyển"
         value={
-          shipping === 0 && subtotal > 0 ? "Free" : formatCurrency(shipping)
+          shipping === 0 && subtotal > 0 ? "Miễn phí" : formatCurrency(shipping)
         }
       />
       {discount > 0 && (
         <SummaryRow
-          label="Discount"
+          label="Giảm giá"
           value={`-${formatCurrency(discount)}`}
           valueClass="text-[#10B981]"
         />
@@ -978,14 +1023,14 @@ const OrderSummaryCard = ({
       onClick={() => navigate("/checkout")}
       className="mt-2 flex h-[55px] w-full items-center justify-center gap-2 rounded-md bg-black text-sm font-semibold uppercase tracking-wide text-white transition hover:bg-gray-800"
     >
-      Proceed to Checkout
+      Tiến hành thanh toán
       <ArrowRight className="h-4 w-4" />
     </button>
     <div className="space-y-4 rounded-lg bg-white/70 p-4 shadow-sm">
       {[
-        { icon: "✅", title: "Free Returns within 30 days" },
-        { icon: "🔒", title: "Secure Checkout" },
-        { icon: "🎁", title: "Complimentary Gift Wrapping" },
+        { icon: "✅", title: "Đổi trả miễn phí trong 30 ngày" },
+        { icon: "🔒", title: "Thanh toán an toàn" },
+        { icon: "🎁", title: "Gói quà miễn phí" },
       ].map((item) => (
         <div key={item.title} className="flex items-center gap-3 text-sm text-[#1A1A1A]">
           <span className="text-lg">{item.icon}</span>
@@ -1018,7 +1063,7 @@ const SiteFooter = () => (
         Aristino
       </p>
       <p className="mt-4 text-xs">
-        © {new Date().getFullYear()} Aristino. All rights reserved.
+        © {new Date().getFullYear()} Aristino. Đã đăng ký bản quyền.
       </p>
     </div>
   </footer>

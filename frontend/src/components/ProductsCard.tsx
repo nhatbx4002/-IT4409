@@ -31,7 +31,7 @@ export function ProductCard({
 
   return (
     <div
-      className={`group relative flex h-full max-h-[640px] flex-col rounded-2xl bg-white/95 ring-1 ring-gray-200 transition-all duration-500 ${isHovered ? "shadow-[0_18px_60px_rgba(15,23,42,0.25)] translate-y-[-2px]" : "shadow-[0_8px_30px_rgba(15,23,42,0.12)]"}`}
+      className={`group relative flex h-full max-h-[640px] flex-col transition-all duration-500 ${isHovered ? "translate-y-[-2px]" : ""}`}
       onMouseEnter={() => {
         setIsHovered(true);
         if (product.images.length > 1) {
@@ -44,7 +44,7 @@ export function ProductCard({
       }}
     >
       {/* Image Container - 320x400px aspect ratio */}
-      <div className="relative aspect-4/5 max-h-[400px] w-full shrink-0 overflow-hidden rounded-t-2xl bg-[#F8F8F8]">
+      <div className="relative aspect-4/5 max-h-[400px] w-full shrink-0 overflow-hidden rounded-t-2xl bg-white/80 backdrop-blur-sm">
         {/* Product Images */}
         <div className="relative w-full h-full">
           {product.images.map((image, idx) => (
@@ -129,7 +129,7 @@ export function ProductCard({
       </div>
 
       {/* Content Area - 20px padding */}
-      <div className="flex flex-1 flex-col overflow-hidden p-5">
+      <div className="flex flex-1 flex-col overflow-hidden p-5 bg-transparent">
         <div className="space-y-3 flex-1">
           {/* Brand Name - Gold, Uppercase, Letter-spacing */}
           <div className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#D4AF37]">

@@ -236,15 +236,27 @@ export function Collections() {
 
       <section className="bg-white pb-16 pt-6">
         <div className="mx-auto flex w-full gap-8 px-6 sm:px-8">
-          {isDesktopFilterVisible && (
-            <aside className="hidden lg:block w-1/4 sticky top-0 self-start transition-all duration-500 ease-in-out">
+          <aside
+            className={`
+              hidden lg:block sticky top-0 self-start
+              transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]
+              ${isDesktopFilterVisible
+                ? 'w-1/4 opacity-100 translate-x-0'
+                : 'w-0 opacity-0 -translate-x-4 overflow-hidden'
+              }
+            `}
+          >
+            <div className={`
+              transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]
+              ${isDesktopFilterVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}
+            `}>
               <FilterSidebar
                 filters={filters}
                 onFilterChange={setFilters}
                 onClearFilters={handleClearFilters}
               />
-            </aside>
-          )}
+            </div>
+          </aside>
 
           <main className="flex-1">
             <div className="mb-6">
@@ -398,28 +410,46 @@ export function Collections() {
               </div>
             </div>
 
-            {isLoading && <LoadingState message="Loading products..." />}
+            <div className="min-h-[50vh]">
+              {isLoading && <LoadingState message="Loading products..." />}
 
-            {error && !isLoading && (
-              <ErrorState message={error} onRetry={fetchProducts} />
-            )}
+              {error && !isLoading && (
+                <ErrorState message={error} onRetry={fetchProducts} />
+              )}
 
-            {!isLoading && !error && (
-              <div
-                className={`grid gap-6 mb-12 transition-all duration-500 grid-cols-1 sm:grid-cols-2 ${
-                  isDesktopFilterVisible ? "lg:grid-cols-3 xl:grid-cols-4" : "lg:grid-cols-4 xl:grid-cols-5"
-                }`}
-              >
-                {paginatedProducts.map((product) => (
-                  <ProductCard
-                    key={product.id}
-                    product={product}
-                    onAddToWishlist={handleAddToWishlist}
-                    onAddToCart={handleAddToCart}
+              {!isLoading && !error && !hasNoResults && (
+                <div
+                  className={`
+                    grid gap-6 mb-12
+                    grid-cols-1 sm:grid-cols-2
+                    transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]
+                    ${isDesktopFilterVisible
+                      ? "lg:grid-cols-3 xl:grid-cols-4"
+                      : "lg:grid-cols-4 xl:grid-cols-5"
+                    }
+                  `}
+                >
+                  {paginatedProducts.map((product) => (
+                    <ProductCard
+                      key={product.id}
+                      product={product}
+                      onAddToWishlist={handleAddToWishlist}
+                      onAddToCart={handleAddToCart}
+                    />
+                  ))}
+                </div>
+              )}
+
+              {hasNoResults && (
+                <div className="min-h-[40vh] flex items-center justify-center">
+                  <EmptyState
+                    title="No products found matching your filters"
+                    actionLabel="Clear All Filters"
+                    onAction={handleClearFilters}
                   />
-                ))}
-              </div>
-            )}
+                </div>
+              )}
+            </div>
 
             {totalPages > 1 && (
               <div className="flex items-center justify-center gap-2">
@@ -495,13 +525,6 @@ export function Collections() {
               </div>
             )}
 
-            {hasNoResults && (
-              <EmptyState
-                title="No products found matching your filters"
-                actionLabel="Clear All Filters"
-                onAction={handleClearFilters}
-              />
-            )}
           </main>
         </div>
       </section>

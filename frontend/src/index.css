@@ -155,6 +155,19 @@
   }
 }
 
+/* Hide number input spin buttons globally - cross-browser support */
+input[type="number"] {
+  /* Firefox: Remove spin buttons */
+  -moz-appearance: textfield;
+
+  /* Chrome/Safari/Edge: Remove spin buttons appearance */
+  &::-webkit-outer-spin-button,
+  &::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+}
+
 /**
  * Base typography. This is not applied to elements which have an ancestor with a Tailwind text class.
  */
