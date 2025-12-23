@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Home from "./pages/Home";
 import { Collections } from "@/pages/Collections";
@@ -12,9 +13,14 @@ import OrderPaymentStatusPage from "@/pages/OrderPaymentStatus";
 import OrdersPage from "@/pages/Orders";
 import AccountPage from "@/pages/Account";
 import PaymentErrorPage from "@/pages/PaymentError";
+import { bootstrapAuthSession } from "@/lib/api";
 
 
 export default function App() {
+  useEffect(() => {
+    void bootstrapAuthSession();
+  }, []);
+
   return (
     <BrowserRouter>
       <Routes>

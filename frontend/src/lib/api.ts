@@ -2,7 +2,6 @@ import axios, { type AxiosError, type AxiosRequestConfig, type AxiosRequestHeade
 import type {
   ProductDetail,
   ProductFilterParams,
-  ProductFiltersMeta,
   ProductsListResponse,
 } from '@/types/products';
 import type { ApiErrorResponse, ApiResponse } from '@/types/api';
@@ -130,6 +129,16 @@ apiClient.interceptors.response.use(
   }
 );
 
+export async function bootstrapAuthSession(): Promise<void> {
+  const accessToken = getAccessToken();
+  if (accessToken) return;
+
+  const refreshToken = getRefreshToken();
+  if (!refreshToken) return;
+
+  await refreshAccessToken(refreshToken);
+}
+
 async function refreshAccessToken(refreshToken: string): Promise<string | null> {
   if (isRefreshing) {
     return new Promise((resolve) => {
@@ -140,14 +149,14 @@ async function refreshAccessToken(refreshToken: string): Promise<string | null> 
   isRefreshing = true;
 
   try {
-    const res = await axios.post<ApiResponse<{ accessToken: string; refreshToken?: string }>>(
+    const res = await axios.post<ApiResponse<{ accessToken: string; refreshToken?: string; user?: AuthUser }>>(
       `${API_BASE_URL_NORMALIZED}/auth/refresh`,
       { refreshToken },
       { withCredentials: true }
     );
 
     const data = unwrapResponse(res.data);
-    const user = getStoredUser();
+    const user = data.user ?? getStoredUser();
     if (data.accessToken && user) {
       setAuthSession(
         { accessToken: data.accessToken, refreshToken: data.refreshToken || refreshToken },
@@ -393,8 +402,8 @@ export async function searchProducts(
 
 export async function getProductFilters(
   filters: Pick<ProductFilterParams, 'collection'> = {}
-): Promise<ProductFiltersMeta> {
-  return getRequest<ProductFiltersMeta>('/products/filters', {
+): Promise<Record<string, unknown>> {
+  return getRequest<Record<string, unknown>>('/products/filters', {
     params: filters,
   });
 }

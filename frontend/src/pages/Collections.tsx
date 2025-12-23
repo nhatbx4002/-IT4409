@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { useParams, useSearchParams } from "react-router-dom";
-import { addToCart, addToWishlist, getProducts, getProductsByCategory } from "@/lib/api";
+import { addToCart, addToWishlist, getProducts } from "@/lib/api";
 import type { ProductSummary, SortOption } from "@/types/products";
 import { useProductFilters } from "@/hooks/useProductFilters";
 import { EmptyState, ErrorState, LoadingState } from "@/components/feedback/AsyncStates";
@@ -29,6 +29,7 @@ import {
   CATEGORY_LABEL_MAP,
   FONT_SANS,
 } from "@/theme/constants";
+import { PRICE_RANGE } from "@/data/filter-options";
 import { toast } from "sonner";
 
 export function Collections() {
@@ -41,6 +42,8 @@ export function Collections() {
 
   const capitalize = (s?: string) =>
     s ? s.charAt(0).toUpperCase() + s.slice(1) : "";
+  const formatCurrency = (value: number) =>
+    new Intl.NumberFormat('vi-VN').format(value) + '₫';
 
   const dynamicTitle =
     (searchParams.get("title") ??
@@ -93,10 +96,9 @@ export function Collections() {
         pageSize: itemsPerPage,
       });
 
-      const response =
-        category && !params.categorySlugs
-          ? await getProductsByCategory(category, params)
-          : await getProducts(params);
+      // Always use getProducts (search endpoint) for consistency
+      // The URL category is already handled by categorySlug in buildFilterParams
+      const response = await getProducts(params);
 
       setProducts(response.products);
       setTotal(response.total);
@@ -110,7 +112,7 @@ export function Collections() {
     } finally {
       setIsLoading(false);
     }
-  }, [buildFilterParams, category, currentPage, currentSort, itemsPerPage]);
+  }, [buildFilterParams, currentPage, currentSort, itemsPerPage]);
 
   useEffect(() => {
     fetchProducts();
@@ -254,7 +256,7 @@ export function Collections() {
                       fontFamily: FONT_SANS,
                     }}
                   >
-                    Active Filters:
+                    Bộ lọc đang chọn:
                   </span>
 
                   {filters.categories.map((categorySlug) => (
@@ -305,14 +307,14 @@ export function Collections() {
                     </Badge>
                   ))}
 
-                  {(filters.priceRange[0] !== 0 ||
-                    filters.priceRange[1] !== 500) && (
+                  {(filters.priceRange[0] !== PRICE_RANGE[0] ||
+                    filters.priceRange[1] !== PRICE_RANGE[1]) && (
                     <Badge
                       variant="secondary"
                       className="bg-black/5 text-black border border-black/20 hover:bg-black/10 transition-colors duration-300 cursor-pointer px-3 py-1"
                       onClick={() => handleRemoveFilter("priceRange")}
                     >
-                      ${filters.priceRange[0]} - ${filters.priceRange[1]}
+                      {formatCurrency(filters.priceRange[0])} - {formatCurrency(filters.priceRange[1])}
                       <X className="w-3 h-3 ml-1" />
                     </Badge>
                   )}
@@ -336,7 +338,7 @@ export function Collections() {
                       fontFamily: FONT_SANS,
                     }}
                   >
-                    Clear All
+                    Xoá hết
                   </button>
                 </div>
               )}
@@ -351,7 +353,7 @@ export function Collections() {
                     }}
                   >
                     <SlidersHorizontal className="w-4 h-4" />
-                    FILTERS
+                    BỘ LỌC
                   </button>
 
                   <button
@@ -364,7 +366,7 @@ export function Collections() {
                     }}
                   >
                     <SlidersHorizontal className="w-4 h-4" />
-                    {isDesktopFilterVisible ? "HIDE FILTERS" : "SHOW FILTERS"}
+                    {isDesktopFilterVisible ? "ẨN BỘ LỌC" : "HIỆN BỘ LỌC"}
                   </button>
                 </div>
 

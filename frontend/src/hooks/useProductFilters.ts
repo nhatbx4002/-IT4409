@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ProductFilterParams, ProductFiltersState, SortOption } from '@/types/products';
+import { PRICE_RANGE } from '@/data/filter-options';
 
-const DEFAULT_PRICE_RANGE: [number, number] = [0, 500];
+const DEFAULT_PRICE_RANGE: [number, number] = PRICE_RANGE;
 
 type UseProductFiltersOptions = {
   collection?: ProductFiltersState['collection'];

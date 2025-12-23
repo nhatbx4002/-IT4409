@@ -409,6 +409,7 @@ export default function CheckoutPage() {
                 total={total}
                 promoCode={promoCode}
                 onPromoCodeChange={setPromoCode}
+                onDiscountAmountChange={setDiscountAmount}
               />
             </div>
           </div>
