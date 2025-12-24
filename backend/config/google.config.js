@@ -15,44 +15,74 @@ passport.use(
         },
         async (accessToken, refreshToken, profile, done) => {
             try {
-                const googleEmail = profile.emails[0].value;
+                const googleEmail = profile.emails[0]?.value?.toLowerCase().trim();
+                
+                if (!googleEmail) {
+                    return done(new Error("Google account does not have an email address"), null);
+                }
 
-                //kiem tra user da ton tai hay chua
-                let user = await User.findOne({ where: { provider_id: profile.id }});
+                // Bước 1: Kiểm tra user đã đăng nhập Google trước đó (theo provider_id)
+                let user = await User.findOne({ 
+                    where: { provider_id: profile.id, provider: "google" } 
+                });
 
-                //Neu chua co user google -> kiem tra email trung
-                if(!user){
-                    const existingEmailUser = await User.findOne({ where : { email: googleEmail} });
-
-                    if(existingEmailUser){
-                        existingEmailUser.provider = "google";
-                        existingEmailUser.provider_id = profile.id;
-                        existingEmailUser.access_token = accessToken;
-                        existingEmailUser.refresh_token = refreshToken;
-                        await existingEmailUser.save();
-                        return done (null, existingEmailUser);
-                    }
-
-                    //Neu chua co user nao thi tao tai khoan moi
-                    user = await User.create({
-                        full_name: profile.displayName,
-                        email: googleEmail,
-                        provider: "google",
-                        provider_id: profile.id,
-                        access_token: accessToken,
-                        refresh_token: refreshToken,
-                    });
-                } else {
-                    // Neu da co user thi cap nhat token moi
+                if (user) {
+                    // User đã có tài khoản Google -> Cập nhật tokens
                     user.access_token = accessToken;
                     user.refresh_token = refreshToken;
                     await user.save();
+                    return done(null, user);
                 }
-                return done(null, user);
-            }catch(error){
-                console.error("Loi khi dang nhap", error);
-                return done(error, null);
+
+                // Bước 2: Kiểm tra email đã tồn tại trong hệ thống
+                const existingEmailUser = await User.findOne({ 
+                    where: { email: googleEmail } 
+                });
+
+                if (existingEmailUser) {
+                    // Email đã tồn tại -> Liên kết tài khoản Google với tài khoản hiện có
+                    // Giữ nguyên provider cũ nếu đã có (local/facebook), nhưng thêm Google info
+                    // Hoặc nếu là local thì chuyển sang google
+                    if (existingEmailUser.provider === "local" || !existingEmailUser.provider) {
+                        // Tài khoản local -> Liên kết với Google
+                        existingEmailUser.provider = "google";
+                        existingEmailUser.provider_id = profile.id;
+                    } else if (existingEmailUser.provider === "google" && !existingEmailUser.provider_id) {
+                        // Trường hợp đặc biệt: có provider google nhưng chưa có provider_id
+                        existingEmailUser.provider_id = profile.id;
+                    }
+                    // Nếu đã có provider khác (ví dụ facebook), vẫn giữ nguyên nhưng thêm Google info
+                    // Hoặc có thể chọn merge thành "google" tùy business logic
+                    
+                    existingEmailUser.access_token = accessToken;
+                    existingEmailUser.refresh_token = refreshToken;
+                    
+                    // Cập nhật full_name nếu chưa có hoặc rỗng
+                    if (!existingEmailUser.full_name || existingEmailUser.full_name.trim() === "") {
+                        existingEmailUser.full_name = profile.displayName || googleEmail.split("@")[0];
+                    }
+                    
+                    await existingEmailUser.save();
+                    console.log(`Linked Google account to existing user: ${existingEmailUser.email}`);
+                    return done(null, existingEmailUser);
+                }
+
+                // Bước 3: Chưa có user nào -> Tạo tài khoản mới
+                user = await User.create({
+                    full_name: profile.displayName || googleEmail.split("@")[0],
+                    email: googleEmail,
+                    provider: "google",
+                    provider_id: profile.id,
+                    access_token: accessToken,
+                    refresh_token: refreshToken,
+                    role: "customer",
+                });
                 
+                console.log(`Created new Google user: ${googleEmail}`);
+                return done(null, user);
+            } catch (error) {
+                console.error("Lỗi khi đăng nhập Google:", error);
+                return done(error, null);
             }
         }
     )
