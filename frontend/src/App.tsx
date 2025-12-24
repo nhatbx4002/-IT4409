@@ -4,6 +4,8 @@ import Home from "./pages/Home";
 import { Collections } from "@/pages/Collections";
 import LoginPage from "@/pages/LoginPage";
 import SignUpPage from "@/pages/SignUpPage";
+import ForgotPasswordPage from "@/pages/ForgotPasswordPage";
+import ResetPasswordPage from "@/pages/ResetPasswordPage";
 import OAuthCallbackPage from "@/pages/OAuthCallbackPage";
 import ProductDetail from "@/pages/ProductDetail";
 import CartPage from "@/pages/Cart";
@@ -40,6 +42,8 @@ export default function App() {
         <Route path="/account" element={<AccountPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignUpPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/auth/callback" element={<OAuthCallbackPage />} />
       </Routes>
     </BrowserRouter>

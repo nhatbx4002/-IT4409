@@ -187,8 +187,8 @@ export function LoginForm() {
             >
               Password
             </label>
-            <a
-              href="#"
+            <Link
+              to="/forgot-password"
               style={{
                 fontFamily: "Poppins",
                 fontSize: "14px",
@@ -199,7 +199,7 @@ export function LoginForm() {
               className="hover:underline"
             >
               Forgot Password?
-            </a>
+            </Link>
           </div>
           <div className="relative">
             <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-[#9CA3AF]" />
