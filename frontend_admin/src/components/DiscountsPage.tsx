@@ -205,7 +205,6 @@ const CreateDiscountModal: React.FC<CreateDiscountModalProps> = ({ discount, onS
     applicable_to: discount?.applicable_to || 'all',
     is_active: discount?.is_active ?? true,
   });
-  const [isRightPanel, setIsRightPanel] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -245,255 +244,359 @@ const CreateDiscountModal: React.FC<CreateDiscountModalProps> = ({ discount, onS
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 overflow-y-auto">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-6xl w-full my-8 flex flex-col lg:flex-row overflow-hidden">
-        {/* Left Panel - Form */}
-        <div className="flex-1 p-8 overflow-y-auto">
-          <div className="flex items-center justify-between mb-6">
-            <h2
-              className="text-2xl font-bold text-[#111111]"
-              style={{ fontFamily: FONT_SERIF }}
-            >
-              {discount ? 'Edit Campaign' : 'Create New Campaign'}
-            </h2>
-            <button
-              onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 transition-colors"
-            >
-              ✕
-            </button>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Campaign Name */}
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">
-                Campaign Name
-              </label>
-              <input
-                type="text"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full bg-[#F5F5F7] border border-transparent focus:border-[#Cfb187] rounded-lg px-4 py-3 text-sm font-medium focus:outline-none focus:ring-1 focus:ring-[#Cfb187] transition-colors"
-                placeholder="e.g., Summer Sale 2024"
-                required
-              />
-            </div>
-
-            {/* Apply Type */}
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-3">
-                Apply Type
-              </label>
-              <div className="grid grid-cols-2 gap-3">
-                {(['code', 'auto_apply'] as ApplyType[]).map((type) => (
-                  <button
-                    key={type}
-                    type="button"
-                    onClick={() => setFormData({ ...formData, apply_type: type })}
-                    className={`p-4 rounded-lg border-2 text-left transition-all ${
-                      formData.apply_type === type
-                        ? 'border-[#Cfb187] bg-[#Cfb187]/10'
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className={`w-4 h-4 rounded-full border-2 ${
-                        formData.apply_type === type ? 'border-[#Cfb187] bg-[#Cfb187]' : 'border-gray-300'
-                      }`} />
-                      <div>
-                        <p className="font-bold text-sm text-[#111111] capitalize">
-                          {type === 'code' ? 'Coupon Code' : 'Auto Apply'}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          {type === 'code' ? 'User enters code at checkout' : 'Automatically applied'}
-                        </p>
-                      </div>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Coupon Code */}
-            {formData.apply_type === 'code' && (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4 py-8">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-7xl w-full max-h-[90vh] flex flex-col lg:flex-row overflow-hidden">
+        {/* Left Panel - Scrollable Form */}
+        <div className="flex-1 overflow-y-auto custom-scrollbar">
+          <div className="p-8">
+            {/* Header */}
+            <div className="flex items-center justify-between mb-8 sticky top-0 bg-white z-10 pb-4 border-b border-gray-100">
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">
-                  Coupon Code
+                <h2
+                  className="text-3xl font-bold text-[#111111]"
+                  style={{ fontFamily: FONT_SERIF }}
+                >
+                  {discount ? 'Edit Campaign' : 'Create New Campaign'}
+                </h2>
+                <p className="text-gray-500 text-sm mt-1">Configure your discount settings</p>
+              </div>
+              <button
+                onClick={onClose}
+                className="w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-8 pb-8">
+              {/* Campaign Name */}
+              <div className="space-y-2">
+                <label className="block text-sm font-bold uppercase tracking-wider text-gray-500">
+                  Campaign Name <span className="text-red-500">*</span>
                 </label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={formData.code}
-                    onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
-                    className="flex-1 bg-[#F5F5F7] border border-transparent focus:border-[#Cfb187] rounded-lg px-4 py-3 text-sm font-mono font-bold focus:outline-none focus:ring-1 focus:ring-[#Cfb187] transition-colors"
-                    placeholder="SUMMER24"
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={handleGenerateCode}
-                    className="px-4 py-3 bg-[#F5F5F7] hover:bg-gray-200 rounded-lg text-sm font-bold text-[#111111] transition-colors flex items-center gap-2"
-                  >
-                    <Sparkles className="w-4 h-4" />
-                    Generate
-                  </button>
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className="w-full bg-[#F5F5F7] border-2 border-transparent focus:border-[#Cfb187] rounded-xl px-5 py-4 text-base font-medium focus:outline-none focus:ring-0 transition-all placeholder:text-gray-400"
+                  placeholder="e.g., Summer Sale 2024"
+                  required
+                />
+              </div>
+
+              {/* Description (Optional) */}
+              <div className="space-y-2">
+                <label className="block text-sm font-bold uppercase tracking-wider text-gray-500">
+                  Description <span className="text-gray-400 font-normal">(Optional)</span>
+                </label>
+                <textarea
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  className="w-full bg-[#F5F5F7] border-2 border-transparent focus:border-[#Cfb187] rounded-xl px-5 py-4 text-base font-medium focus:outline-none focus:ring-0 transition-all placeholder:text-gray-400 resize-none"
+                  placeholder="Brief description of this campaign..."
+                  rows={3}
+                />
+              </div>
+
+              {/* Apply Type */}
+              <div className="space-y-3">
+                <label className="block text-sm font-bold uppercase tracking-wider text-gray-500">
+                  Apply Type
+                </label>
+                <div className="grid grid-cols-2 gap-4">
+                  {(['code', 'auto_apply'] as ApplyType[]).map((type) => (
+                    <button
+                      key={type}
+                      type="button"
+                      onClick={() => setFormData({ ...formData, apply_type: type })}
+                      className={`p-5 rounded-xl border-2 text-left transition-all group ${
+                        formData.apply_type === type
+                          ? 'border-[#Cfb187] bg-[#Cfb187]/10 shadow-md'
+                          : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                      }`}
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                          formData.apply_type === type ? 'border-[#Cfb187] bg-[#Cfb187]' : 'border-gray-300'
+                        }`}>
+                          {formData.apply_type === type && (
+                            <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                            </svg>
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-bold text-base text-[#111111] capitalize mb-1">
+                            {type === 'code' ? 'Coupon Code' : 'Auto Apply'}
+                          </p>
+                          <p className="text-sm text-gray-500 leading-snug">
+                            {type === 'code' ? 'User enters code at checkout' : 'Automatically applied to eligible orders'}
+                          </p>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
                 </div>
               </div>
-            )}
 
-            {/* Discount Type & Value */}
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-3">
-                Discount Type
-              </label>
-              <div className="grid grid-cols-3 gap-3 mb-4">
-                {(['percentage', 'fixed_amount', 'free_shipping'] as DiscountType[]).map((type) => (
-                  <button
-                    key={type}
-                    type="button"
-                    onClick={() => setFormData({ ...formData, discount_type: type })}
-                    className={`p-4 rounded-lg border-2 text-center transition-all ${
-                      formData.discount_type === type
-                        ? 'border-[#Cfb187] bg-[#Cfb187]/10'
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                  >
-                    <p className="font-bold text-sm text-[#111111] capitalize">
-                      {type === 'fixed_amount' ? 'Fixed' : type === 'free_shipping' ? 'Free Ship' : 'Percent'}
-                    </p>
-                  </button>
-                ))}
-              </div>
-
-              {formData.discount_type !== 'free_shipping' && (
-                <div className="flex gap-3">
-                  <div className="flex-1">
+              {/* Coupon Code */}
+              {formData.apply_type === 'code' && (
+                <div className="space-y-2">
+                  <label className="block text-sm font-bold uppercase tracking-wider text-gray-500">
+                    Coupon Code <span className="text-red-500">*</span>
+                  </label>
+                  <div className="flex gap-3">
                     <input
-                      type="number"
-                      value={formData.discount_value}
-                      onChange={(e) => setFormData({ ...formData, discount_value: e.target.value })}
-                      className="w-full bg-[#F5F5F7] border border-transparent focus:border-[#Cfb187] rounded-lg px-4 py-3 text-sm font-medium focus:outline-none focus:ring-1 focus:ring-[#Cfb187] transition-colors"
-                      placeholder={formData.discount_type === 'percentage' ? '10' : '100000'}
+                      type="text"
+                      value={formData.code}
+                      onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
+                      className="flex-1 bg-[#F5F5F7] border-2 border-transparent focus:border-[#Cfb187] rounded-xl px-5 py-4 text-lg font-mono font-bold focus:outline-none focus:ring-0 transition-all placeholder:text-gray-400"
+                      placeholder="SUMMER24"
                       required
                     />
-                  </div>
-                  <div className="flex items-center bg-gray-100 px-4 rounded-lg">
-                    <span className="text-sm font-bold text-gray-600">
-                      {formData.discount_type === 'percentage' ? '%' : '₫'}
-                    </span>
+                    <button
+                      type="button"
+                      onClick={handleGenerateCode}
+                      className="px-6 py-4 bg-[#F5F5F7] hover:bg-gray-200 rounded-xl text-sm font-bold text-[#111111] transition-all flex items-center gap-2 border-2 border-transparent hover:border-gray-300"
+                    >
+                      <Sparkles className="w-4 h-4" />
+                      Generate
+                    </button>
                   </div>
                 </div>
               )}
 
-              {formData.discount_type === 'percentage' && (
-                <div className="mt-3">
-                  <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">
-                    Max Discount Amount (Optional)
-                  </label>
+              {/* Discount Type & Value */}
+              <div className="space-y-4">
+                <label className="block text-sm font-bold uppercase tracking-wider text-gray-500">
+                  Discount Type
+                </label>
+                <div className="grid grid-cols-3 gap-4">
+                  {(['percentage', 'fixed_amount', 'free_shipping'] as DiscountType[]).map((type) => (
+                    <button
+                      key={type}
+                      type="button"
+                      onClick={() => setFormData({ ...formData, discount_type: type })}
+                      className={`p-5 rounded-xl border-2 text-center transition-all ${
+                        formData.discount_type === type
+                          ? 'border-[#Cfb187] bg-[#Cfb187]/10 shadow-md'
+                          : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                      }`}
+                    >
+                      <p className="font-bold text-base text-[#111111] capitalize mb-1">
+                        {type === 'fixed_amount' ? 'Fixed Amount' : type === 'free_shipping' ? 'Free Shipping' : 'Percentage'}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {type === 'percentage' ? 'Off total %' : type === 'fixed_amount' ? 'Fixed amount off' : 'Free delivery'}
+                      </p>
+                    </button>
+                  ))}
+                </div>
+
+                {formData.discount_type !== 'free_shipping' && (
+                  <div className="space-y-2">
+                    <label className="block text-sm font-bold uppercase tracking-wider text-gray-500">
+                      Discount Value <span className="text-red-500">*</span>
+                    </label>
+                    <div className="flex gap-3">
+                      <input
+                        type="number"
+                        value={formData.discount_value}
+                        onChange={(e) => setFormData({ ...formData, discount_value: e.target.value })}
+                        className="flex-1 bg-[#F5F5F7] border-2 border-transparent focus:border-[#Cfb187] rounded-xl px-5 py-4 text-base font-medium focus:outline-none focus:ring-0 transition-all placeholder:text-gray-400"
+                        placeholder={formData.discount_type === 'percentage' ? '20' : '100000'}
+                        required
+                      />
+                      <div className="flex items-center bg-gray-100 px-6 rounded-xl border-2 border-transparent">
+                        <span className="text-lg font-bold text-gray-700">
+                          {formData.discount_type === 'percentage' ? '%' : '₫'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {formData.discount_type === 'percentage' && (
+                  <div className="space-y-2">
+                    <label className="block text-sm font-bold uppercase tracking-wider text-gray-500">
+                      Max Discount Amount <span className="text-gray-400 font-normal">(Optional)</span>
+                    </label>
+                    <div className="flex gap-3">
+                      <input
+                        type="number"
+                        value={formData.max_discount_amount}
+                        onChange={(e) => setFormData({ ...formData, max_discount_amount: e.target.value })}
+                        className="flex-1 bg-[#F5F5F7] border-2 border-transparent focus:border-[#Cfb187] rounded-xl px-5 py-4 text-base font-medium focus:outline-none focus:ring-0 transition-all placeholder:text-gray-400"
+                        placeholder="500000"
+                      />
+                      <div className="flex items-center bg-gray-100 px-6 rounded-xl border-2 border-transparent">
+                        <span className="text-lg font-bold text-gray-700">₫</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Minimum Order Value */}
+              <div className="space-y-2">
+                <label className="block text-sm font-bold uppercase tracking-wider text-gray-500">
+                  Minimum Order Value <span className="text-gray-400 font-normal">(Optional)</span>
+                </label>
+                <div className="flex gap-3">
                   <input
                     type="number"
-                    value={formData.max_discount_amount}
-                    onChange={(e) => setFormData({ ...formData, max_discount_amount: e.target.value })}
-                    className="w-full bg-[#F5F5F7] border border-transparent focus:border-[#Cfb187] rounded-lg px-4 py-3 text-sm font-medium focus:outline-none focus:ring-1 focus:ring-[#Cfb187] transition-colors"
-                    placeholder="500000"
+                    value={formData.min_order_value}
+                    onChange={(e) => setFormData({ ...formData, min_order_value: e.target.value })}
+                    className="flex-1 bg-[#F5F5F7] border-2 border-transparent focus:border-[#Cfb187] rounded-xl px-5 py-4 text-base font-medium focus:outline-none focus:ring-0 transition-all placeholder:text-gray-400"
+                    placeholder="0"
+                  />
+                  <div className="flex items-center bg-gray-100 px-6 rounded-xl border-2 border-transparent">
+                    <span className="text-lg font-bold text-gray-700">₫</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Date Range */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="block text-sm font-bold uppercase tracking-wider text-gray-500">
+                    Start Date <span className="text-gray-400 font-normal">(Optional)</span>
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.start_date}
+                    onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
+                    className="w-full bg-[#F5F5F7] border-2 border-transparent focus:border-[#Cfb187] rounded-xl px-5 py-4 text-base font-medium focus:outline-none focus:ring-0 transition-all"
                   />
                 </div>
-              )}
-            </div>
+                <div className="space-y-2">
+                  <label className="block text-sm font-bold uppercase tracking-wider text-gray-500">
+                    End Date <span className="text-gray-400 font-normal">(Optional)</span>
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.end_date}
+                    onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
+                    className="w-full bg-[#F5F5F7] border-2 border-transparent focus:border-[#Cfb187] rounded-xl px-5 py-4 text-base font-medium focus:outline-none focus:ring-0 transition-all"
+                  />
+                </div>
+              </div>
 
-            {/* Min Order Value */}
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">
-                Minimum Order Value
-              </label>
-              <div className="flex gap-2">
+              {/* Usage Limit */}
+              <div className="space-y-2">
+                <label className="block text-sm font-bold uppercase tracking-wider text-gray-500">
+                  Usage Limit <span className="text-red-500">*</span>
+                </label>
                 <input
                   type="number"
-                  value={formData.min_order_value}
-                  onChange={(e) => setFormData({ ...formData, min_order_value: e.target.value })}
-                  className="flex-1 bg-[#F5F5F7] border border-transparent focus:border-[#Cfb187] rounded-lg px-4 py-3 text-sm font-medium focus:outline-none focus:ring-1 focus:ring-[#Cfb187] transition-colors"
-                  placeholder="0"
+                  value={formData.usage_limit}
+                  onChange={(e) => setFormData({ ...formData, usage_limit: Number(e.target.value) })}
+                  className="w-full bg-[#F5F5F7] border-2 border-transparent focus:border-[#Cfb187] rounded-xl px-5 py-4 text-base font-medium focus:outline-none focus:ring-0 transition-all"
+                  min="1"
+                  required
                 />
-                <div className="flex items-center bg-gray-100 px-4 rounded-lg">
-                  <span className="text-sm font-bold text-gray-600">₫</span>
+                <p className="text-sm text-gray-500">Maximum number of times this discount can be used</p>
+              </div>
+
+              {/* Error Display */}
+              {error && (
+                <div className="bg-red-50 border-2 border-red-200 text-red-700 px-5 py-4 rounded-xl text-sm font-medium">
+                  {error}
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex items-center justify-end gap-4 pt-6 border-t-2 border-gray-100 sticky bottom-0 bg-white pb-4">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="px-8 py-4 text-base font-semibold text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-xl transition-all"
+                  disabled={loading}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="bg-[#111111] hover:bg-[#2a2a2a] text-[#Cfb187] px-8 py-4 rounded-xl text-base font-bold uppercase tracking-wider transition-all hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  {loading ? (
+                    <>
+                      <svg className="animate-spin h-5 w-5 text-[#Cfb187]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Saving...
+                    </>
+                  ) : discount ? 'Update Campaign' : 'Create Campaign'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        {/* Right Panel - Sticky Live Preview */}
+        <div className="lg:w-[420px] bg-gradient-to-br from-[#F5F5F7] to-[#E8E8EA] p-8 lg:p-10 flex-shrink-0 overflow-y-auto custom-scrollbar border-l border-gray-200">
+          <div className="sticky top-0">
+            <div className="mb-8">
+              <h3
+                className="text-2xl font-bold text-[#111111] mb-2"
+                style={{ fontFamily: FONT_SERIF }}
+              >
+                Live Preview
+              </h3>
+              <p className="text-gray-500 text-sm">See how your voucher will appear</p>
+            </div>
+
+            <div className="space-y-6">
+              <VoucherCard discount={previewDiscount} size="large" />
+
+              {/* Preview Info Card */}
+              <div className="bg-white/80 backdrop-blur rounded-xl p-5 border border-gray-200">
+                <h4 className="font-bold text-[#111111] text-sm mb-3 uppercase tracking-wider">Campaign Details</h4>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Type</span>
+                    <span className="font-medium text-[#111111] capitalize">{formData.apply_type === 'code' ? 'Coupon Code' : 'Auto Apply'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Discount</span>
+                    <span className="font-medium text-[#Cfb187]">{formatDiscountValue(previewDiscount)}</span>
+                  </div>
+                  {formData.min_order_value && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Min. Order</span>
+                      <span className="font-medium text-[#111111]">{formatCurrency(formData.min_order_value)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Usage Limit</span>
+                    <span className="font-medium text-[#111111]">{formData.usage_limit || '∞'}</span>
+                  </div>
                 </div>
               </div>
             </div>
-
-            {/* Date Range */}
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">
-                  Start Date
-                </label>
-                <input
-                  type="date"
-                  value={formData.start_date}
-                  onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
-                  className="w-full bg-[#F5F5F7] border border-transparent focus:border-[#Cfb187] rounded-lg px-4 py-3 text-sm font-medium focus:outline-none focus:ring-1 focus:ring-[#Cfb187] transition-colors"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">
-                  End Date
-                </label>
-                <input
-                  type="date"
-                  value={formData.end_date}
-                  onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
-                  className="w-full bg-[#F5F5F7] border border-transparent focus:border-[#Cfb187] rounded-lg px-4 py-3 text-sm font-medium focus:outline-none focus:ring-1 focus:ring-[#Cfb187] transition-colors"
-                />
-              </div>
-            </div>
-
-            {/* Usage Limit */}
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">
-                Usage Limit
-              </label>
-              <input
-                type="number"
-                value={formData.usage_limit}
-                onChange={(e) => setFormData({ ...formData, usage_limit: Number(e.target.value) })}
-                className="w-full bg-[#F5F5F7] border border-transparent focus:border-[#Cfb187] rounded-lg px-4 py-3 text-sm font-medium focus:outline-none focus:ring-1 focus:ring-[#Cfb187] transition-colors"
-                min="1"
-              />
-            </div>
-
-            {error && <p className="text-sm text-red-600 bg-red-50 p-3 rounded-lg">{error}</p>}
-
-            <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100">
-              <button
-                type="button"
-                onClick={onClose}
-                className="px-6 py-2.5 text-sm font-semibold text-gray-600 hover:text-gray-800 transition-colors"
-                disabled={loading}
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={loading}
-                className="bg-[#111111] hover:bg-[#2a2a2a] text-[#Cfb187] px-6 py-2.5 rounded-lg text-sm font-bold uppercase tracking-wider transition-all hover:shadow-lg disabled:opacity-50"
-              >
-                {loading ? 'Saving...' : discount ? 'Update Campaign' : 'Create Campaign'}
-              </button>
-            </div>
-          </form>
-        </div>
-
-        {/* Right Panel - Live Preview */}
-        <div className="lg:w-96 bg-[#F5F5F7] p-8 overflow-y-auto">
-          <h3
-            className="text-lg font-bold text-[#111111] mb-6"
-            style={{ fontFamily: FONT_SERIF }}
-          >
-            Live Preview
-          </h3>
-          <VoucherCard discount={previewDiscount} size="large" />
+          </div>
         </div>
       </div>
+
+      {/* Custom scrollbar styles */}
+      <style>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: #f1f1f1;
+          border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: #Cfb187;
+          border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: #B08D55;
+        }
+      `}</style>
     </div>
   );
 };

@@ -96,7 +96,7 @@ export const getOrderDetail = async (orderId) => {
             {
                 model: ShippingAddress,
                 as: 'shipping_address',
-                attributes: ['id', 'full_name', 'phone', 'address', 'city', 'district']
+                attributes: ['id', 'name', 'phone', 'address', 'city', 'district']
             }
         ]
     });

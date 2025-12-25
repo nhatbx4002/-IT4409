@@ -5,7 +5,7 @@ import { setUpdatedAtHook } from "./hooks.js";
 export const ShippingAddress = sequelize.define("shipping_addresses", {
   id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
   user_id: DataTypes.INTEGER,
-  full_name: DataTypes.STRING(100),
+  name: DataTypes.STRING(100),
   phone: DataTypes.STRING(20),
   address: DataTypes.TEXT,
   city: DataTypes.STRING(100),

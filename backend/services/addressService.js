@@ -1,7 +1,7 @@
 import { ShippingAddress } from "../models/index.js";
 
 export const createAddress = async (userId, payload) => {
-  const { full_name, phone, city, district, ward, address, is_default } =
+  const { name, phone, city, district, ward, address, is_default } =
     payload;
 
   if (is_default) {
@@ -13,7 +13,7 @@ export const createAddress = async (userId, payload) => {
 
   return ShippingAddress.create({
     user_id: userId,
-    full_name,
+    name,
     phone,
     city,
     district,

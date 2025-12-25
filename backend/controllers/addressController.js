@@ -7,7 +7,7 @@ import {
 import { sendError, sendSuccess, validateRequest } from "./controllerUtils.js";
 
 const addressPayloadSchema = z.object({
-  full_name: z.string().min(1, "Vui lòng cung cấp tên người nhận"),
+  name: z.string().min(1, "Vui lòng cung cấp tên người nhận"),
   phone: z.string().min(8, "Vui lòng cung cấp số điện thoại"),
   city: z.string().min(1, "Thiếu tỉnh/thành phố"),
   district: z.string().min(1, "Thiếu quận/huyện"),
