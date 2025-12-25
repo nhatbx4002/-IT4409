@@ -61,7 +61,7 @@ export default function OAuthCallbackPage() {
           },
           {
             id: parseInt(userId),
-            full_name: fullName,
+            name: fullName,
             email,
           }
         );

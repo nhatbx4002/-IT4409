@@ -1,5 +1,6 @@
 import { DataTypes } from "sequelize";
 import { sequelize } from "../config/db.config.js";
+import { setUpdatedAtHook } from "./hooks.js";
 
 export const OrderItem = sequelize.define("order_items", {
   id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
@@ -16,3 +17,5 @@ export const OrderItem = sequelize.define("order_items", {
   created_at: { type: DataTypes.DATE, defaultValue: DataTypes.NOW },
   updated_at: { type: DataTypes.DATE, defaultValue: DataTypes.NOW },
 });
+
+setUpdatedAtHook(OrderItem);

@@ -6,7 +6,7 @@ import orderRoutes from "./orderRoutes.js";
 import statsRoutes from "./statsRoute.js";
 import adminUserRoutes from "./userRoutes.js";
 import userManagementRoutes from "./userManagementRoutes.js";
-import discountRoutes from "../discountRoutes.js";
+import adminDiscountRoutes from "./discountRoutes.js";
 
 const adminRouter = Router();
 
@@ -17,6 +17,6 @@ adminRouter.use("/admin/orders", authenticateToken, isAdmin, orderRoutes);
 adminRouter.use("/admin", authenticateToken, isAdmin, statsRoutes);
 adminRouter.use("/admin/users", authenticateToken, isAdmin, userManagementRoutes);
 adminRouter.use("/admin/user-management", authenticateToken, isAdmin, adminUserRoutes);
-adminRouter.use("/admin/discounts", authenticateToken, isAdmin, discountRoutes);
+adminRouter.use("/admin/discounts", authenticateToken, isAdmin, adminDiscountRoutes);
 
 export default adminRouter;

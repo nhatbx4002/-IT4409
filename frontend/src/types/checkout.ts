@@ -1,7 +1,7 @@
 export interface ShippingAddress {
   id: number;
   user_id: number;
-  full_name: string;
+  name: string;
   phone: string;
   address: string;
   city: string;
@@ -13,7 +13,7 @@ export interface ShippingAddress {
 }
 
 export interface AddressFormData {
-  full_name: string;
+  name: string;
   phone: string;
   address: string;
   city: string;

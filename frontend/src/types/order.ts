@@ -20,7 +20,6 @@ export interface Payment {
   amount: number;
   currency: string;
   status: string;
-  payment_method: string | null;
   raw_payload: any;
   created_at: string;
   updated_at: string;

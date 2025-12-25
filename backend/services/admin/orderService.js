@@ -33,7 +33,7 @@ export const listOrders = async ({
                 {
                     model: User,
                     as: 'user',
-                    attributes: ['id', 'full_name', 'email'],
+                    attributes: ['id', 'name', 'email'],
                     required: false
                 }
             ],
@@ -50,9 +50,9 @@ export const listOrders = async ({
             code: order.order_number,
             status: order.status,
             customer_id: order.user_id,
-            customer_name: order.user?.full_name || null,
+            customer_name: order.user?.name || null,
             email: order.user?.email || null,
-            total_amount: order.final_total || order.total_amount,
+            total_amount: order.total_amount,
             created_at: order.created_at,
             updated_at: order.updated_at,
             items: [] // Will be populated when fetching individual order
@@ -79,7 +79,7 @@ export const getOrderDetail = async (orderId) => {
             {
                 model: User,
                 as: 'user',
-                attributes: ['id', 'full_name', 'email']
+                attributes: ['id', 'name', 'email']
             },
             {
                 model: OrderItem,
@@ -111,13 +111,13 @@ export const getOrderDetail = async (orderId) => {
         code: order.order_number,
         status: order.status,
         customer_id: order.user_id,
-        customer_name: order.user?.full_name || null,
+        customer_name: order.user?.name || null,
         email: order.user?.email || null,
         phone: order.shipping_address?.phone || null,
         address: order.shipping_address ?
             `${order.shipping_address.address}, ${order.shipping_address.city}, ${order.shipping_address.district}` : null,
         payment_method: null, // Add when Payment model is integrated
-        total_amount: order.final_total || order.total_amount,
+        total_amount: order.total_amount,
         subtotal_amount: order.subtotal_amount,
         discount_amount: order.discount_amount,
         notes: order.notes,
@@ -152,7 +152,7 @@ export const updateOrderStatus = async (orderId, newStatus) => {
             {
                 model: User,
                 as: 'user',
-                attributes: ['id', 'full_name', 'email']
+                attributes: ['id', 'name', 'email']
             }
         ]
     });
@@ -177,9 +177,9 @@ export const updateOrderStatus = async (orderId, newStatus) => {
         code: order.order_number,
         status: order.status,
         customer_id: order.user_id,
-        customer_name: order.user?.full_name || null,
+        customer_name: order.user?.name || null,
         email: order.user?.email || null,
-        total_amount: order.final_total || order.total_amount,
+        total_amount: order.total_amount,
         created_at: order.created_at,
         updated_at: order.updated_at
     };
@@ -191,7 +191,7 @@ export const processRefund = async (orderId, refundData) => {
             {
                 model: User,
                 as: 'user',
-                attributes: ['id', 'full_name', 'email']
+                attributes: ['id', 'name', 'email']
             }
         ]
     });
@@ -219,9 +219,9 @@ export const processRefund = async (orderId, refundData) => {
         code: order.order_number,
         status: order.status,
         customer_id: order.user_id,
-        customer_name: order.user?.full_name || null,
+        customer_name: order.user?.name || null,
         email: order.user?.email || null,
-        total_amount: order.final_total || order.total_amount,
+        total_amount: order.total_amount,
         notes: order.notes,
         created_at: order.created_at,
         updated_at: order.updated_at

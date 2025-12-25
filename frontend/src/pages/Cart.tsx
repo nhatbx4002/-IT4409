@@ -12,7 +12,7 @@ import {
 import { useMemo, useState, useEffect } from "react";
 import { ProductsCarousel } from "@/components/Cart/ProductsCarousel";
 import { ViewedProductsCarousel } from "@/components/Cart/ViewedProductsCarousel";
-import { getCart, getProductDetail, updateCartItem, removeCartItem, validateDiscountCode } from "@/lib/api";
+import { getCart, getProductDetail, updateCartItem, removeCartItem } from "@/lib/api";
 import type { CartItem as ApiCartItem, CartResponse } from "@/types/cart";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
@@ -51,9 +51,7 @@ type VariantOption = {
   price: number;
 };
 
-const SHIPPING_FEE = 15;
-const FREE_SHIPPING_THRESHOLD = 200;
-const PROMO = { code: "LUXE50", label: "Đã áp dụng mã! -$50", amount: 50 };
+const SHIPPING_FEE = 15000;
 
 const mapApiCartItemToCartItem = (apiItem: ApiCartItem): CartItem => {
   return {
@@ -100,9 +98,9 @@ const RECOMMENDED: RecommendedProduct[] = [
 
 
 const formatCurrency = (value: number) =>
-  new Intl.NumberFormat("en-US", {
+  new Intl.NumberFormat("vi-VN", {
     style: "currency",
-    currency: "USD",
+    currency: "VND",
     maximumFractionDigits: 0,
   }).format(value);
 
@@ -157,12 +155,6 @@ export default function CartPage() {
   const [cartData, setCartData] = useState<CartResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [promoCode, setPromoCode] = useState("");
-  const [appliedPromo, setAppliedPromo] = useState(false);
-  const [promoState, setPromoState] = useState<"success" | "error" | null>(
-    null,
-  );
-  const [isPromoExpanded, setIsPromoExpanded] = useState(false);
   const [variantsByProduct, setVariantsByProduct] = useState<Record<number, VariantOption[]>>({});
 
   useEffect(() => {
@@ -178,10 +170,6 @@ export default function CartPage() {
         const cart = await getCart();
         setCartData(cart);
         setItems(cart.items.map(mapApiCartItemToCartItem));
-        if (cart.applied_promotion_code) {
-          setAppliedPromo(true);
-          setPromoCode(cart.applied_promotion_code);
-        }
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : "Không thể tải giỏ hàng";
         setError(errorMessage);
@@ -235,13 +223,8 @@ export default function CartPage() {
     () => items.reduce((acc, item) => acc + item.price * item.quantity, 0),
     [items],
   );
-  const discount = useMemo(
-    () => (appliedPromo ? cartData?.discount_amount || 0 : 0),
-    [appliedPromo, cartData],
-  );
-  const shipping =
-    subtotal >= FREE_SHIPPING_THRESHOLD || subtotal === 0 ? 0 : SHIPPING_FEE;
-  const total = Math.max(subtotal + shipping - discount, 0);
+  const shipping = subtotal > 0 ? SHIPPING_FEE : 0;
+  const total = subtotal + shipping;
   const itemCount = items.reduce((acc, item) => acc + item.quantity, 0);
 
   const refreshCartData = async () => {
@@ -395,34 +378,6 @@ export default function CartPage() {
     }
   };
 
-  const handleApplyPromo = async () => {
-    const code = promoCode.trim();
-    if (!code) {
-      setPromoState("error");
-      setAppliedPromo(false);
-      toast.error("Vui lòng nhập mã");
-      return;
-    }
-
-    try {
-      const result = await validateDiscountCode(code);
-      if (result.valid) {
-        setAppliedPromo(true);
-        setPromoState("success");
-        toast.success("Mã giảm giá hợp lệ");
-      } else {
-        setAppliedPromo(false);
-        setPromoState("error");
-        toast.error("Mã không hợp lệ hoặc đã hết hạn");
-      }
-    } catch (err) {
-      setAppliedPromo(false);
-      setPromoState("error");
-      const message = err instanceof Error ? err.message : "Không thể kiểm tra mã";
-      toast.error(message);
-    }
-  };
-
   if (isLoading) {
     return (
       <MainLayout>
@@ -508,15 +463,7 @@ export default function CartPage() {
             <OrderSummaryCard
               subtotal={subtotal}
               shipping={shipping}
-              discount={discount}
               total={total}
-              promoCode={promoCode}
-              promoState={promoState}
-              appliedPromo={appliedPromo}
-              isPromoExpanded={isPromoExpanded}
-              onPromoCodeChange={setPromoCode}
-              onApplyPromo={handleApplyPromo}
-              onTogglePromo={() => setIsPromoExpanded((prev) => !prev)}
               navigate={navigate}
             />
           </div>
@@ -559,60 +506,68 @@ const CartItemCard = ({
   onQuantitySet,
   onVariantChange,
   onRemove,
-}: CartItemCardProps) => (
-  <article className="grid grid-cols-[120px_minmax(0,1fr)] gap-8 py-10">
-    <div className="group overflow-hidden">
-      <img
-        src={item.image}
-        alt={item.name}
-        className="h-[180px] w-full object-cover transition duration-300 group-hover:scale-105"
-      />
-    </div>
-    <div className="flex flex-col gap-6">
-      <div className="flex items-start justify-between gap-6">
-        <div>
-          <p className="text-xs uppercase tracking-[0.3em] text-[#999999]">
-            {item.brand}
-          </p>
-          <p className="text-2xl font-bold text-black">
-            {item.name}
-          </p>
+}: CartItemCardProps) => {
+  const navigate = useNavigate();
+
+  const handleProductClick = () => {
+    navigate(`/products/${item.productId}`);
+  };
+
+  return (
+    <article className="grid grid-cols-[120px_minmax(0,1fr)] gap-8 py-10">
+      <div className="group overflow-hidden cursor-pointer" onClick={handleProductClick}>
+        <img
+          src={item.image}
+          alt={item.name}
+          className="h-[180px] w-full object-cover transition duration-300 group-hover:scale-105"
+        />
+      </div>
+      <div className="flex flex-col gap-6">
+        <div className="flex items-start justify-between gap-6">
+          <div className="cursor-pointer hover:opacity-70 transition-opacity" onClick={handleProductClick}>
+            <p className="text-xs uppercase tracking-[0.3em] text-[#999999]">
+              {item.brand}
+            </p>
+            <p className="text-2xl font-bold text-black">
+              {item.name}
+            </p>
+          </div>
+          <button
+            type="button"
+            aria-label={`Xóa ${item.name}`}
+            onClick={onRemove}
+            className="text-[11px] uppercase tracking-[0.3em] text-[#999999] underline underline-offset-4 transition hover:text-[#000000]"
+          >
+            Xóa
+          </button>
         </div>
-        <button
-          type="button"
-          aria-label={`Xóa ${item.name}`}
-          onClick={onRemove}
-          className="text-[11px] uppercase tracking-[0.3em] text-[#999999] underline underline-offset-4 transition hover:text-[#000000]"
-        >
-          Xóa
-        </button>
+        <div className="space-y-3">
+          <VariantControls
+            size={item.size}
+            color={item.color}
+            variantOptions={variantOptions}
+            onSizeChange={(value) => onVariantChange({ size: value })}
+            onColorChange={(value) => onVariantChange({ color: value })}
+          />
+          <span
+            className={`text-[11px] uppercase tracking-[0.3em] ${stockStyles[item.stockStatus]}`}
+          >
+            {item.stockStatus === "in" ? "Còn hàng" : "Sắp hết"}
+          </span>
+        </div>
+        <div className="mt-auto flex flex-wrap items-center justify-between gap-6">
+          <QuantityControl
+            quantity={item.quantity}
+            onIncrease={onIncrease}
+            onDecrease={onDecrease}
+            onQuantitySet={onQuantitySet}
+          />
+          <PriceStack item={item} />
+        </div>
       </div>
-      <div className="space-y-3">
-        <VariantControls
-          size={item.size}
-          color={item.color}
-          variantOptions={variantOptions}
-          onSizeChange={(value) => onVariantChange({ size: value })}
-          onColorChange={(value) => onVariantChange({ color: value })}
-        />
-        <span
-          className={`text-[11px] uppercase tracking-[0.3em] ${stockStyles[item.stockStatus]}`}
-        >
-          {item.stockStatus === "in" ? "Còn hàng" : "Sắp hết"}
-        </span>
-      </div>
-      <div className="mt-auto flex flex-wrap items-center justify-between gap-6">
-        <QuantityControl
-          quantity={item.quantity}
-          onIncrease={onIncrease}
-          onDecrease={onDecrease}
-          onQuantitySet={onQuantitySet}
-        />
-        <PriceStack item={item} />
-      </div>
-    </div>
-  </article>
-);
+    </article>
+  );
+};
 
 const QuantityControl = ({
   quantity,
@@ -792,7 +747,7 @@ const PriceStack = ({
 
 const EmptyCartState = () => {
   const navigate = useNavigate();
-  
+
   return (
     <div className="flex flex-col items-center rounded-2xl border border-[#E5E7EB] bg-white px-8 py-16 text-center">
       <div className="flex h-20 w-20 items-center justify-center rounded-full bg-[#E5E7EB]/40 text-[#9CA3AF]">
@@ -833,146 +788,15 @@ const EmptyCartState = () => {
   );
 };
 
-const PromoCodeToggle = ({
-  promoCode,
-  status,
-  isApplied,
-  onChange,
-  onApply,
-  className = "",
-  isExpanded,
-  onToggle,
-}: {
-  promoCode: string;
-  status: "success" | "error" | null;
-  isApplied: boolean;
-  onChange: (value: string) => void;
-  onApply: () => void;
-  className?: string;
-  isExpanded: boolean;
-  onToggle: () => void;
-}) => (
-  <div className={className}>
-    <button
-      type="button"
-      onClick={onToggle}
-      className="text-xs font-semibold text-black/70 hover:text-black active:text-black/50 transition duration-300"
-    >
-      {isExpanded ? "Ẩn mã khuyến mãi" : "Bạn có mã khuyến mãi?"}
-    </button>
-    
-    {/* Expandable Section */}
-    <div
-      className={`overflow-hidden transition-all duration-500 ease-out ${
-        isExpanded ? "max-h-80 opacity-100" : "max-h-0 opacity-0"
-      }`}
-    >
-      {isExpanded && (
-        <div className="mt-3 space-y-3">
-          {/* Label */}
-          <label className="block text-[10px] uppercase tracking-[0.2em] font-bold text-black/40 ml-1">
-            Mã khuyến mãi
-          </label>
-
-          {/* Seamless Input Block */}
-          <div className="relative flex items-center group">
-            <input
-              type="text"
-              value={promoCode}
-              onChange={(event) => onChange(event.target.value)}
-              placeholder="Nhập mã của bạn"
-              disabled={status === "success" && isApplied}
-              className={`
-                w-full rounded-full py-3.5 pl-6 pr-28 text-sm font-medium tracking-tight outline-none transition-all
-                ${
-                  status === "error"
-                    ? "border-2 border-[#DC2626] bg-[#FEE2E2] placeholder:text-[#DC2626]/40 focus:border-[#DC2626]"
-                    : status === "success" && isApplied
-                    ? "border-2 border-[#10B981] bg-[#F0FDF4] placeholder:text-[#10B981]/40 focus:border-[#10B981]"
-                    : "border-2 border-black bg-white placeholder:text-black/30 focus:border-black focus:shadow-lg"
-                }
-                ${status === "success" && isApplied ? "cursor-not-allowed opacity-60" : ""}
-              `}
-            />
-
-            {/* Status Icon - Inside Input */}
-            {status === "success" && isApplied && (
-              <div className="absolute left-6 text-[#10B981]">
-                <CheckCircle2 className="h-5 w-5" />
-              </div>
-            )}
-            {status === "error" && (
-              <div className="absolute left-6 text-[#DC2626]">
-                <AlertCircle className="h-5 w-5" />
-              </div>
-            )}
-
-            {/* Apply Button - Rounded, Seamless */}
-            <button
-              type="button"
-              onClick={onApply}
-              disabled={status === "success" && isApplied}
-              className={`
-                absolute right-1.5 text-[10px] font-black uppercase tracking-widest px-5 py-2.5 rounded-full transition-all duration-300
-                ${
-                  status === "success" && isApplied
-                    ? "bg-[#10B981] text-white cursor-not-allowed opacity-70 hover:bg-[#10B981]"
-                    : status === "error"
-                    ? "bg-[#DC2626] text-white hover:bg-[#B91C1C] active:scale-95"
-                    : "bg-black text-white hover:bg-black/90 active:scale-95"
-                }
-              `}
-            >
-              {status === "success" && isApplied ? "✓" : "Áp dụng"}
-            </button>
-          </div>
-
-          {/* Status Messages - Below Input */}
-          <div className="min-h-5">
-            {status === "success" && isApplied && (
-              <div className="flex items-center gap-2 text-xs font-semibold text-[#065F46] bg-[#ECFDF5] px-4 py-2 rounded-lg">
-                <CheckCircle2 className="h-4 w-4 flex-shrink-0" />
-                <span>{PROMO.label}</span>
-              </div>
-            )}
-            {status === "error" && (
-              <div className="flex items-center gap-2 text-xs font-semibold text-[#7F1D1D] bg-[#FEE2E2] px-4 py-2 rounded-lg">
-                <AlertCircle className="h-4 w-4 flex-shrink-0" />
-                <span>Mã không hợp lệ hoặc đã hết hạn</span>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-    </div>
-  </div>
-);
-
 const OrderSummaryCard = ({
   subtotal,
   shipping,
-  discount,
   total,
-  promoCode,
-  promoState,
-  appliedPromo,
-  isPromoExpanded,
-  onPromoCodeChange,
-  onApplyPromo,
-  onTogglePromo,
   navigate,
 }: {
   subtotal: number;
   shipping: number;
-  discount: number;
   total: number;
-  promoCode: string;
-  promoState: "success" | "error" | null;
-  appliedPromo: boolean;
-  isPromoExpanded: boolean;
-  onPromoCodeChange: (value: string) => void;
-  onApplyPromo: () => void;
-  onTogglePromo: () => void;
   navigate: (path: string) => void;
 }) => (
   <aside className="h-fit space-y-6 rounded-lg border border-gray-200 bg-gray-50 p-6 lg:sticky lg:top-5">
@@ -983,28 +807,10 @@ const OrderSummaryCard = ({
       <SummaryRow label="Tạm tính" value={formatCurrency(subtotal)} />
       <SummaryRow
         label="Phí vận chuyển"
-        value={
-          shipping === 0 && subtotal > 0 ? "Miễn phí" : formatCurrency(shipping)
-        }
+        value={shipping > 0 ? formatCurrency(shipping) : "—"}
       />
-      {discount > 0 && (
-        <SummaryRow
-          label="Giảm giá"
-          value={`-${formatCurrency(discount)}`}
-          valueClass="text-[#10B981]"
-        />
-      )}
     </div>
 
-    <PromoCodeToggle
-      promoCode={promoCode}
-      status={promoState}
-      isApplied={appliedPromo}
-      onChange={onPromoCodeChange}
-      onApply={onApplyPromo}
-      isExpanded={isPromoExpanded}
-      onToggle={onTogglePromo}
-    />
     <div className="space-y-3 border-t border-gray-200 pt-4">
       <div className="flex items-center justify-between">
         <span className="text-lg font-bold text-black">

@@ -10,7 +10,7 @@ export const getCart = async (req, res) => {
         if (!userId) {
             throw new Error("Vui lòng đăng nhập để xem giỏ hàng");
         }
-        const cart = await cartService.getCartDetails({ userId, sessionId: null });
+        const cart = await cartService.getCartDetails(userId);
 
         sendSuccess(res, {
             message: "Lấy giỏ hàng thành công",
@@ -36,8 +36,7 @@ export const addItem = async (req, res) => {
             userId,
             productVariantId,
             quantity,
-            productId,
-            null
+            productId
         );
 
         sendSuccess(res, {
@@ -65,8 +64,7 @@ export const updateItem = async (req, res) => {
         const updatedItem = await cartService.updateCartItem(
             userId,
             cartItemId,
-            { quantity, productVariantId },
-            null
+            { quantity, productVariantId }
         );
 
         sendSuccess(res, {
@@ -89,7 +87,7 @@ export const removeItem = async (req, res) => {
         }
         const { cartItemId } = req.params; // Lấy ID item từ URL
 
-        await cartService.removeItemFromCart(userId, cartItemId, null);
+        await cartService.removeItemFromCart(userId, cartItemId);
 
         sendSuccess(res, { message: "Xóa sản phẩm thành công" });
     } catch (error) {

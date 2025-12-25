@@ -10,6 +10,8 @@ import addressRoutes from "./addressRoute.js";
 import categoryRoutes from "./categoryRoutes.js";
 import checkoutRoutes from "./checkoutRoute.js";
 import reviewRoutes from "./reviewRoute.js";
+import collectionRoutes from "./collections.js";
+import adminCollectionRoutes from "./admin/collections.js";
 
 const api = express.Router();
 
@@ -25,5 +27,7 @@ api.use("/orders", orderRoutes);
 api.use("/addresses", addressRoutes);
 api.use("/checkout", checkoutRoutes);
 api.use("/reviews", reviewRoutes);
+api.use("/collections", collectionRoutes);
+api.use("/admin/collections", adminCollectionRoutes);
 
 export default api;

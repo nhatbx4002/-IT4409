@@ -2,13 +2,13 @@ import { User } from "../../models/index.js"; // <--- Lùi 2 cấp
 import { Op } from "sequelize";
 
 export const getAllUsers = async (page = 1, limit = 10, search = "") => {
-  const where = search ? { 
+  const where = search ? {
     [Op.or]: [
-      { email: { [Op.iLike]: `%${search}%` } }, 
-      { full_name: { [Op.iLike]: `%${search}%` } }
-    ] 
+      { email: { [Op.iLike]: `%${search}%` } },
+      { name: { [Op.iLike]: `%${search}%` } }
+    ]
   } : {};
-  
+
   const { count, rows } = await User.findAndCountAll({
     where, limit: parseInt(limit), offset: (page - 1) * limit,
     order: [['created_at', 'DESC']],

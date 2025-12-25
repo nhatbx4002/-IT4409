@@ -11,7 +11,7 @@ export const getProfile = async (req, res) => {
     const profile = {
       id: user.id,
       email: user.email,
-      name: user.name || user.full_name || null,
+      name: user.name || null,
       roles: user.role ? [user.role] : [],
     };
 

@@ -13,7 +13,6 @@ export interface ProductSummary {
   slug: string | null;
   name: string;
   brand: string;
-  collection: 'men' | 'women' | 'accessories' | null;
   category: CategorySummary | null;
   price: number;
   salePrice: number | null;
@@ -48,7 +47,6 @@ export interface ProductDetail extends ProductSummary {
 
 export interface ProductFilterParams {
   q?: string;
-  collection?: 'men' | 'women' | 'accessories';
   categorySlug?: string;
   categorySlugs?: string[];
   sizes?: string[];
@@ -86,7 +84,6 @@ export interface ProductFiltersState {
   priceRange: [number, number];
   brands: string[];
   inStockOnly: boolean;
-  collection?: 'men' | 'women' | 'accessories';
   sortBy?: SortOption;
 }
 
@@ -100,7 +97,6 @@ export interface Product {
   name: string;
   description?: string;          // Optional detailed description
   brand: string; // Allow object or name
-  collection: 'men' | 'women' | 'accessories';
   category: string;
   price: number;                  // Base price
   salePrice?: number;             // Discounted price (if on sale)
@@ -113,7 +109,7 @@ export interface Product {
   isNew?: boolean;
   inStock: boolean;
   variantId?: string;             // Optional, if product variants exist
-  tags?: string[];                
+  tags?: string[];
   createdAt?: string;
   updatedAt?: string;
 }

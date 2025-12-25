@@ -2,27 +2,7 @@ import { registerUser, loginUser, logoutUser, sendOtpService, verifyOtpService, 
 import passport  from "passport";
 import { buildOAuthCallbackUrl, redirectOAuthError } from "../utils/oauth.js";
 import { APP_CONSTANTS } from "../config/constants.js";
-import * as cartService from "../services/cartService.js";
 import { sendSuccess, sendError } from "./controllerUtils.js";
-
-const extractSessionId = (req) => {
-  const headerValue = req.headers["x-session-id"] || req.headers["x-sessionid"];
-  if (typeof headerValue === "string" && headerValue.trim()) {
-    return headerValue.trim();
-  }
-
-  const cookieHeader = req.headers?.cookie;
-  if (typeof cookieHeader === "string") {
-    const cookies = Object.fromEntries(
-      cookieHeader.split(";").map((part) => {
-        const [k, v] = part.split("=").map((s) => s.trim());
-        return [k, v];
-      })
-    );
-    if (cookies.sessionId) return cookies.sessionId;
-  }
-  return null;
-};
 
 // Get current user from token
 export const getCurrentUser = async (req, res) => {
@@ -91,7 +71,7 @@ export const refreshAccessToken = async (req, res) => {
         user: {
           id: user.id,
           email: user.email,
-          full_name: user.full_name,
+          name: user.name,
           role: user.role
         }
       }
@@ -117,14 +97,7 @@ export const signIn = async (req,res) => {
            message: "Access denied. Admin privileges required."
          });
        }
-       const sessionId = extractSessionId(req);
-       if (sessionId) {
-        try {
-          await cartService.mergeGuestCartToUser(result.user.id, sessionId);
-        } catch (mergeError) {
-          console.error("Merge guest cart failed:", mergeError);
-        }
-       }
+
        sendSuccess(res, {
         message: "User logged in successfully",
         data: {
@@ -216,7 +189,7 @@ export const signInGoogleController = {
         refreshToken,
         userId: user.id.toString(),
         email: user.email,
-        fullName: user.full_name,
+        fullName: user.name,
       };
 
       if (typeof req.query?.state === "string" && req.query.state.length > 0) {
@@ -265,7 +238,7 @@ export const signInFacebookController = {
         refreshToken,
         userId: user.id.toString(),
         email: user.email,
-        fullName: user.full_name,
+        fullName: user.name,
       };
 
       if (typeof req.query?.state === "string" && req.query.state.length > 0) {

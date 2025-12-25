@@ -10,21 +10,15 @@ import { Op } from "sequelize";
 
 const SUPPORTED_PAYMENTS = ["COD", "VNPAY"];
 
-const findCartForValidation = async ({ userId, sessionId }) => {
-  const where = userId
-    ? { user_id: userId }
-    : sessionId
-    ? { session_id: sessionId, is_guest: true }
-    : null;
-
-  if (!where) {
+const findCartForValidation = async (userId) => {
+  if (!userId) {
     const error = new Error("Không xác định được giỏ hàng");
     error.status = 400;
     throw error;
   }
 
   const cart = await Cart.findOne({
-    where,
+    where: { user_id: userId },
     include: [
       {
         model: CartItem,
@@ -78,40 +72,30 @@ const validateCartItems = (cartItems) => {
   return subtotal;
 };
 
-const validateShippingAddress = async ({ userId, shippingAddressId, shippingAddress }) => {
-  if (shippingAddressId) {
-    if (!userId) {
-      const error = new Error("Cần đăng nhập để sử dụng địa chỉ giao hàng đã lưu");
-      error.status = 401;
-      throw error;
-    }
-
-    const address = await ShippingAddress.findOne({
-      where: { id: shippingAddressId, user_id: userId },
-    });
-
-    if (!address) {
-      const error = new Error("Địa chỉ giao hàng không hợp lệ");
-      error.status = 400;
-      throw error;
-    }
-    return address;
+const validateShippingAddress = async ({ userId, shippingAddressId }) => {
+  if (!userId) {
+    const error = new Error("Cần đăng nhập để thực hiện thanh toán");
+    error.status = 401;
+    throw error;
   }
 
-  if (shippingAddress) {
-    const requiredFields = ["full_name", "phone", "city", "district", "ward", "address"];
-    const missing = requiredFields.filter((field) => !shippingAddress[field]);
-    if (missing.length) {
-      const error = new Error(`Thiếu thông tin địa chỉ: ${missing.join(", ")}`);
-      error.status = 400;
-      throw error;
-    }
-    return shippingAddress;
+  if (!shippingAddressId) {
+    const error = new Error("Thiếu thông tin địa chỉ giao hàng");
+    error.status = 400;
+    throw error;
   }
 
-  const error = new Error("Thiếu thông tin địa chỉ giao hàng");
-  error.status = 400;
-  throw error;
+  const address = await ShippingAddress.findOne({
+    where: { id: shippingAddressId, user_id: userId },
+  });
+
+  if (!address) {
+    const error = new Error("Địa chỉ giao hàng không hợp lệ");
+    error.status = 400;
+    throw error;
+  }
+
+  return address;
 };
 
 const validatePaymentMethod = (paymentMethod) => {
@@ -154,15 +138,13 @@ const validatePromotion = async ({ promotionCode, subtotal }) => {
 
 export const validateCheckout = async ({
   userId,
-  sessionId,
   shippingAddressId,
-  shippingAddress,
   paymentMethod,
   promotionCode,
 }) => {
-  const { cart, cartItems } = await findCartForValidation({ userId, sessionId });
+  const { cart, cartItems } = await findCartForValidation(userId);
   const subtotal = validateCartItems(cartItems);
-  const address = await validateShippingAddress({ userId, shippingAddressId, shippingAddress });
+  const address = await validateShippingAddress({ userId, shippingAddressId });
   const payment = validatePaymentMethod(paymentMethod);
   const promotion = await validatePromotion({ promotionCode, subtotal });
 

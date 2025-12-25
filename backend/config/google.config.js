@@ -53,15 +53,14 @@ passport.use(
                     }
                     // Nếu đã có provider khác (ví dụ facebook), vẫn giữ nguyên nhưng thêm Google info
                     // Hoặc có thể chọn merge thành "google" tùy business logic
-                    
-                    existingEmailUser.access_token = accessToken;
+
                     existingEmailUser.refresh_token = refreshToken;
-                    
-                    // Cập nhật full_name nếu chưa có hoặc rỗng
-                    if (!existingEmailUser.full_name || existingEmailUser.full_name.trim() === "") {
-                        existingEmailUser.full_name = profile.displayName || googleEmail.split("@")[0];
+
+                    // Cập nhật name nếu chưa có hoặc rỗng
+                    if (!existingEmailUser.name || existingEmailUser.name.trim() === "") {
+                        existingEmailUser.name = profile.displayName || googleEmail.split("@")[0];
                     }
-                    
+
                     await existingEmailUser.save();
                     console.log(`Linked Google account to existing user: ${existingEmailUser.email}`);
                     return done(null, existingEmailUser);
@@ -69,11 +68,10 @@ passport.use(
 
                 // Bước 3: Chưa có user nào -> Tạo tài khoản mới
                 user = await User.create({
-                    full_name: profile.displayName || googleEmail.split("@")[0],
+                    name: profile.displayName || googleEmail.split("@")[0],
                     email: googleEmail,
                     provider: "google",
                     provider_id: profile.id,
-                    access_token: accessToken,
                     refresh_token: refreshToken,
                     role: "customer",
                 });

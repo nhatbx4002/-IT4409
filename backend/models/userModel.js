@@ -6,16 +6,13 @@ export const User = sequelize.define("users", {
   id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
   email: { type: DataTypes.STRING, unique: true },
   password: DataTypes.STRING(255), // Hashed password
-  full_name: DataTypes.STRING(100), 
-  name: DataTypes.STRING(100), 
+  name: DataTypes.STRING(100),
   phone: DataTypes.STRING(20),
   role: { type: DataTypes.STRING(20), defaultValue: "customer" },
   is_locked: { type: DataTypes.BOOLEAN, defaultValue: false }, //lock account
   provider: DataTypes.STRING(50),
   provider_id: DataTypes.STRING(100),
   refresh_token: DataTypes.TEXT,
-  access_token: DataTypes.TEXT,
-  expires_at: DataTypes.DATE,
   token_version: { type: DataTypes.INTEGER, defaultValue: 0 },
   created_at: { type: DataTypes.DATE, defaultValue: DataTypes.NOW },
   updated_at: { type: DataTypes.DATE, defaultValue: DataTypes.NOW },
@@ -24,7 +21,7 @@ export const User = sequelize.define("users", {
 
 User.addScope('withoutSecrets', {
   attributes: {
-    exclude: ['password', 'refresh_token', 'access_token', 'expires_at']
+    exclude: ['password', 'refresh_token']
   }
 });
 

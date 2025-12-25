@@ -30,7 +30,7 @@ export type Order = {
   email?: string | null;
   phone?: string | null;
   address?: string | null;
-  payment_method?: string | null;
+  provider?: string | null;
   total_amount?: number | string;
   created_at?: string;
   updated_at?: string;

@@ -15,6 +15,8 @@ import { toast } from "sonner";
 import { Loader2, Plus, CheckCircle2 } from "lucide-react";
 import type { ShippingAddress } from "@/types/checkout";
 
+const FIXED_SHIPPING_FEE = 15000;
+
 export default function CheckoutPage() {
   const navigate = useNavigate();
   const [cartData, setCartData] = useState<CartResponse | null>(null);
@@ -28,7 +30,7 @@ export default function CheckoutPage() {
   const [contactEmail, setContactEmail] = useState("");
   const [contactPhone, setContactPhone] = useState("");
   const [addressFormData, setAddressFormData] = useState({
-    full_name: "",
+    name: "",
     phone: "",
     address: "",
     city: "",
@@ -38,8 +40,8 @@ export default function CheckoutPage() {
   });
   const [paymentMethod, setPaymentMethod] = useState<"COD" | "VNPAY" | null>(null);
   const [promoCode, setPromoCode] = useState("");
-  const [shippingFee, setShippingFee] = useState<number | null>(null);
-  const [shippingNote, setShippingNote] = useState<string>("Tính ở bước sau");
+  const [shippingFee, setShippingFee] = useState<number | null>(FIXED_SHIPPING_FEE);
+  const [shippingNote] = useState<string>("Phí vận chuyển cố định");
   const [discountAmount, setDiscountAmount] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSavingAddress, setIsSavingAddress] = useState(false);
@@ -63,8 +65,15 @@ export default function CheckoutPage() {
         setIsLoading(true);
         const cart = await getCart();
         setCartData(cart);
+        // Set fixed shipping fee based on cart items
+        if (cart.items.length > 0) {
+          setShippingFee(FIXED_SHIPPING_FEE);
+        } else {
+          setShippingFee(0);
+        }
         if (cart.applied_promotion_code) {
           setPromoCode(cart.applied_promotion_code);
+          setDiscountAmount(cart.discount_amount || 0);
         }
         const addrList = await getMyAddresses();
         setAddresses(addrList);
@@ -72,7 +81,7 @@ export default function CheckoutPage() {
         if (defaultAddr) {
           setSelectedAddressId(defaultAddr.id);
           setAddressFormData({
-            full_name: defaultAddr.full_name || "",
+            name: defaultAddr.name || "",
             phone: defaultAddr.phone || "",
             address: defaultAddr.address || "",
             city: defaultAddr.city || "",
@@ -109,7 +118,7 @@ export default function CheckoutPage() {
       (contactPhone.trim() !== "" || (addressFormData.phone?.trim?.() ?? "") !== "") &&
       (
         selectedAddressId !== null ||
-        (addressFormData.full_name.trim() !== "" &&
+        (addressFormData.name.trim() !== "" &&
           addressFormData.address.trim() !== "" &&
           addressFormData.city !== "" &&
           addressFormData.district !== "" &&
@@ -120,19 +129,10 @@ export default function CheckoutPage() {
 
   const handleAddressChange = (field: string, value: string | boolean) => {
     setAddressFormData((prev) => ({ ...prev, [field]: value }));
-    
-    // Update shipping fee when province/district changes
-    if (field === "city" || field === "district") {
-      if (addressFormData.city && addressFormData.district) {
-        // Calculate shipping fee
-        // This will be handled by the ShippingAddressForm component
-      }
-    }
   };
 
   const handleShippingFeeUpdate = (fee: number, note: string, discount: number) => {
-    setShippingFee(fee);
-    setShippingNote(note);
+    // Keep fixed shipping fee, only update discount amount
     setDiscountAmount(discount);
   };
 
@@ -146,7 +146,7 @@ export default function CheckoutPage() {
 
   const handleSaveAddress = async () => {
     if (
-      !addressFormData.full_name.trim() ||
+      !addressFormData.name.trim() ||
       !addressFormData.address.trim() ||
       !addressFormData.city ||
       !addressFormData.district ||
@@ -160,7 +160,7 @@ export default function CheckoutPage() {
     try {
       setIsSavingAddress(true);
       const newAddress = await createAddress({
-        full_name: addressFormData.full_name,
+        name: addressFormData.name,
         phone: addressFormData.phone || contactPhone,
         address: addressFormData.address,
         city: addressFormData.city,
@@ -198,7 +198,7 @@ export default function CheckoutPage() {
 
       if (!shippingAddressId) {
         const address = await createAddress({
-          full_name: addressFormData.full_name,
+          name: addressFormData.name,
           phone: addressFormData.phone || contactPhone,
           address: addressFormData.address,
           city: addressFormData.city,
@@ -471,7 +471,7 @@ function AddressSelector({
                   <CheckCircle2 className="h-5 w-5" />
                 </span>
               )}
-              <p className="text-sm font-semibold text-black">{address.full_name}</p>
+              <p className="text-sm font-semibold text-black">{address.name}</p>
               <p className="text-sm text-gray-600">{address.phone}</p>
               <p className="mt-2 text-sm text-gray-700 leading-relaxed">
                 {address.address}, {address.ward}, {address.district}, {address.city}

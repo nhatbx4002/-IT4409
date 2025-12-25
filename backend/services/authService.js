@@ -81,17 +81,17 @@ export const issueTokens = async (user) => {
 
 //Dang ky user moi bang local
 export const registerUser = async (data) => {
-  const { email, full_name, password, phone, role, provider } = data;
+  const { email, name, password, phone, role, provider } = data;
   const checkEmail = await User.findOne({ where: { email } });
   const checkPhone = await User.findOne({ where: { phone } });
   if (checkEmail || checkPhone) throw new Error("User already exists");
-  if (!email || !full_name || !password || !phone)
+  if (!email || !name || !password || !phone)
     throw new Error("Missing required fields");
 
   const hashedPassword = await bcrypt.hash(password, 10);
   const newUser = await User.create({
     email,
-    full_name,
+    name,
     phone,
     password: hashedPassword,
     role: role || "customer",
@@ -221,7 +221,7 @@ const socialAuthFactory = (providerLabel) => ({
     user: {
       id: user.id,
       email: user.email,
-      full_name: user.full_name,
+      name: user.name,
       phone: user.phone,
       provider: user.provider,
     },

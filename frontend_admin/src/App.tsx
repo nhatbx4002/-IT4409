@@ -21,7 +21,8 @@ import {
   ChevronRight,
   Edit2,
   Trash2,
-  MoreHorizontal
+  MoreHorizontal,
+  Ticket
 } from 'lucide-react';
 import {
   AreaChart,
@@ -46,13 +47,15 @@ import { adminApiClient, getPaginatedAdminData } from './lib/api';
 import { getKPIStats, getRevenueChart, getRecentOrders, getBestSellers, getAnalyticsData, type BestSeller } from './lib/dashboard';
 import { listProducts, createProduct, updateProduct, deleteProduct, type Product } from './lib/products';
 import { listOrders, getOrderById, updateOrderStatus, processRefund, type Order, type OrderStatus } from './lib/orders';
+import DiscountsPage from './components/DiscountsPage';
 
-type Page = 'dashboard' | 'products' | 'orders' | 'analytics' | 'settings' | 'customers';
+type Page = 'dashboard' | 'products' | 'orders' | 'analytics' | 'settings' | 'customers' | 'discounts';
 
 const navigation = [
   { name: 'Dashboard', icon: LayoutDashboard, id: 'dashboard' },
   { name: 'Products', icon: Package, id: 'products' },
   { name: 'Orders', icon: ShoppingBag, id: 'orders' },
+  { name: 'Discounts', icon: Ticket, id: 'discounts' },
   { name: 'Customers', icon: Users, id: 'customers' },
   { name: 'Analytics', icon: BarChart3, id: 'analytics' },
   { name: 'Settings', icon: Settings, id: 'settings' },
@@ -232,11 +235,13 @@ export default function App() {
                 {currentPage === 'dashboard' && 'Dashboard'}
                 {currentPage === 'products' && 'Collections'}
                 {currentPage === 'orders' && 'Invoices'}
+                {currentPage === 'discounts' && 'Campaigns'}
               </h2>
               <p className="text-gray-500 text-xs tracking-wider uppercase mt-1">
                 {currentPage === 'dashboard' && 'Overview & Analytics'}
                 {currentPage === 'products' && 'Manage Inventory'}
                 {currentPage === 'orders' && 'Order Management'}
+                {currentPage === 'discounts' && 'Discount & Coupons'}
               </p>
             </div>
           </div>
@@ -264,6 +269,7 @@ export default function App() {
             {currentPage === 'dashboard' && <DashboardPage />}
             {currentPage === 'products' && <ProductsPage />}
             {currentPage === 'orders' && <OrdersPage />}
+            {currentPage === 'discounts' && <DiscountsPage />}
             {currentPage === 'analytics' && <AnalyticsPage />}
             {currentPage === 'settings' && <SettingsPage />}
             {currentPage === 'customers' && <CustomersPage />}
@@ -1549,7 +1555,7 @@ function CustomersPage() {
                       <span className="font-mono text-sm font-medium text-[#0A0A0A]">#{user.id}</span>
                     </td>
                     <td className="px-6 py-5">
-                      <span className="text-sm">{user.full_name || user.name || '—'}</span>
+                      <span className="text-sm">{user.name || '—'}</span>
                     </td>
                     <td className="px-6 py-5">
                       <span className="text-sm">{user.email}</span>

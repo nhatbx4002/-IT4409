@@ -36,6 +36,9 @@
     "test:checkout": "node --test ./tests/checkout.test.js",
     "test:all": "node --test ./tests/**/*.test.js",
     "seed:discounts": "node ./scripts/seedDiscounts.js",
-    "insert:products": "node ./scripts/insertProducts.js"
+    "seed:collections": "node ./scripts/seedCollections.js",
+    "insert:products": "node ./scripts/insertProducts.js",
+    "reset:db": "node ./scripts/resetDatabase.js",
+    "reset:db:force": "node ./scripts/resetDatabase.js --force"
   }
 }

@@ -14,6 +14,8 @@ import {
   Discount,
   Review,
   Wishlist,
+  Collection,
+  ProductCollection,
 } from "./models/index.js";
 
 loadEnv();
@@ -36,19 +38,36 @@ async function initDatabase() {
   try {
     await sequelize.authenticate();
 
+    // Level 1: No dependencies
     await syncModel(User, "User");
     await syncModel(Category, "Category");
+    await syncModel(Discount, "Discount");
+
+    // Level 2: Depends on User, Category
     await syncModel(ShippingAddress, "ShippingAddress");
-    await syncModel(Cart, "Cart");
-    await syncModel(Order, "Order");
     await syncModel(Product, "Product");
+
+    // Level 3: Depends on Product, User
     await syncModel(ProductVariant, "ProductVariant");
-    await syncModel(Review, "Review");
+    await syncModel(Cart, "Cart");
+
+    // Level 4: Depends on Cart, ProductVariant
     await syncModel(CartItem, "CartItem");
+
+    // Level 5: Depends on User, ShippingAddress, Discount
+    await syncModel(Order, "Order");
+
+    // Level 6: Depends on Order, Product, ProductVariant
     await syncModel(OrderItem, "OrderItem");
     await syncModel(Payment, "Payment");
-    await syncModel(Discount, "Discount");
+
+    // Level 7: Depends on User, Product
+    await syncModel(Review, "Review");
     await syncModel(Wishlist, "Wishlist");
+
+    // Level 8: Independent collection tables
+    await syncModel(Collection, "Collection");
+    await syncModel(ProductCollection, "ProductCollection");
   } catch (error) {
     console.error("❌ Database initialization failed:", error);
     console.error("Error details:", error.message);

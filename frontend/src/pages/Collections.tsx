@@ -45,13 +45,21 @@ export function Collections() {
   const formatCurrency = (value: number) =>
     new Intl.NumberFormat('vi-VN').format(value) + '₫';
 
+  // Vietnamese category slugs that should be treated as categories, not collections
+  const VIETNAMESE_CATEGORY_SLUGS = ['ao', 'quan', 'nuoc-hoa', 'phu-kien', 'hang-moi'];
+
+  // Determine if the collection parameter is actually a Vietnamese category
+  const isVietnameseCategory = collection && VIETNAMESE_CATEGORY_SLUGS.includes(collection);
+  const effectiveCategory = isVietnameseCategory ? collection : category;
+  const effectiveCollection = isVietnameseCategory ? undefined : collection;
+
   const dynamicTitle =
     (searchParams.get("title") ??
       [collection, category].filter(Boolean).join(" / ")) ||
     "Collection";
 
   const crumbs = [
-    { label: "Home", href: "/" },
+    { label: "Trang chủ", href: "/" },
     ...(collection
       ? [{ label: capitalize(collection), href: `/collections/${collection}` }]
       : []),
@@ -66,8 +74,8 @@ export function Collections() {
     activeFilterCount,
     buildFilterParams,
   } = useProductFilters({
-    collection: collection as "men" | "women" | "accessories" | undefined,
-    categoryFromUrl: category,
+    collection: effectiveCollection as "men" | "women" | "accessories" | undefined,
+    categoryFromUrl: effectiveCategory,
     initialSort: sortParam,
   });
 
@@ -206,7 +214,7 @@ export function Collections() {
           <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#D4AF37]">
-                {collection ? capitalize(collection) : "All menswear"}
+                {collection ? capitalize(collection) : "Tất cả thời trang nam"}
               </p>
               <h1 className="mt-1 font-['Playfair_Display'] text-3xl font-semibold tracking-tight text-white sm:text-4xl">
                 {dynamicTitle}
@@ -218,16 +226,16 @@ export function Collections() {
                 }}
               >
                 {isLoading
-                  ? "Curating your selection..."
-                  : `Showing ${total} handpicked pieces`}
+                  ? "Đang tổ chức lựa chọn..."
+                  : `Hiển thị ${total} sản phẩm được lựa chọn`}
               </p>
             </div>
             <div className="rounded-2xl bg-white/15 px-4 py-3 text-xs text-white shadow-sm ring-1 ring-white/20 sm:text-sm backdrop-blur">
               <p className="font-medium">
-                Contemporary luxury, crafted for motion.
+                Thời trang hàng hiệu, được thiết kế để chuyển động.
               </p>
               <p className="mt-1 text-xs text-white/80">
-                Glide through filters to find your perfect look.
+                Lướt qua các bộ lọc để tìm kiếm bộ trang phục hoàn hảo của bạn.
               </p>
             </div>
           </header>
@@ -337,7 +345,7 @@ export function Collections() {
                       className="bg-black/5 text-black border border-black/20 hover:bg-black/10 transition-colors duration-300 cursor-pointer px-3 py-1"
                       onClick={() => handleRemoveFilter("inStockOnly")}
                     >
-                      In Stock
+                      Còn hàng
                       <X className="w-3 h-3 ml-1" />
                     </Badge>
                   )}
@@ -383,7 +391,7 @@ export function Collections() {
                 </div>
 
                 <div className="flex items-center gap-3">
-                  <span className="text-sm text-[#666666]">Sort by:</span>
+                  <span className="text-sm text-[#666666]">Sắp xếp theo:</span>
                   <Select
                     value={currentSort}
                     onValueChange={(value) =>
@@ -394,15 +402,15 @@ export function Collections() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="featured">Featured</SelectItem>
-                      <SelectItem value="newest">Newest</SelectItem>
+                      <SelectItem value="featured">Nổi bật</SelectItem>
+                      <SelectItem value="newest">Mới nhất</SelectItem>
                       <SelectItem value="price-low">
-                        Price: Low to High
+                        Giá: Thấp đến Cao
                       </SelectItem>
                       <SelectItem value="price-high">
-                        Price: High to Low
+                        Giá: Cao đến Thấp
                       </SelectItem>
-                      <SelectItem value="popular">Most Popular</SelectItem>
+                      <SelectItem value="popular">Phổ biến nhất</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -411,7 +419,7 @@ export function Collections() {
             </div>
 
             <div className="min-h-[50vh]">
-              {isLoading && <LoadingState message="Loading products..." />}
+              {isLoading && <LoadingState message="Đang tải sản phẩm..." />}
 
               {error && !isLoading && (
                 <ErrorState message={error} onRetry={fetchProducts} />
@@ -443,8 +451,8 @@ export function Collections() {
               {hasNoResults && (
                 <div className="min-h-[40vh] flex items-center justify-center">
                   <EmptyState
-                    title="No products found matching your filters"
-                    actionLabel="Clear All Filters"
+                    title="Không tìm thấy sản phẩm phù hợp với bộ lọc của bạn"
+                    actionLabel="Xóa tất cả bộ lọc"
                     onAction={handleClearFilters}
                   />
                 </div>

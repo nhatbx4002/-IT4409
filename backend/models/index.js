@@ -14,7 +14,9 @@ import { Discount } from "./discountModel.js";
 import { Review } from "./reviewModel.js";
 // Sửa lại import Wishlist cho đồng bộ (có ngoặc nhọn nếu export const, không ngoặc nếu export default)
 // Dựa trên code cũ của bạn là 'export default Wishlist', nên import thế này là đúng:
-import Wishlist from "./wishlistModel.js"; 
+import Wishlist from "./wishlistModel.js";
+import { Collection } from "./collectionModel.js";
+import { ProductCollection } from "./productCollectionModel.js"; 
 
 // ============================================================
 // 🔹 Thiết lập các mối quan hệ (Associations)
@@ -85,6 +87,10 @@ OrderItem.belongsTo(Order, { foreignKey: 'order_id', as: 'order' });
 OrderItem.belongsTo(Product, { foreignKey: 'product_id', as: 'product' });
 Product.hasMany(OrderItem, { foreignKey: 'product_id', as: 'orderItems' });
 
+// OrderItem to ProductVariant association
+OrderItem.belongsTo(ProductVariant, { foreignKey: 'product_variant_id', as: 'product_variant' });
+ProductVariant.hasMany(OrderItem, { foreignKey: 'product_variant_id' });
+
 Order.hasOne(Payment, { foreignKey: 'order_id' });
 Payment.belongsTo(Order, { foreignKey: 'order_id' });
 
@@ -101,7 +107,38 @@ Review.belongsTo(Product, { foreignKey: 'product_id' });
 User.hasMany(Review, { foreignKey: 'user_id' });
 Review.belongsTo(User, { foreignKey: 'user_id' });
 
+// Collection associations (Many-to-Many between Product and Collection)
+Product.belongsToMany(Collection, {
+  through: ProductCollection,
+  foreignKey: 'product_id',
+  otherKey: 'collection_id',
+  as: 'collections'
+});
+Collection.belongsToMany(Product, {
+  through: ProductCollection,
+  foreignKey: 'collection_id',
+  otherKey: 'product_id',
+  as: 'products'
+});
 
+// Direct associations to the junction table for additional fields access
+Collection.hasMany(ProductCollection, {
+  foreignKey: 'collection_id',
+  as: 'productCollections'
+});
+ProductCollection.belongsTo(Collection, {
+  foreignKey: 'collection_id',
+  as: 'collection'
+});
+
+Product.hasMany(ProductCollection, {
+  foreignKey: 'product_id',
+  as: 'productCollections'
+});
+ProductCollection.belongsTo(Product, {
+  foreignKey: 'product_id',
+  as: 'product'
+});
 
 export {
   sequelize,
@@ -117,5 +154,7 @@ export {
   Payment,
   Discount, // Unified Discount model
   Review,
-  Wishlist
+  Wishlist,
+  Collection,
+  ProductCollection
 };

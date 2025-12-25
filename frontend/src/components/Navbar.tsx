@@ -16,6 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ShoppingCart } from "./HomePage/ShoppingCart";
+import { LuxurySearchOverlay } from "./LuxurySearchOverlay";
 import {
   Sheet,
   SheetContent,
@@ -41,6 +42,7 @@ export function Navbar() {
   const [showTopBar, setShowTopBar] = useState(true);
   const [cartOpen, setCartOpen] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const [user, setUser] = useState<AuthUser | null>(null);
@@ -87,8 +89,21 @@ export function Navbar() {
 
   const initials = useMemo(() => {
     if(!user) return "U";
-    return (user.full_name || '').split(" ").map(p => p[0]).join("").slice(0,2).toUpperCase();
+    return (user.name || '').split(" ").map(p => p[0]).join("").slice(0,2).toUpperCase();
   },[user])
+
+  // Keyboard shortcut for search (Cmd+K / Ctrl+K)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setSearchOpen(true);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   const handleLogout = () => {
     logout();
@@ -105,7 +120,7 @@ export function Navbar() {
       {showTopBar && (
         <div className="relative bg-black py-2 text-center text-white">
           <p className="text-xs tracking-[0.24em] uppercase text-slate-200 sm:text-sm">
-            Premium menswear · Complimentary alterations · Free shipping over $200
+            Thời trang nam cao cấp · Sửa đồ miễn phí · Miễn phí vận chuyển cho đơn trên $200
           </p>
           <button
             onClick={() => setShowTopBar(false)}
@@ -140,55 +155,52 @@ export function Navbar() {
                 onClick={() => navigate("/collections?sort=newest")}
                 className="text-xs font-medium tracking-[0.22em] text-[#4B5563] transition-colors hover:text-[#D4AF37]"
               >
-                NEW ARRIVALS
+                HÀNG MỚI
               </button>
               <button
                 type="button"
-                onClick={() => navigate("/collections/men")}
+                onClick={() => navigate("/collections/ao")}
                 className="text-xs font-medium tracking-[0.22em] text-[#4B5563] transition-colors hover:text-[#D4AF37]"
               >
-                SUITS
+                ÁO
               </button>
               <button
                 type="button"
-                onClick={() => navigate("/collections/men/shirts")}
+                onClick={() => navigate("/collections/quan")}
                 className="text-xs font-medium tracking-[0.22em] text-[#4B5563] transition-colors hover:text-[#D4AF37]"
               >
-                SHIRTS
+                QUẦN
               </button>
               <button
                 type="button"
-                onClick={() => navigate("/collections/men/outerwear")}
+                onClick={() => navigate("/collections/phu-kien")}
                 className="text-xs font-medium tracking-[0.22em] text-[#4B5563] transition-colors hover:text-[#D4AF37]"
               >
-                OUTERWEAR
+                PHỤ KIỆN
               </button>
               <button
                 type="button"
-                onClick={() => navigate("/collections/men/accessories")}
+                onClick={() => navigate("/collections/nuoc-hoa")}
                 className="text-xs font-medium tracking-[0.22em] text-[#4B5563] transition-colors hover:text-[#D4AF37]"
               >
-                ACCESSORIES
-              </button>
-              <button
-                type="button"
-                onClick={() =>
-                  navigate("/collections?sort=featured&title=Autumn%20Sale")
-                }
-                className="rounded-full border border-transparent bg-[#D4AF37] px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-black transition-colors hover:bg-[#B6911F]"
-              >
-                Autumn Sale
+                NƯỚC HOA
               </button>
             </div>
 
             {/* Right Icons */}
             <div className="flex items-center gap-2 sm:gap-3">
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="hover:bg-transparent hover:text-[#D4AF37] transition-colors"
+              <Button
+                variant="ghost"
+                size="icon"
+                className="hover:bg-transparent hover:text-[#D4AF37] transition-colors relative group"
+                onClick={() => setSearchOpen(true)}
+                aria-label="Search"
               >
                 <Search className="h-5 w-5" />
+                {/* Keyboard shortcut hint */}
+                <span className="hidden sm:ml-2 sm:inline-block sm:absolute sm:left-full sm:ml-3 text-[10px] text-gray-400 group-hover:text-[#D4AF37] transition-colors opacity-0 group-hover:opacity-100 whitespace-nowrap">
+                  ⌘K
+                </span>
               </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -199,7 +211,7 @@ export function Navbar() {
                   >
                     {user ? (
                       user.avatarUrl ? (
-                        <img src={user.avatarUrl} alt={user.full_name} className="h-8 w-8 rounded-full object-cover"/>
+                        <img src={user.avatarUrl} alt={user.name} className="h-8 w-8 rounded-full object-cover"/>
                       ): (
                         <div className="h-8 w-8 rounded-full bg-black/80 text-white text-xs flex items-center justify-center">
                           {initials}
@@ -219,39 +231,39 @@ export function Navbar() {
                           onClick={() => handleDemoLogin()}
                         >
                         <LogIn className="h-4 w-4 mr-3 text-[#D4AF37]" />
-                        <span className="text-sm">Login (Demo)</span>
+                        <span className="text-sm">Đăng nhập</span>
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         className="cursor-pointer hover:bg-[#F5F5F5] py-3"
                         onClick={() => navigate("/signup")}
                       >
                         <UserPlus className="h-4 w-4 mr-3 text-[#D4AF37]" />
-                        <span className="text-sm">Register</span>
+                        <span className="text-sm">Đăng ký</span>
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 ) : (
                    <DropdownMenuContent align="end" className="w-72 bg-white border border-black/10 shadow-lg">
                     <DropdownMenuItem className="cursor-pointer hover:bg-[#F5F5F5] py-3" onClick={() => navigate("/account")}> 
                       <UserCircle className="h-4 w-4 mr-3 text-[#D4AF37]" />
-                      <span className="text-sm">My Profile</span>
+                      <span className="text-sm">Hồ sơ của tôi</span>
                     </DropdownMenuItem>
                     <DropdownMenuItem className="cursor-pointer hover:bg-[#F5F5F5] py-3" onClick={() => navigate("/orders")}>
                       <Package className="h-4 w-4 mr-3 text-[#D4AF37]" />
-                      <span className="text-sm">My Orders</span>
+                      <span className="text-sm">Đơn hàng của tôi</span>
                     </DropdownMenuItem>
                     <DropdownMenuItem className="cursor-pointer hover:bg-[#F5F5F5] py-3" onClick={() => navigate("/wishlist")}>
                       <Heart className="h-4 w-4 mr-3 text-[#D4AF37]" />
-                      <span className="text-sm">Wishlist</span>
+                      <span className="text-sm">Yêu thích</span>
                     </DropdownMenuItem>
                     <DropdownMenuItem className="cursor-pointer hover:bg-[#F5F5F5] py-3" onClick={() => navigate("/account")}>
                       <Settings className="h-4 w-4 mr-3 text-[#D4AF37]" />
-                      <span className="text-sm">Settings</span>
+                      <span className="text-sm">Cài đặt</span>
                     </DropdownMenuItem>
 
                     <DropdownMenuSeparator className="bg-[#D4AF37]/20" />
                     <DropdownMenuItem className="cursor-pointer hover:bg-[#FFF4DB] py-3" onClick={handleLogout}>
                       <LogOut className="h-4 w-4 mr-3 text-[#D4AF37]" />
-                      <span className="text-sm">Logout</span>
+                      <span className="text-sm">Đăng xuất</span>
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 )}
@@ -336,43 +348,43 @@ export function Navbar() {
                 setMobileNavOpen(false);
               }}
             >
-              New Arrivals
+              Hàng Mới
             </button>
             <button
               className="w-full rounded-lg px-3 py-2 text-left text-[#111827] hover:bg-[#F3F4F6]"
               onClick={() => {
-                navigate("/collections/men");
+                navigate("/collections/ao");
                 setMobileNavOpen(false);
               }}
             >
-              Suits
+              Áo
             </button>
             <button
               className="w-full rounded-lg px-3 py-2 text-left text-[#111827] hover:bg-[#F3F4F6]"
               onClick={() => {
-                navigate("/collections/men/shirts");
+                navigate("/collections/quan");
                 setMobileNavOpen(false);
               }}
             >
-              Shirts
+              Quần
             </button>
             <button
               className="w-full rounded-lg px-3 py-2 text-left text-[#111827] hover:bg-[#F3F4F6]"
               onClick={() => {
-                navigate("/collections/men/outerwear");
+                navigate("/collections/phu-kien");
                 setMobileNavOpen(false);
               }}
             >
-              Outerwear
+              Phụ Kiện
             </button>
             <button
               className="w-full rounded-lg px-3 py-2 text-left text-[#111827] hover:bg-[#F3F4F6]"
               onClick={() => {
-                navigate("/collections/men/accessories");
+                navigate("/collections/nuoc-hoa");
                 setMobileNavOpen(false);
               }}
             >
-              Accessories
+              Nước Hoa
             </button>
 
             <div className="mt-4 space-y-1 border-t border-black/10 pt-4">
@@ -383,7 +395,7 @@ export function Navbar() {
                   setMobileNavOpen(false);
                 }}
               >
-                Wishlist
+                Yêu thích
               </button>
               <button
                 className="w-full rounded-lg px-3 py-2 text-left text-[#111827] hover:bg-[#F3F4F6]"
@@ -392,7 +404,7 @@ export function Navbar() {
                   setMobileNavOpen(false);
                 }}
               >
-                Cart
+                Giỏ hàng
               </button>
               {!user ? (
                 <button
@@ -402,7 +414,7 @@ export function Navbar() {
                     setMobileNavOpen(false);
                   }}
                 >
-                  Sign in
+                  Đăng nhập
                 </button>
               ) : null}
             </div>
@@ -412,6 +424,9 @@ export function Navbar() {
 
       {/* Shopping Cart Sidebar */}
       <ShoppingCart open={cartOpen} onOpenChange={setCartOpen} />
+
+      {/* Luxury Search Overlay */}
+      <LuxurySearchOverlay open={searchOpen} onOpenChange={setSearchOpen} />
     </>
   );
 }

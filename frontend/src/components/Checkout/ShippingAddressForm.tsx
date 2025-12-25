@@ -15,7 +15,7 @@ import { Loader2, Search, X, ChevronDown } from "lucide-react";
 
 interface ShippingAddressFormProps {
   formData: {
-    full_name: string;
+    name: string;
     phone: string;
     address: string;
     city: string;
@@ -131,13 +131,13 @@ export function ShippingAddressForm({
       <h2 className="text-xl font-bold text-black">Địa chỉ giao hàng</h2>
       <div className="space-y-4">
         <div>
-          <Label htmlFor="full_name" className="text-xs font-light tracking-wide text-gray-600 uppercase">
+          <Label htmlFor="name" className="text-xs font-light tracking-wide text-gray-600 uppercase">
             Họ và tên
           </Label>
           <Input
-            id="full_name"
-            value={formData.full_name}
-            onChange={(e) => onFormChange("full_name", e.target.value)}
+            id="name"
+            value={formData.name}
+            onChange={(e) => onFormChange("name", e.target.value)}
             className="mt-3 px-4 py-2.5"
             placeholder="Nguyễn Văn A"
           />

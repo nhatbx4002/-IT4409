@@ -212,7 +212,7 @@ const buildFilterParams = (filters: ProductFilterParams = {}) => {
 
 export interface SignUpData {
   email: string;
-  full_name: string;
+  name: string;
   password: string;
   phone?: string;
 }
@@ -579,6 +579,7 @@ export interface DiscountDTO {
 export interface ValidateCodeResponse {
   valid: boolean;
   reason?: string;
+  message?: string;
   discount?: DiscountDTO;
 }
 
@@ -587,12 +588,19 @@ export interface ApplyDiscountRequest {
   orderDraft?: {
     subtotal?: number;
     shipping_fee?: number;
+    cart_items?: CartItemForDiscount[];
   };
+}
+
+export interface CartItemForDiscount {
+  product_variant_id: number;
+  quantity: number;
 }
 
 export interface ApplyDiscountResponse {
   applied: boolean;
   reason?: string;
+  message?: string;
   amount?: number;
   discount?: DiscountDTO;
   snapshot?: {
@@ -607,14 +615,52 @@ export async function getActiveDiscounts(): Promise<DiscountDTO[]> {
   return unwrapResponse(res.data);
 }
 
-export async function validateDiscountCode(code: string): Promise<ValidateCodeResponse> {
-  const res = await apiClient.get<ApiResponse<ValidateCodeResponse>>(`/discounts/validate/${encodeURIComponent(code)}`);
+export async function validateDiscountCode(code: string, cartItems?: CartItemForDiscount[]): Promise<ValidateCodeResponse> {
+  const res = await apiClient.post<ApiResponse<ValidateCodeResponse>>(
+    `/discounts/validate/${encodeURIComponent(code)}`,
+    { cart_items: cartItems || [] }
+  );
   return unwrapResponse(res.data);
+}
+
+/**
+ * Get cart items from current cart for discount validation
+ * Helper function to extract cart items from CartResponse
+ */
+export async function getCartItemsForDiscount(): Promise<CartItemForDiscount[]> {
+  try {
+    const cart = await getCart();
+    return cart.items.map(item => ({
+      product_variant_id: item.product_variant_id,
+      quantity: item.quantity,
+    }));
+  } catch (error) {
+    console.error('Failed to get cart items for discount validation:', error);
+    return [];
+  }
 }
 
 export async function applyDiscount(payload: ApplyDiscountRequest): Promise<ApplyDiscountResponse> {
   const res = await apiClient.post<ApiResponse<ApplyDiscountResponse>>('/discounts/apply', payload);
   return unwrapResponse(res.data);
+}
+
+/**
+ * Apply discount with cart items from current cart
+ * This is the recommended way to apply discounts as it includes product eligibility checks
+ */
+export async function applyDiscountWithCart(code: string): Promise<ApplyDiscountResponse> {
+  const cartItems = await getCartItemsForDiscount();
+  const cart = await getCart();
+
+  return applyDiscount({
+    code,
+    orderDraft: {
+      subtotal: cart.subtotal_amount || cart.subtotal || 0,
+      shipping_fee: 0, // Will be calculated later based on address
+      cart_items: cartItems,
+    },
+  });
 }
 
 export async function getMyAddresses(): Promise<ShippingAddress[]> {
@@ -624,7 +670,7 @@ export async function getMyAddresses(): Promise<ShippingAddress[]> {
 
 export async function createAddress(data: AddressFormData): Promise<ShippingAddress> {
   const response = await apiClient.post<ApiResponse<ShippingAddress>>('/addresses', {
-    full_name: data.full_name,
+    name: data.name,
     phone: data.phone,
     city: data.city,
     district: data.district,

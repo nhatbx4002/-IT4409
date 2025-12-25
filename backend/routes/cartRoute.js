@@ -1,27 +1,11 @@
 import express from 'express';
 import { getCart, addItem, updateItem, removeItem } from '../controllers/cartController.js';
-import { verifyAccessToken } from '../services/authService.js';
-import { User } from '../models/index.js';
+import { authenticateToken } from '../middlewares/auth.js';
 
 const router = express.Router();
 
-// Optional auth: attach user if token is valid, otherwise continue as guest
-router.use(async (req, res, next) => {
-  const authHeader = req.headers["authorization"];
-  const token = authHeader && authHeader.split(" ")[1];
-  if (!token) return next();
-
-  try {
-    const decoded = verifyAccessToken(token);
-    const user = await User.findByPk(decoded.id);
-    if (user) {
-      req.user = user;
-    }
-  } catch (err) {
-    // Ignore invalid tokens for guest flows
-  }
-  next();
-});
+// Require authentication for all cart routes
+router.use(authenticateToken);
 
 /**
  * @swagger

@@ -15,6 +15,7 @@ import OrderPaymentStatusPage from "@/pages/OrderPaymentStatus";
 import OrdersPage from "@/pages/Orders";
 import AccountPage from "@/pages/Account";
 import PaymentErrorPage from "@/pages/PaymentError";
+import SearchPage from "@/pages/SearchPage";
 import { bootstrapAuthSession } from "@/lib/api";
 
 
@@ -32,6 +33,7 @@ export default function App() {
         <Route path="/collections/:collection" element={<Collections />} />
         <Route path="/collections/:collection/:category" element={<Collections />} />
         <Route path="/products/:productId" element={<ProductDetail />} />
+        <Route path="/search" element={<SearchPage />} />
         <Route path="/cart" element={<CartPage />} />
         <Route path="/checkout" element={<CheckoutPage />} />
         <Route path="/orders" element={<OrdersPage />} />

@@ -11,21 +11,15 @@ import {
   Discount,
 } from "../models/index.js";
 
-export const findCartWithItems = (userId, sessionId) => {
-  const where = userId
-    ? { user_id: userId }
-    : sessionId
-    ? { session_id: sessionId, is_guest: true }
-    : null;
-
-  if (!where) {
-    const error = new Error("Không xác định được giỏ hàng");
-    error.status = 400;
+export const findCartWithItems = (userId) => {
+  if (!userId) {
+    const error = new Error("Cần đăng nhập để xem giỏ hàng");
+    error.status = 401;
     throw error;
   }
 
   return Cart.findOne({
-    where,
+    where: { user_id: userId },
     include: [
       {
         model: CartItem,
@@ -41,9 +35,9 @@ export const findCartWithItems = (userId, sessionId) => {
   });
 };
 
-export const findShippingAddress = (addressId, userId, sessionId) => {
+export const findShippingAddress = (addressId, userId) => {
   if (!userId) {
-    const error = new Error("Khách vãng lai không thể dùng địa chỉ đã lưu");
+    const error = new Error("Cần đăng nhập để sử dụng địa chỉ giao hàng");
     error.status = 401;
     throw error;
   }
@@ -94,7 +88,7 @@ export const findAllOrders = () =>
     include: [
       {
         model: User,
-        attributes: ["id", "full_name", "email", "phone"],
+        attributes: ["id", "name", "email", "phone"],
       },
       { model: ShippingAddress, as: "shipping_address" },
       { model: Payment },

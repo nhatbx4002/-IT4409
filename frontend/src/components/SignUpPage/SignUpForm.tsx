@@ -89,12 +89,12 @@ export function SignUpForm() {
     setError(null);
 
     try {
-      // Combine firstName + lastName thành full_name
-      const full_name = `${data.firstName} ${data.lastName}`;
+      // Combine firstName + lastName thành name
+      const name = `${data.firstName} ${data.lastName}`;
 
       const response = await signUp({
         email: data.email,
-        full_name,
+        name,
         password: data.password,
         phone: data.phone || undefined,
       });

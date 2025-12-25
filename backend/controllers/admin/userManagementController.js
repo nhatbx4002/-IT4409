@@ -10,8 +10,7 @@ export const listUsers = async (req, res) => {
         const where = search ? {
             [Op.or]: [
                 { email: { [Op.iLike]: `%${search}%` } },
-                { name: { [Op.iLike]: `%${search}%` } },
-                { full_name: { [Op.iLike]: `%${search}%` } }
+                { name: { [Op.iLike]: `%${search}%` } }
             ]
         } : {};
         
@@ -20,8 +19,8 @@ export const listUsers = async (req, res) => {
             limit: parseInt(limit),
             offset,
             order: [['created_at', 'DESC']],
-            attributes: { 
-                exclude: ['password', 'refresh_token', 'access_token', 'expires_at'] 
+            attributes: {
+                exclude: ['password', 'refresh_token']
             }
         });
         
@@ -53,8 +52,8 @@ export const getUserDetail = async (req, res) => {
         const { id } = req.params;
         
         const user = await User.findByPk(id, {
-            attributes: { 
-                exclude: ['password', 'refresh_token', 'access_token', 'expires_at'] 
+            attributes: {
+                exclude: ['password', 'refresh_token']
             }
         });
         

@@ -11,14 +11,14 @@ import { Op, col } from "sequelize";
 /**
  * Hàm nội bộ: Tìm giỏ hàng của user, nếu chưa có thì tạo mới
  */
-const getOrCreateCart = async ({ userId, sessionId }) => {
+const getOrCreateCart = async (userId) => {
     if (!userId) {
         throw new Error("Vui lòng đăng nhập để sử dụng giỏ hàng");
     }
 
     const [cart] = await Cart.findOrCreate({
         where: { user_id: userId },
-        defaults: { user_id: userId, is_guest: false },
+        defaults: { user_id: userId },
     });
     return cart;
 };
@@ -72,8 +72,7 @@ export const addProductToCart = async (
     userId,
     productVariantId,
     quantity,
-    productId,
-    sessionId
+    productId
 ) => {
     const addQuantity = parseInt(quantity, 10);
     // --- Xử lý logic (trong 1 transaction) ---
@@ -83,7 +82,7 @@ export const addProductToCart = async (
         const quantityToAdd = clampQuantityToStock(addQuantity, variant.stock_quantity);
 
         // --- Tìm giỏ hàng & sản phẩm ---
-        const cart = await getOrCreateCart({ userId, sessionId });
+        const cart = await getOrCreateCart(userId);
 
         // Kiểm tra xem item đã có trong giỏ chưa
         let cartItem = await CartItem.findOne({
@@ -126,7 +125,7 @@ export const addProductToCart = async (
 /**
  * 2. Cập nhật số lượng sản phẩm trong giỏ
  */
-export const updateCartItem = async (userId, cartItemId, payload, sessionId) => {
+export const updateCartItem = async (userId, cartItemId, payload) => {
     const { quantity, productVariantId } = payload || {};
     const hasQuantity = quantity !== undefined && quantity !== null;
 
@@ -140,11 +139,11 @@ export const updateCartItem = async (userId, cartItemId, payload, sessionId) => 
     }
 
     if (hasQuantity && newQuantity === 0) {
-        return await removeItemFromCart(userId, cartItemId, sessionId);
+        return await removeItemFromCart(userId, cartItemId);
     }
 
     return sequelize.transaction(async (t) => {
-        const cart = await getOrCreateCart({ userId, sessionId });
+        const cart = await getOrCreateCart(userId);
         const cartItem = await CartItem.findByPk(cartItemId, {
             transaction: t,
             lock: t.LOCK.UPDATE,
@@ -222,8 +221,8 @@ export const updateCartItem = async (userId, cartItemId, payload, sessionId) => 
 /**
  * 3. Xóa sản phẩm khỏi giỏ
  */
-export const removeItemFromCart = async (userId, cartItemId, sessionId) => {
-    const cart = await getOrCreateCart({ userId, sessionId });
+export const removeItemFromCart = async (userId, cartItemId) => {
+    const cart = await getOrCreateCart(userId);
     const cartItem = await CartItem.findByPk(cartItemId);
 
     if (!cartItem) {
@@ -242,9 +241,9 @@ export const removeItemFromCart = async (userId, cartItemId, sessionId) => {
 /**
  * 4. Lấy chi tiết giỏ hàng và tính tổng tiền
  */
-export const getCartDetails = async ({ userId, sessionId }) => {
+export const getCartDetails = async (userId) => {
     try {
-        const cart = await getOrCreateCart({ userId, sessionId });
+        const cart = await getOrCreateCart(userId);
 
         // Lấy tất cả item trong giỏ, đồng thời lấy thông tin của
         // ProductVariant (biến thể) và Product (sản phẩm gốc)
@@ -340,61 +339,6 @@ export const getCartDetails = async ({ userId, sessionId }) => {
         console.error("Error in getCartDetails:", error);
         throw error;
     }
-};
-
-export const mergeGuestCartToUser = async (userId, sessionId) => {
-    if (!userId || !sessionId) return null;
-
-    const guestCart = await Cart.findOne({
-        where: { session_id: sessionId, is_guest: true },
-    });
-    if (!guestCart) return null;
-
-    const userCart = await getOrCreateCart({ userId });
-
-    await sequelize.transaction(async (t) => {
-        const guestItems = await CartItem.findAll({
-            where: { cart_id: guestCart.id },
-            transaction: t,
-        });
-
-        for (const item of guestItems) {
-            const variant = await ProductVariant.findByPk(item.product_variant_id, {
-                transaction: t,
-            });
-
-            if (!variant || (variant.stock_quantity || 0) <= 0) {
-                await item.destroy({ transaction: t });
-                continue;
-            }
-
-            const existing = await CartItem.findOne({
-                where: { cart_id: userCart.id, product_variant_id: item.product_variant_id },
-                transaction: t,
-            });
-
-            const mergedQuantity = existing ? existing.quantity + item.quantity : item.quantity;
-            const finalQuantity = clampQuantityToStock(mergedQuantity, variant.stock_quantity);
-
-            if (existing) {
-                existing.quantity = finalQuantity;
-                await existing.save({ transaction: t });
-            } else {
-                await CartItem.create(
-                    {
-                        cart_id: userCart.id,
-                        product_variant_id: item.product_variant_id,
-                        quantity: finalQuantity,
-                    },
-                    { transaction: t }
-                );
-            }
-        }
-
-        await guestCart.destroy({ transaction: t });
-    });
-
-    return true;
 };
 
 /**

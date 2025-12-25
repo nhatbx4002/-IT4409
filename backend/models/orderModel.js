@@ -10,7 +10,6 @@ export const Order = sequelize.define("orders", {
   subtotal_amount: DataTypes.DECIMAL(12,2),
   discount_amount: { type: DataTypes.DECIMAL(12,2), defaultValue: 0 },
   total_amount: DataTypes.DECIMAL(12,2),
-  final_total: { type: DataTypes.DECIMAL(12,2), allowNull: true },
   status: { type: DataTypes.STRING(20), defaultValue: "pending" },
   // Snapshot fields for discount to preserve data even if discount rules change
   discount_code_snapshot: DataTypes.STRING,

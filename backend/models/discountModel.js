@@ -4,7 +4,7 @@ import { setUpdatedAtHook } from "./hooks.js";
 
 export const Discount = sequelize.define("discounts", {
   id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
-  name: { type: DataTypes.STRING, allowNull: false }, // Tên discount (VD: Sale Tết, WELCOME10)
+  name: { type: DataTypes.STRING, allowNull: false },
   code: { type: DataTypes.STRING, unique: true, allowNull: true }, // Nếu NULL -> auto_apply (flash sale)
   description: DataTypes.TEXT,
   
@@ -37,7 +37,7 @@ export const Discount = sequelize.define("discounts", {
     type: DataTypes.STRING(20), 
     defaultValue: 'all' 
   },
-  // Lưu danh sách ID Brand/Category/Product (Dạng mảng JSON: ["Nike", "Adidas"] hoặc [1, 2])
+ 
   target_ids: { 
     type: DataTypes.JSONB, 
     defaultValue: [] 

@@ -5,7 +5,6 @@ export type Role = "ADMIN" | "CUSTOMER" | "SUPER_ADMIN" | "customer" | "admin" |
 export type User = {
   id: number;
   name?: string | null;
-  full_name?: string | null;
   email: string;
   phone?: string | null;
   role?: Role;

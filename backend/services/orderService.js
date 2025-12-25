@@ -29,38 +29,27 @@ const env = loadEnv();
 const SHOP_PROVINCE_ID = parseInt(env.SHOP_PROVINCE_ID || "1", 10);
 const SHOP_CITY_NAME = env.SHOP_CITY || "Hà Nội";
 
-const findOrCreateShippingAddress = async ({ userId, addressId, sessionId, guestAddressData, transaction }) => {
-    if (userId && addressId) {
-        const address = await findShippingAddress(addressId, userId, sessionId);
-        if (!address) {
-            const error = new Error("Địa chỉ giao hàng không tồn tại");
-            error.status = 400;
-            throw error;
-        }
-        return address;
+const findOrCreateShippingAddress = async ({ userId, addressId, transaction }) => {
+    if (!userId) {
+        const error = new Error("Cần đăng nhập để thực hiện thanh toán");
+        error.status = 401;
+        throw error;
     }
 
-    if (sessionId && guestAddressData) {
-        const requiredFields = ["full_name", "phone", "city", "district", "ward", "address"];
-        const missing = requiredFields.filter((field) => !guestAddressData[field]);
-        if (missing.length) {
-            const error = new Error(`Thiếu thông tin địa chỉ: ${missing.join(", ")}`);
-            error.status = 400;
-            throw error;
-        }
-
-        return ShippingAddress.create(
-            {
-                ...guestAddressData,
-                user_id: null,
-            },
-            { transaction }
-        );
+    if (!addressId) {
+        const error = new Error("Thiếu thông tin địa chỉ giao hàng");
+        error.status = 400;
+        throw error;
     }
 
-    const error = new Error("Thiếu thông tin địa chỉ giao hàng");
-    error.status = 400;
-    throw error;
+    const address = await findShippingAddress(addressId, userId);
+    if (!address) {
+        const error = new Error("Địa chỉ giao hàng không tồn tại");
+        error.status = 400;
+        throw error;
+    }
+
+    return address;
 };
 
 /**
@@ -213,13 +202,17 @@ export const previewShippingFee = async (userId, locationData, promotionCode) =>
 };
 
 // 2. Tạo đơn hàng (Checkout)
-export const createOrder = async (userId, shippingAddressId, paymentMethod, notes, promotionCode, sessionId, guestAddressData) => {
+export const createOrder = async (userId, shippingAddressId, paymentMethod, notes, promotionCode) => {
     const validMethods = ['COD', 'VNPAY'];
     if (!validMethods.includes(paymentMethod.toUpperCase())) {
         throw new Error("Phương thức thanh toán không hợp lệ");
     }
 
-    const cart = await findCartWithItems(userId, sessionId);
+    if (!userId) {
+        throw new Error("Cần đăng nhập để tạo đơn hàng");
+    }
+
+    const cart = await findCartWithItems(userId);
 
     if (!cart || !cart.cart_items.length) throw new Error("Giỏ hàng trống");
 
@@ -227,11 +220,9 @@ export const createOrder = async (userId, shippingAddressId, paymentMethod, note
         let subtotal = 0;
         const orderItemsData = [];
 
-        const ensuredAddress = await findOrCreateShippingAddress({
+        const address = await findOrCreateShippingAddress({
             userId,
             addressId: shippingAddressId,
-            sessionId,
-            guestAddressData,
             transaction,
         });
 
@@ -270,7 +261,7 @@ export const createOrder = async (userId, shippingAddressId, paymentMethod, note
         }
 
         // Tính toán tiền
-        const { fee: shippingFee } = calculateFeeLogic(ensuredAddress, subtotal);
+        const { fee: shippingFee } = calculateFeeLogic(address, subtotal);
 
         const discountInfo = await calculateDiscount(promotionCode, subtotal, shippingFee);
 
@@ -299,7 +290,7 @@ export const createOrder = async (userId, shippingAddressId, paymentMethod, note
         // Tạo Order (lưu cả trường cũ `promotion_id` để tránh phá vỡ code cũ, và trường `discount_id` mới)
         const newOrder = await createOrderRecord({
             user_id: userId,
-            shipping_address_id: ensuredAddress.id,
+            shipping_address_id: address.id,
             promotion_id: discountInfo.id,
             discount_id: discountInfo.id,
             subtotal_amount: subtotal,
@@ -431,7 +422,7 @@ export const getAllOrdersAdmin = async ({
     if (customer) {
         const customerTerm = customer.toString().trim();
         userWhere[Op.or] = [
-            { full_name: { [textOp]: `%${customerTerm}%` } },
+            { name: { [textOp]: `%${customerTerm}%` } },
             { email: { [textOp]: `%${customerTerm}%` } },
             { phone: { [textOp]: `%${customerTerm}%` } },
         ];
@@ -446,7 +437,7 @@ export const getAllOrdersAdmin = async ({
         include: [
             {
                 model: User,
-                attributes: ["id", "full_name", "email", "phone"],
+                attributes: ["id", "name", "email", "phone"],
                 where: Object.keys(userWhere).length ? userWhere : undefined,
             },
         ],

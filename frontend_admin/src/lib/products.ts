@@ -23,7 +23,6 @@ export type Product = {
   sale_price?: number | string | null;
   status?: ProductStatus;
   category_id?: number | null;
-  collection?: string | null;
   is_new?: boolean;
   images?: string[];
   variants?: ProductVariant[];
@@ -59,7 +58,6 @@ export type CreateProductPayload = {
   sale_price?: number | null;
   brand?: string | null;
   category_id: number;
-  collection?: string | null;
   status?: ProductStatus;
   is_new?: boolean;
   tags?: string[];

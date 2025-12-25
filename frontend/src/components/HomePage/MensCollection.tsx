@@ -40,7 +40,6 @@ export function MensCollection() {
       const categorySlug = selectedCategory ? categorySlugMap[selectedCategory] : undefined;
 
       const filterParams: ProductFilterParams = {
-        collection: "men",
         categorySlug: categorySlug,
         priceMin: priceRange[0] > 0 ? priceRange[0] : undefined,
         priceMax: priceRange[1] < 5000 ? priceRange[1] : undefined,

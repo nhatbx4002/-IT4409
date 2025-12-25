@@ -53,16 +53,14 @@ passport.use(
 
           user = await User.create({
             email,
-            full_name: fullName,
+            name: fullName,
             phone: null,
             provider: "facebook",
             provider_id: facebookId,
-            access_token: accessToken,
             refresh_token: refreshToken || null
           });
         } else {
-          // Cập nhật cả access_token và refresh_token
-          user.access_token = accessToken;
+          // Cập nhật refresh_token
           if (refreshToken) {
             user.refresh_token = refreshToken;
           }

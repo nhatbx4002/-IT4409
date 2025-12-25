@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ProductCard } from "@/components/ProductsCard";
 import type { ProductSummary } from "@/types/products";
@@ -6,6 +7,7 @@ import { getProducts, addToWishlist } from "@/lib/api";
 import { LoadingState, ErrorState, EmptyState } from "@/components/feedback/AsyncStates";
 
 export function NewArrivals() {
+  const navigate = useNavigate();
   const [products, setProducts] = useState<ProductSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -88,8 +90,9 @@ export function NewArrivals() {
         {/* View All Button */}
         {!isLoading && !error && products.length > 0 && (
           <div className="text-center">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
+              onClick={() => navigate("/collections?sort=newest")}
               className="px-10 py-6 border-2 hover:bg-[#D4AF37] hover:text-black hover:border-[#D4AF37] transition-colors"
               style={{ borderColor: '#D4AF37', color: '#D4AF37' }}
             >

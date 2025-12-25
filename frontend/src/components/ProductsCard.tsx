@@ -64,7 +64,7 @@ export function ProductCard({
         {/* NEW Badge - Top Left */}
         {product.isNew && (
           <div className="absolute left-3 top-3 z-10 rounded-full bg-black/80 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-white shadow-sm">
-            NEW
+            MỚI
           </div>
         )}
 
@@ -73,7 +73,7 @@ export function ProductCard({
           <div
             className={`absolute left-3 z-10 rounded-full bg-[#D4AF37] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-black shadow-sm ${product.isNew ? "top-8" : "top-3"}`}
           >
-            SALE
+            GIẢM GIÁ
           </div>
         )}
 
@@ -95,18 +95,18 @@ export function ProductCard({
           <div className="flex items-center justify-between gap-2 text-sm text-[#111827]">
             <button
               onClick={() => navigate(`/products/${product.id}`)}
-              className="flex items-center gap-2 rounded-full px-3 py-2 text-[12px] font-semibold uppercase tracking-[0.16em] text-[#111827] transition hover:text-[#D4AF37]"
+              className="flex items-center gap-2 rounded-full px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#111827] transition hover:text-[#D4AF37]"
             >
               <Eye className="h-4 w-4" />
-              View detail
+              Chi tiết
             </button>
             <button
               onClick={() => onAddToCart(product)}
-              className="inline-flex items-center gap-2 rounded-full bg-[#111827] px-3 py-2 text-[12px] font-semibold uppercase tracking-[0.18em] text-white transition hover:bg-black"
+              className="inline-flex items-center gap-2 rounded-full bg-[#111827] px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-white transition hover:bg-black"
               disabled={!product.inStock}
             >
               <ShoppingBag className="h-4 w-4 text-[#D4AF37]" />
-              {product.inStock ? "Add" : "Out"}
+              {product.inStock ? "Thêm vào" : "Hết hàng"}
             </button>
           </div>
         </div>
@@ -122,7 +122,7 @@ export function ProductCard({
                 fontWeight: 600,
               }}
             >
-              Out of Stock
+              Hết hàng
             </span>
           </div>
         )}
@@ -132,13 +132,13 @@ export function ProductCard({
       <div className="flex flex-1 flex-col overflow-hidden p-5 bg-transparent">
         <div className="space-y-3 flex-1">
           {/* Brand Name - Gold, Uppercase, Letter-spacing */}
-          <div className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#D4AF37]">
+          <div className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#D4AF37]">
             {product.brand}
           </div>
 
           {/* Product Name - Playfair Display, 20px, Bold */}
           <h3
-            className="min-h-[28px] overflow-hidden text-ellipsis font-['Playfair_Display'] text-[18px] font-semibold leading-snug text-[#111827] line-clamp-2"
+            className="min-h-[28px] overflow-hidden text-ellipsis font-['Playfair_Display'] text-[16px] font-semibold leading-snug text-[#111827] line-clamp-2"
             title={product.name}
           >
             {product.name}
@@ -163,7 +163,7 @@ export function ProductCard({
                 />
               ))}
             </div>
-            <span className="text-[12px] text-[#9CA3AF]">
+            <span className="text-[11px] text-[#9CA3AF]">
               ({product.reviewCount})
             </span>
           </div>
@@ -171,11 +171,11 @@ export function ProductCard({
           {/* Price - 24px Bold Black */}
           <div className="flex items-center gap-3 pt-1">
             {hasDiscount && (
-              <span className="text-[14px] text-[#9CA3AF] line-through">
+              <span className="text-[12px] text-[#9CA3AF] line-through">
                 {formatVnd(product.price)}
               </span>
             )}
-            <span className="font-['Poppins'] text-[18px] font-semibold text-[#111827]">
+            <span className="font-['Poppins'] text-[16px] font-semibold text-[#111827]">
               {formatVnd(displayPrice)}
             </span>
           </div>
@@ -183,8 +183,8 @@ export function ProductCard({
           {/* Color Selector - "Colors:" label + 3 circular swatches (24px) */}
           {product.colors.length > 0 && (
             <div className="flex items-center gap-3 pt-2">
-              <span className="text-[12px] font-medium text-[#111827]">
-                Colors:
+              <span className="text-[11px] font-medium text-[#111827]">
+                Màu:
               </span>
               <div className="flex items-center gap-2">
                 {product.colors.slice(0, 3).map((color, idx) => (

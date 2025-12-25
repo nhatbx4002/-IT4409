@@ -4,7 +4,7 @@ import { buildPagination } from "./product/queryBuilder.js";
 
 const buildUserName = (user) => {
   if (!user) return "Anonymous";
-  return user.full_name || user.name || user.email || "Anonymous";
+  return user.name || user.email || "Anonymous";
 };
 
 export const listProductReviews = async ({ productId, page = 1, pageSize = 6 }) => {
@@ -21,7 +21,7 @@ export const listProductReviews = async ({ productId, page = 1, pageSize = 6 }) 
     include: [
       {
         model: User,
-        attributes: ["id", "full_name", "name", "email"],
+        attributes: ["id", "name", "email"],
       },
     ],
     order: [["created_at", "DESC"]],

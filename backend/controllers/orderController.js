@@ -2,26 +2,6 @@ import * as orderService from '../services/orderService.js';
 import { sendError, sendSuccess } from "./controllerUtils.js";
 import { loadEnv } from '../config/env.js';
 
-const extractSessionId = (req) => {
-    const headerValue = req.headers["x-session-id"] || req.headers["x-sessionid"];
-    if (typeof headerValue === "string" && headerValue.trim()) {
-        return headerValue.trim();
-    }
-
-    const cookieHeader = req.headers?.cookie;
-    if (typeof cookieHeader === "string") {
-        const cookies = Object.fromEntries(
-            cookieHeader.split(";").map((part) => {
-                const [k, v] = part.split("=").map((s) => s.trim());
-                return [k, v];
-            })
-        );
-        if (cookies.sessionId) return cookies.sessionId;
-    }
-
-    return null;
-};
-
 /**
  * Tính phí ship (API riêng để Frontend gọi khi chọn xong địa chỉ)
  */
@@ -47,24 +27,22 @@ export const getShippingFee = async (req, res) => {
  */
 export const createOrder = async (req, res) => {
     try {
-        const userId = req.user?.id || null;
-        const sessionId = extractSessionId(req) || null;
-        if (!userId && !sessionId) {
-            const error = new Error("Cần đăng nhập hoặc cung cấp session để đặt hàng");
+        const userId = req.user?.id;
+        if (!userId) {
+            const error = new Error("Cần đăng nhập để đặt hàng");
             error.status = 401;
             return sendError(res, error, 401);
         }
+
         // Frontend gửi: ID địa chỉ đã lưu, Phương thức thanh toán, Ghi chú, Mã giảm giá
-        const { shippingAddressId, shippingAddress, paymentMethod, notes, promotionCode } = req.body;
+        const { shippingAddressId, paymentMethod, notes, promotionCode } = req.body;
 
         const result = await orderService.createOrder(
             userId,
             shippingAddressId,
             paymentMethod,
             notes,
-            promotionCode,
-            sessionId,
-            shippingAddress
+            promotionCode
         );
 
         sendSuccess(res, {
