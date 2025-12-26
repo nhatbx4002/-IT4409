@@ -63,7 +63,7 @@ export default function ProductDetail() {
         <div className="rounded-3xl border border-white/10 bg-white/5 px-10 py-8 text-center shadow-[0_18px_80px_rgba(15,23,42,0.85)] backdrop-blur-2xl">
           <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-2 border-[#D4AF37]/30 border-t-[#D4AF37]" />
           <p className="text-xs uppercase tracking-[0.24em] text-slate-300">
-            Loading product details
+            Đang tải thông tin sản phẩm
           </p>
         </div>
       </div>
@@ -77,16 +77,16 @@ export default function ProductDetail() {
       <div className="flex min-h-[70vh] items-center justify-center bg-gradient-to-b from-[#F9FAFB] to-white">
         <div className="max-w-md rounded-3xl border border-[#E5E7EB] bg-white px-8 py-10 text-center shadow-[0_18px_60px_rgba(15,23,42,0.10)]">
           <h1 className="mb-3 font-['Playfair_Display'] text-2xl font-semibold text-[#111827]">
-            Product not found
+            Không tìm thấy sản phẩm
           </h1>
           <p className="mb-6 text-sm text-[#6B7280]">
-            {error || "The piece you are looking for is no longer available or does not exist."}
+            {error || "Sản phẩm bạn đang tìm kiếm không còn khả dụng hoặc không tồn tại."}
           </p>
           <button
             onClick={() => navigate("/")}
             className="rounded-full bg-[#111827] px-8 py-3 text-xs font-semibold uppercase tracking-[0.22em] text-white transition hover:bg-black"
           >
-            Back to Home
+            Quay về trang chủ
           </button>
         </div>
       </div>
@@ -122,23 +122,22 @@ export default function ProductDetail() {
           {/* Recommendations */}
           <div className="space-y-16 border-t border-[#E5E7EB] pt-12 lg:pt-16">
             <RecommendationsCarousel 
-              title="You May Also Like" 
+              title="Có thể bạn sẽ thích" 
               product={product} 
               variant="similar"
               excludeProductId={product.id}
             />
             {product.collection && (
               <RecommendationsCarousel 
-                title="More from This Collection" 
+                title="Thêm từ Bộ Sưu Tập Này" 
                 product={product} 
                 variant="category"
                 excludeProductId={product.id}
               />
             )}
-            
-            {/* Recently Viewed */}
+            {/* Sản phẩm đã xem gần đây */}
             <ViewedProductsCarousel 
-              title="Recently Viewed" 
+              title="Đã xem gần đây" 
               excludeProductId={product.id}
             />
           </div>

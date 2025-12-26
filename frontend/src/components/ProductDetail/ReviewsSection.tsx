@@ -100,9 +100,9 @@ export function ReviewsSection({ product }: ReviewsSectionProps) {
       <div className="flex flex-col gap-6 rounded-[32px] border border-[#E5E7EB] bg-white/80 p-8 shadow-[0_20px_60px_rgba(0,0,0,0.05)] md:flex-row md:items-center md:justify-between">
         <div>
           <p className="text-[28px] font-semibold text-[#1A1A1A]" style={{ fontFamily: "'Playfair Display', serif" }}>
-            Customer Reviews
+            Đánh giá của khách hàng
           </p>
-          <p className="text-[15px] text-[#6B7280]">Verified feedback from our sartorial community</p>
+          <p className="text-[15px] text-[#6B7280]">Phản hồi xác thực từ cộng đồng Aristino</p>
         </div>
         <div className="flex items-end gap-4">
           <div className="text-[56px] font-bold leading-none text-[#1A1A1A]">
@@ -119,7 +119,7 @@ export function ReviewsSection({ product }: ReviewsSectionProps) {
               ))}
             </div>
             <p className="text-[14px] text-[#6B7280]">
-              Based on {resolvedTotalReviews} luxury clients
+              Dựa trên {resolvedTotalReviews} khách hàng
             </p>
           </div>
         </div>
@@ -127,7 +127,7 @@ export function ReviewsSection({ product }: ReviewsSectionProps) {
 
       <div className="grid gap-8 lg:grid-cols-[320px_1fr]">
         <div className="rounded-[24px] border border-[#E5E7EB] bg-white/90 p-6 shadow-sm">
-          <p className="mb-4 text-[16px] font-semibold text-[#1A1A1A]">Rating Breakdown</p>
+          <p className="mb-4 text-[16px] font-semibold text-[#1A1A1A]">Phân tích đánh giá</p>
           <div className="space-y-3">
             {[5, 4, 3, 2, 1].map((rating) => {
               const count = ratingDistribution[rating as keyof typeof ratingDistribution];
@@ -148,13 +148,13 @@ export function ReviewsSection({ product }: ReviewsSectionProps) {
         <div className="space-y-6">
           {isLoading && (
             <div className="rounded-[24px] border border-[#E5E7EB] bg-white/90 p-6 text-[14px] text-[#6B7280] shadow-sm">
-              Loading reviews...
+              Đang tải đánh giá...
             </div>
           )}
 
           {!isLoading && reviews.length === 0 && (
             <div className="rounded-[24px] border border-[#E5E7EB] bg-white/90 p-6 text-[14px] text-[#6B7280] shadow-sm">
-              No reviews yet.
+              Chưa có đánh giá nào.
             </div>
           )}
 
@@ -185,7 +185,7 @@ export function ReviewsSection({ product }: ReviewsSectionProps) {
                     </span>
                   </div>
                   <p className="text-[15px] leading-relaxed text-[#4B5563]">
-                    {review.comment || "No comment provided."}
+                    {review.comment || "Không có nhận xét."}
                   </p>
                 </div>
               </div>
@@ -198,7 +198,7 @@ export function ReviewsSection({ product }: ReviewsSectionProps) {
                 disabled={isLoadingMore}
                 className="inline-flex items-center justify-center rounded-[14px] border border-[#1A1A1A] px-8 py-3 text-[14px] font-semibold uppercase tracking-[0.2em] text-[#1A1A1A] transition hover:bg-[#1A1A1A] hover:text-white disabled:opacity-60"
               >
-                {isLoadingMore ? "Loading..." : "Load More Reviews"}
+                {isLoadingMore ? "Đang tải..." : "Xem thêm đánh giá"}
               </button>
             </div>
           )}

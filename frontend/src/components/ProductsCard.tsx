@@ -81,7 +81,7 @@ export function ProductCard({
         <button
           onClick={() => onAddToWishlist(product.id)}
           className="absolute right-3 top-3 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white/95 text-black shadow-[0_8px_20px_rgba(15,23,42,0.25)] transition-colors duration-200 hover:bg-[#D4AF37] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D4AF37] focus-visible:ring-offset-2 focus-visible:ring-offset-white"
-          aria-label="Add to Wishlist"
+          aria-label="Thêm vào Yêu thích"
         >
           <Heart className="w-4 h-4 text-black" />
         </button>

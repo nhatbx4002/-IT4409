@@ -180,7 +180,7 @@ export function ProductHero({ product }: ProductHeroProps) {
     }
 
     if (quantity <= 0) {
-      toast.error("Quantity must be greater than 0");
+      toast.error("Số lượng phải lớn hơn 0");
       return;
     }
 
@@ -192,10 +192,10 @@ export function ProductHero({ product }: ProductHeroProps) {
     try {
       setIsAddingToCart(true);
       await addToCart(selectedVariant.id, quantity);
-      toast.success("Product added to cart successfully!");
+      toast.success("Đã thêm sản phẩm vào giỏ hàng!");
       setQuantity(1);
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Failed to add product to cart";
+      const errorMessage = error instanceof Error ? error.message : "Thêm sản phẩm vào giỏ hàng thất bại";
       toast.error(errorMessage);
     } finally {
       setIsAddingToCart(false);
@@ -341,7 +341,7 @@ export function ProductHero({ product }: ProductHeroProps) {
                   ))}
                 </div>
                 <button type="button" className="text-[13px] font-medium text-[#D4AF37] underline" onClick={() => document.getElementById("reviews")?.scrollIntoView({ behavior: "smooth" })}>
-                  ({product.reviewCount} reviews)
+                  ({product.reviewCount} đánh giá)
                 </button>
               </div>
             </div>
@@ -418,7 +418,7 @@ export function ProductHero({ product }: ProductHeroProps) {
                 <span className="text-[13px] font-semibold uppercase tracking-[0.24em] text-[#6B7280]">
                   Kích cỡ
                 </span>
-                <button className="text-[13px] font-medium text-[#D4AF37] underline">Size Guide</button>
+                <button className="text-[13px] font-medium text-[#D4AF37] underline">Hướng dẫn chọn size</button>
               </div>
               <div className="flex flex-wrap gap-3">
                 {sizeStates.map(({ size, isAvailable }) => {
@@ -445,7 +445,7 @@ export function ProductHero({ product }: ProductHeroProps) {
           )}
 
           <section className="space-y-3">
-            <span className="text-[14px] font-semibold text-[#1A1A1A]">Quantity</span>
+            <span className="text-[14px] font-semibold text-[#1A1A1A]">Số lượng</span>
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setQuantity((q) => Math.max(1, q - 1))}
@@ -481,7 +481,7 @@ export function ProductHero({ product }: ProductHeroProps) {
                 ) : (
                   <ShoppingBag className="h-5 w-5" />
                 )}
-                {isAddingToCart ? "Adding..." : "Thêm vào giỏ hàng"}
+                {isAddingToCart ? "Đang thêm..." : "Thêm vào giỏ hàng"}
               </button>
               <button
                 onClick={handleBuyNow}
@@ -498,27 +498,30 @@ export function ProductHero({ product }: ProductHeroProps) {
                 className="flex flex-1 min-w-[180px] items-center justify-center gap-2 rounded-[12px] border border-[#E5E7EB] py-3 text-[14px] font-semibold text-[#1A1A1A] transition hover:border-[#D4AF37]"
               >
                 <Heart className="h-4 w-4 text-[#D4AF37]" />
-                Add to Wishlist
+                Thêm vào yêu thích
               </button>
               <button className="flex flex-1 min-w-[150px] items-center justify-center gap-2 rounded-[12px] border border-[#E5E7EB] py-3 text-[14px] font-semibold text-[#1A1A1A] transition hover:border-[#D4AF37]">
                 <Share2 className="h-4 w-4 text-[#1A1A1A]" />
-                Share
+                Chia sẻ
               </button>
             </div>
           </section>
 
           <section className="grid gap-4 border-t border-[#F3F4F6] pt-6 sm:grid-cols-3">
             {[
-              { icon: Truck, title: "Free Shipping", desc: "Complimentary on all orders", iconColor: "#D4AF37" },
-              { icon: RotateCcw, title: "Easy Returns", desc: "30-day hassle-free returns", iconColor: "#1A1A1A" },
-              { icon: Shield, title: "Secure Payment", desc: "256-bit SSL encryption", iconColor: "#1A1A1A" },
-            ].map((feature) => (
-              <div key={feature.title} className="rounded-[16px] bg-[#F9FAFB] p-4 text-center shadow-sm">
-                <feature.icon className="mx-auto mb-3 h-8 w-8" style={{ color: feature.iconColor }} />
-                <p className="text-[14px] font-semibold text-[#1A1A1A]">{feature.title}</p>
-                <p className="text-[13px] text-[#6B7280]">{feature.desc}</p>
-              </div>
-            ))}
+              { icon: Truck, title: "Miễn phí vận chuyển", desc: "Miễn phí cho mọi đơn hàng", iconColor: "#D4AF37" },
+              { icon: RotateCcw, title: "Đổi trả dễ dàng", desc: "Đổi trả trong 30 ngày không phiền phức", iconColor: "#1A1A1A" },
+              { icon: Shield, title: "Thanh toán an toàn", desc: "Mã hóa SSL 256-bit bảo mật", iconColor: "#1A1A1A" },
+            ].map((feature) => {
+              const IconComponent = feature.icon;
+              return (
+                <div key={feature.title} className="rounded-[16px] bg-[#F9FAFB] p-4 text-center shadow-sm">
+                  <IconComponent className="mx-auto mb-3 h-8 w-8" style={{ color: feature.iconColor }} />
+                  <p className="text-[14px] font-semibold text-[#1A1A1A]">{feature.title}</p>
+                  <p className="text-[13px] text-[#6B7280]">{feature.desc}</p>
+                </div>
+              );
+            })}
           </section>
         </div>
       </aside>

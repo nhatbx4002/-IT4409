@@ -62,13 +62,13 @@ export function PromotionBanner() {
             className="text-white mb-6"
             style={{ fontSize: '48px', fontFamily: "'Playfair Display', serif", fontWeight: 600 }}
           >
-            Exclusive Autumn Sale - Up to 40% Off
+            Ưu đãi mùa thu - Giảm đến 40%
           </h2>
           <p 
             className="text-white/80 mb-10"
             style={{ fontSize: '18px', lineHeight: 1.6 }}
           >
-            Limited time offer on selected premium items from our autumn collection
+            Ưu đãi có thời hạn cho các sản phẩm cao cấp trong bộ sưu tập mùa thu
           </p>
 
           {/* Countdown Timer */}
@@ -85,7 +85,7 @@ export function PromotionBanner() {
               >
                 {timeLeft.days}
               </div>
-              <div className="text-white/60 text-xs tracking-wider">DAYS</div>
+              <div className="text-white/60 text-xs tracking-wider">NGÀY</div>
             </div>
             <div className="text-center">
               <div 
@@ -99,7 +99,7 @@ export function PromotionBanner() {
               >
                 {timeLeft.hours}
               </div>
-              <div className="text-white/60 text-xs tracking-wider">HOURS</div>
+              <div className="text-white/60 text-xs tracking-wider">GIỜ</div>
             </div>
             <div className="text-center">
               <div 
@@ -113,7 +113,7 @@ export function PromotionBanner() {
               >
                 {timeLeft.minutes}
               </div>
-              <div className="text-white/60 text-xs tracking-wider">MINUTES</div>
+              <div className="text-white/60 text-xs tracking-wider">PHÚT</div>
             </div>
             <div className="text-center">
               <div 
@@ -127,7 +127,7 @@ export function PromotionBanner() {
               >
                 {timeLeft.seconds}
               </div>
-              <div className="text-white/60 text-xs tracking-wider">SECONDS</div>
+              <div className="text-white/60 text-xs tracking-wider">GIÂY</div>
             </div>
           </div>
 
@@ -141,7 +141,7 @@ export function PromotionBanner() {
                 letterSpacing: '1px'
               }}
             >
-              Shop Now
+              Mua ngay
             </Button>
           </div>
         </div>

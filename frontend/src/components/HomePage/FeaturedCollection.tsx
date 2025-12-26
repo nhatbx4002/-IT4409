@@ -38,7 +38,7 @@ export function FeaturedCollections() {
             className="mb-4"
             style={{ fontSize: '42px', fontFamily: "'Playfair Display', serif", fontWeight: 600 }}
           >
-            Featured Collections
+            Bộ Sưu Tập Nổi Bật
           </h2>
           <div className="w-24 h-0.5 mx-auto" style={{ backgroundColor: '#D4AF37' }}></div>
         </div>
@@ -78,9 +78,11 @@ export function FeaturedCollections() {
                 >
                   {collection.title}
                 </h3>
-                <p className="text-xs text-gray-300 mt-2">
-                  {collection.productCount} products
-                </p>
+                {collection.productCount !== undefined && (
+                  <p className="text-xs text-gray-300 mt-2">
+                    {collection.productCount} sản phẩm
+                  </p>
+                )}
               </div>
             </div>
           ))}

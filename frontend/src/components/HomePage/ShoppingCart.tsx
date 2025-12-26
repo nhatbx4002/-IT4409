@@ -320,7 +320,7 @@ export function ShoppingCart({ open, onOpenChange }: ShoppingCartProps) {
                   fontWeight: 600 
                 }}
               >
-                Your Bag
+                Giỏ hàng của bạn
               </SheetTitle>
               <div 
                 className="w-16 h-0.5" 
@@ -336,8 +336,8 @@ export function ShoppingCart({ open, onOpenChange }: ShoppingCartProps) {
           </div>
           <SheetDescription className="text-sm text-[#666666] mt-4">
             {isEmpty 
-              ? 'Your shopping bag is currently empty' 
-              : `${cartItems.length} ${cartItems.length === 1 ? 'item' : 'items'} in your bag`
+              ? 'Giỏ hàng của bạn đang trống' 
+              : `${cartItems.length} ${cartItems.length === 1 ? 'sản phẩm' : 'sản phẩm'} trong giỏ hàng`
             }
           </SheetDescription>
         </SheetHeader>
@@ -364,17 +364,17 @@ export function ShoppingCart({ open, onOpenChange }: ShoppingCartProps) {
                   fontWeight: 500 
                 }}
               >
-                Your bag is empty
+                Giỏ hàng trống
               </h3>
               <p className="mb-8 text-[#666666]" style={{ fontSize: '16px' }}>
-                Start adding items to your shopping bag
+                Hãy thêm sản phẩm vào giỏ hàng của bạn
               </p>
               <Button
                 onClick={() => onOpenChange(false)}
                 variant="outline"
                 className="rounded-full border-2 border-[#D4AF37] px-8 py-4 text-xs font-semibold uppercase tracking-[0.2em] text-[#D4AF37] transition-colors hover:bg-[#D4AF37] hover:text-black"
               >
-                Continue Shopping
+                Tiếp tục mua sắm
               </Button>
             </div>
           ) : (

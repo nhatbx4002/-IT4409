@@ -40,13 +40,13 @@ export function InstagramGallery() {
             className="mb-4"
             style={{ fontSize: '36px', fontFamily: "'Playfair Display', serif", fontWeight: 600 }}
           >
-            Follow @aristino_official
+            Theo dõi @aristino_official
           </h2>
           <p 
             className="text-[#666666]"
             style={{ fontSize: '16px', lineHeight: 1.5 }}
           >
-            Join our community and get inspired
+            Tham gia cộng đồng của chúng tôi và tìm cảm hứng mỗi ngày
           </p>
         </div>
 

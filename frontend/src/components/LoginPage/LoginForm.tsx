@@ -9,7 +9,7 @@ import { signIn, signInWithGoogle, signInWithFacebook } from "@/lib/api";
 import { setAuthSession } from "@/lib/auth";
 
 const loginSchema = z.object({
-  email: z.string().email("Vui lòng nhập email hợp lệ"),
+  email: z.string().email("Vui lòng nhập địa chỉ email hợp lệ"),
   password: z.string().min(6, "Mật khẩu phải có ít nhất 6 ký tự"),
   remember: z.boolean().optional(),
 });
@@ -98,7 +98,7 @@ export function LoginForm() {
             color: "#6B7280",
           }}
         >
-          Nhập email và mật khẩu để tiếp tục
+          Nhập email và mật khẩu của bạn để tiếp tục
         </p>
         </div>
 
@@ -138,7 +138,7 @@ export function LoginForm() {
               color: "#111111",
             }}
           >
-            Email
+            Địa chỉ Email
           </label>
           <div className="relative">
             <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-[#9CA3AF]" />
@@ -185,7 +185,7 @@ export function LoginForm() {
                 color: "#111111",
               }}
             >
-                Mật khẩu
+              Mật khẩu
             </label>
             <Link
               to="/forgot-password"
@@ -198,7 +198,7 @@ export function LoginForm() {
               }}
               className="hover:underline"
             >
-                Quên mật khẩu?
+              Quên mật khẩu?
             </Link>
           </div>
           <div className="relative">
@@ -206,7 +206,7 @@ export function LoginForm() {
             <input
               id="password"
               type={showPassword ? "text" : "password"}
-              placeholder="Nhập mật khẩu"
+              placeholder="Nhập mật khẩu của bạn"
               {...register("password")}
               className={`w-full h-[52px] bg-[rgba(243,244,246,0.5)] border rounded-lg pl-12 pr-12 transition-all focus:outline-none focus:border-2 focus:bg-white focus:shadow-[0_0_0_4px_rgba(212,175,55,0.1)] ${
                 errors.password
@@ -262,7 +262,7 @@ export function LoginForm() {
               color: "#6B7280",
             }}
           >
-            Ghi nhớ trong 30 ngày
+            Lưu đăng nhập trong 30 ngày
           </label>
         </div>
 
@@ -355,7 +355,7 @@ export function LoginForm() {
               fill="#EA4335"
             />
           </svg>
-          Tiếp tục với Google
+          Đăng nhập bằng Google
         </button>
 
         {/* Facebook SSO Button */}
@@ -385,7 +385,7 @@ export function LoginForm() {
               fill="#1877F2"
             />
           </svg>
-          Tiếp tục với Facebook
+          Đăng nhập với Facebook
         </button>
 
         {/* Footer */}
@@ -397,7 +397,7 @@ export function LoginForm() {
               color: "#6B7280",
             }}
           >
-            Chưa có tài khoản?{" "}
+            Không có tài khoản?{" "}
           </span>
           <Link
             to="/signup"
