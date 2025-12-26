@@ -61,17 +61,29 @@ router.get("/categories/:slug", getCategoryBySlug);
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - name
  *             properties:
  *               name:
  *                 type: string
+ *                 description: Tên danh mục (bắt buộc)
+ *                 example: "Áo Khoác"
  *               slug:
  *                 type: string
+ *                 description: Slug cho URL (tùy chọn - tự động tạo từ tên nếu không cung cấp)
+ *                 example: "ao-khoac"
  *               parent_id:
  *                 type: integer
+ *                 description: ID danh mục cha (tùy chọn)
+ *                 example: 13
  *               description:
  *                 type: string
+ *                 description: Mô tả danh mục (tùy chọn)
+ *                 example: "Các loại áo khoác"
  *               image_url:
  *                 type: string
+ *                 description: URL hình ảnh (tùy chọn)
+ *                 example: "https://example.com/image.jpg"
  *     responses:
  *       201:
  *         description: Tạo danh mục thành công
@@ -79,6 +91,8 @@ router.get("/categories/:slug", getCategoryBySlug);
  *         description: Dữ liệu không hợp lệ
  *       403:
  *         description: Access denied
+ *       409:
+ *         description: Slug đã tồn tại
  */
 router.post("/admin/categories", authenticateToken, isAdmin, createCategory);
 
@@ -96,6 +110,7 @@ router.post("/admin/categories", authenticateToken, isAdmin, createCategory);
  *         required: true
  *         schema:
  *           type: integer
+ *         description: ID danh mục cần cập nhật
  *     requestBody:
  *       required: true
  *       content:
@@ -105,14 +120,24 @@ router.post("/admin/categories", authenticateToken, isAdmin, createCategory);
  *             properties:
  *               name:
  *                 type: string
+ *                 description: Tên danh mục (tự động tạo slug mới nếu thay đổi)
+ *                 example: "Áo Khoác"
  *               slug:
  *                 type: string
+ *                 description: Slug cho URL (tùy chọn - giữ nguyên nếu không cung cấp)
+ *                 example: "ao-khoac"
  *               parent_id:
  *                 type: integer
+ *                 description: ID danh mục cha
+ *                 example: 13
  *               description:
  *                 type: string
+ *                 description: Mô tả danh mục
+ *                 example: "Các loại áo khoác"
  *               image_url:
  *                 type: string
+ *                 description: URL hình ảnh
+ *                 example: "https://example.com/image.jpg"
  *     responses:
  *       200:
  *         description: Cập nhật danh mục thành công
@@ -120,6 +145,8 @@ router.post("/admin/categories", authenticateToken, isAdmin, createCategory);
  *         description: Không tìm thấy danh mục
  *       403:
  *         description: Access denied
+ *       409:
+ *         description: Slug đã tồn tại
  */
 router.put("/admin/categories/:id", authenticateToken, isAdmin, updateCategory);
 

@@ -1,8 +1,7 @@
 export const calculatePriceFromVariants = (basePrice = 0, variants = []) => {
+  // Price is now always from product base_price, not variants
   const numericBase = parseFloat(basePrice || 0);
-  if (!variants.length) return numericBase;
-  const minPrice = Math.min(...variants.map((v) => parseFloat(v.price || 0)));
-  return Number.isFinite(minPrice) ? minPrice : numericBase;
+  return Number.isFinite(numericBase) ? numericBase : 0;
 };
 
 export const calculateDiscountPercent = (price, salePrice) => {

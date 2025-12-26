@@ -260,7 +260,6 @@ export const getCartDetails = async (userId) => {
                         "color",
                         "size",
                         "sku",
-                        "price",
                         "stock_quantity",
                         "image_url",
                     ],
@@ -274,6 +273,7 @@ export const getCartDetails = async (userId) => {
                                 "name",
                                 "slug",
                                 "base_price",
+                                "sale_price",
                             ],
                         },
                     ],
@@ -294,8 +294,8 @@ export const getCartDetails = async (userId) => {
 
         const product = variant.product;
 
-        // Tính giá cuối cùng của 1 sản phẩm
-        const final_price = parseFloat(variant.price || product.base_price || 0);
+        // Tính giá cuối cùng của 1 sản phẩm (sử dụng product price, không phải variant price)
+        const final_price = parseFloat(product.sale_price || product.base_price || 0);
 
         // Tính tổng tiền của dòng này
         const line_total = Number((final_price * item.quantity).toFixed(2));

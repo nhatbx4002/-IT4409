@@ -33,10 +33,28 @@ export const getCategoryBySlug = async (req, res) => {
 
 export const createCategory = async (req, res) => {
   try {
-    const payload = req.body;
+    const { name, slug, parent_id, description, image_url } = req.body;
+
+    // Validate: name is required
+    if (!name || name.trim() === "") {
+      return sendError(res, "Category name is required", 400);
+    }
+
+    const payload = {
+      name: name.trim(),
+      slug: slug ? slug.trim() : undefined,
+      parent_id: parent_id || null,
+      description: description || null,
+      image_url: image_url || null,
+    };
+
     const created = await createCategoryEntry(payload);
     return sendSuccess(res, { status: 201, data: created });
   } catch (error) {
+    // Handle unique constraint violation for slug
+    if (error.name === "SequelizeUniqueConstraintError") {
+      return sendError(res, "A category with this slug already exists", 409);
+    }
     return sendError(res, error);
   }
 };
@@ -44,7 +62,17 @@ export const createCategory = async (req, res) => {
 export const updateCategory = async (req, res) => {
   try {
     const { id } = req.params;
-    const updated = await updateCategoryEntry(id, req.body);
+    const { name, slug, parent_id, description, image_url } = req.body;
+
+    const payload = {
+      ...(name !== undefined && { name: name.trim() }),
+      ...(slug !== undefined && { slug: slug.trim() }),
+      ...(parent_id !== undefined && { parent_id: parent_id || null }),
+      ...(description !== undefined && { description: description || null }),
+      ...(image_url !== undefined && { image_url: image_url || null }),
+    };
+
+    const updated = await updateCategoryEntry(id, payload);
 
     if (!updated) {
       return sendError(res, "Category not found", 404);
@@ -52,6 +80,9 @@ export const updateCategory = async (req, res) => {
 
     return sendSuccess(res, { data: updated });
   } catch (error) {
+    if (error.name === "SequelizeUniqueConstraintError") {
+      return sendError(res, "A category with this slug already exists", 409);
+    }
     return sendError(res, error);
   }
 };

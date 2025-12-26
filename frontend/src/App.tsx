@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import Home from "./pages/Home";
 import { Collections } from "@/pages/Collections";
 import LoginPage from "@/pages/LoginPage";
@@ -18,6 +18,19 @@ import PaymentErrorPage from "@/pages/PaymentError";
 import SearchPage from "@/pages/SearchPage";
 import { bootstrapAuthSession } from "@/lib/api";
 
+// Scroll to top component that triggers on route change
+function ScrollToTop() {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth"
+    });
+  }, [pathname]);
+
+  return null;
+}
 
 export default function App() {
   useEffect(() => {
@@ -26,13 +39,14 @@ export default function App() {
 
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <Routes>
         <Route path="/" element={<Home />} />
         {/* Collections listing (all) and filtered by collection */}
         <Route path="/collections" element={<Collections />} />
         <Route path="/collections/:collection" element={<Collections />} />
         <Route path="/collections/:collection/:category" element={<Collections />} />
-        <Route path="/products/:productId" element={<ProductDetail />} />
+        <Route path="/products/:slug" element={<ProductDetail />} />
         <Route path="/search" element={<SearchPage />} />
         <Route path="/cart" element={<CartPage />} />
         <Route path="/checkout" element={<CheckoutPage />} />

@@ -93,8 +93,8 @@ async function validateProductEligibility(discount, cartItems = []) {
     }
 
     if (isMatch) {
-      // Calculate the amount for matching items only
-      const price = parseFloat(variant.price || 0);
+      // Calculate the amount for matching items only using product-level pricing
+      const price = parseFloat(product.sale_price || product.base_price || 0);
       matchingAmount += price * itemQuantity;
     }
   }
@@ -234,14 +234,15 @@ export async function applyDiscount(orderDraft, code) {
       try {
         const variants = await ProductVariant.findAll({
           where: { id: { [Op.in]: variantIds } },
-          include: [{ model: Product, as: 'product', attributes: ['base_price'] }],
-          attributes: ['id', 'price', 'product_id']
+          include: [{ model: Product, as: 'product', attributes: ['base_price', 'sale_price'] }],
+          attributes: ['id', 'product_id']
         });
 
         for (const item of cartItems) {
           const variant = variants.find(v => v.id === (item.product_variant_id || item.productVariantId));
           if (variant) {
-            const price = parseFloat(variant.price || variant.product?.base_price || 0);
+            // Use product-level pricing (base_price or sale_price)
+            const price = parseFloat(variant.product?.sale_price || variant.product?.base_price || 0);
             subtotal += price * (item.quantity || 1);
           }
         }

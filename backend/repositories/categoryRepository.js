@@ -1,4 +1,25 @@
 import { Category, sequelize } from "../models/index.js";
+import { slugify } from "../utils/slug.js";
+
+const generateUniqueSlug = async (name, transaction) => {
+  const base = slugify(name);
+  if (!base) return null;
+
+  let slug = base;
+  let counter = 1;
+
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    const existing = await Category.findOne({
+      where: { slug },
+      transaction,
+    });
+    if (!existing) break;
+    slug = `${base}-${counter++}`;
+  }
+
+  return slug;
+};
 
 export const getAllCategories = async () => {
   const categories = await Category.findAll({
@@ -16,15 +37,44 @@ export const getCategoryBySlug = async (slug) => {
   return category ? category.get({ plain: true }) : null;
 };
 
-export const createCategory = async (payload) => {
-  const created = await Category.create(payload);
+export const createCategory = async (payload, transaction) => {
+  const { name, slug, ...rest } = payload;
+
+  // Auto-generate slug from name if not provided
+  const categorySlug = slug || (name ? await generateUniqueSlug(name, transaction) : null);
+
+  const created = await Category.create(
+    {
+      ...rest,
+      name,
+      slug: categorySlug,
+    },
+    { transaction }
+  );
   return created.get({ plain: true });
 };
 
 export const updateCategory = async (id, payload) => {
   const category = await Category.findByPk(id);
   if (!category) return null;
-  const updated = await category.update(payload);
+
+  const { name, slug, ...rest } = payload;
+
+  // If slug is provided but name changed, check if we need to update slug
+  let finalSlug = slug;
+  if (!slug && name && name !== category.name) {
+    // Auto-generate new slug from new name if not explicitly provided
+    finalSlug = await generateUniqueSlug(name);
+  } else if (!slug) {
+    // Keep existing slug if neither slug nor name changed
+    finalSlug = category.slug;
+  }
+
+  const updated = await category.update({
+    ...rest,
+    name: name || category.name,
+    slug: finalSlug,
+  });
   return updated.get({ plain: true });
 };
 

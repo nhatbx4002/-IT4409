@@ -65,7 +65,8 @@ const validateCartItems = (cartItems) => {
       throw error;
     }
 
-    const price = parseFloat(variant.price || variant.product.base_price || 0);
+    // Use product-level pricing (base_price or sale_price)
+    const price = parseFloat(variant.product.sale_price || variant.product.base_price || 0);
     subtotal += price * item.quantity;
   }
 

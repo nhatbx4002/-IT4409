@@ -89,22 +89,6 @@ export const listProductsWithRelations = async ({
 }) => {
   return Product.findAll({
     where,
-    attributes: {
-      include: [
-        [
-          literal(
-            'COALESCE((SELECT MIN(pv.price) FROM product_variants pv WHERE pv.product_id = products.id), products.base_price)'
-          ),
-          "minPrice",
-        ],
-        [
-          literal(
-            'COALESCE((SELECT MAX(pv.price) FROM product_variants pv WHERE pv.product_id = products.id), products.base_price)'
-          ),
-          "maxPrice",
-        ],
-      ],
-    },
     include: [
       {
         model: ProductVariant,
@@ -125,23 +109,37 @@ export const listProductsWithRelations = async ({
   });
 };
 
-export const countProductsWithRelations = async ({ where, variantWhere }) =>
-  Product.count({
+export const countProductsWithRelations = async ({ where, variantWhere }) => {
+  // When variant filters are applied, we need to count products that have at least one matching variant
+  if (variantWhere && Object.keys(variantWhere).length > 0) {
+    // Use a separate query to count distinct products with matching variants
+    const { count } = await Product.findAndCountAll({
+      where,
+      include: [
+        {
+          model: ProductVariant,
+          as: "variants",
+          where: variantWhere,
+          required: true, // INNER JOIN - only products with matching variants
+          attributes: [], // Don't select variant attributes
+        },
+      ],
+      distinct: true,
+      attributes: ['id'], // Only select product ID for counting
+    });
+    return count;
+  }
+
+  // No variant filters - simple count
+  return Product.count({
     where,
-    include: [
-      {
-        model: ProductVariant,
-        as: "variants",
-        where: variantWhere,
-        required: Boolean(variantWhere),
-      },
-    ],
     distinct: true,
   });
+};
 
 export const buildBasePriceSubquery = () =>
   literal(
-    "COALESCE((SELECT MIN(price) FROM product_variants WHERE product_id = products.id), base_price)"
+    "base_price"
   );
 
 export const defaultProductOrder = [["created_at", "DESC"]];

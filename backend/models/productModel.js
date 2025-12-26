@@ -28,6 +28,10 @@ export const Product = sequelize.define("products", {
     type: DataTypes.JSONB,
     defaultValue: [],
   },
+  collection: {
+    type: DataTypes.STRING(50),
+    allowNull: true,
+  },
   created_at: { type: DataTypes.DATE, defaultValue: DataTypes.NOW },
   updated_at: { type: DataTypes.DATE, defaultValue: DataTypes.NOW },
 });

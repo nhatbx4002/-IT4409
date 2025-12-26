@@ -1,19 +1,19 @@
 import { Op } from "sequelize";
-import { ProductVariant } from "../models/index.js";
+import { ProductVariant, Product } from "../models/index.js";
 
-export const createVariantRecord = async (productId, variant, transaction) =>
-  ProductVariant.create(
+export const createVariantRecord = async (productId, variant, transaction) => {
+  return ProductVariant.create(
     {
       product_id: productId,
       color: variant.color || null,
       size: variant.size || null,
       sku: variant.sku || null,
-      price: variant.price ?? 0,
       stock_quantity: variant.stock_quantity || 0,
       image_url: variant.image_url || null,
     },
     { transaction }
   );
+};
 
 export const findVariantForProduct = (productId, variantId, transaction) =>
   ProductVariant.findOne({
@@ -53,7 +53,6 @@ export const updateVariantRecord = (variant, data, transaction) =>
       color: data.color ?? variant.color,
       size: data.size ?? variant.size,
       sku: data.sku ?? variant.sku,
-      price: data.price ?? variant.price,
       stock_quantity: data.stock_quantity ?? variant.stock_quantity,
       image_url: data.image_url ?? variant.image_url,
     },

@@ -48,7 +48,6 @@ type VariantOption = {
   color: string;
   size: string;
   stockQuantity: number;
-  price: number;
 };
 
 const SHIPPING_FEE = 15000;
@@ -109,13 +108,11 @@ const normalizeVariantOption = (variant: {
   color: string | null;
   size: string | null;
   stockQuantity: number;
-  price: number;
 }): VariantOption => ({
   id: variant.id,
   color: variant.color || "Không có",
   size: variant.size || "Không có",
   stockQuantity: variant.stockQuantity,
-  price: variant.price,
 });
 
 const COLOR_HEX_MAP = COLOR_OPTIONS.reduce<Record<string, string>>((acc, option) => {
@@ -510,7 +507,7 @@ const CartItemCard = ({
   const navigate = useNavigate();
 
   const handleProductClick = () => {
-    navigate(`/products/${item.productId}`);
+    navigate(`/products/${item.product_slug || item.product_id}`);
   };
 
   return (

@@ -8,7 +8,6 @@ export type ProductVariant = {
   color?: string | null;
   size?: string | null;
   sku?: string | null;
-  price?: number | string | null;
   stock_quantity?: number | null;
   image_url?: string | null;
 };
@@ -70,7 +69,6 @@ export type CreateVariantPayload = {
   color?: string | null;
   size?: string | null;
   sku?: string | null;
-  price: number;
   stock_quantity?: number;
   image_url?: File | string | null;
 };
@@ -156,6 +154,11 @@ export async function deleteProduct(id: number | string): Promise<void> {
   await adminApiClient.delete(`/products/${id}`);
 }
 
+export async function getBrands(): Promise<string[]> {
+  const res = await adminApiClient.get<string[]>("/product-management/brands");
+  return res.data;
+}
+
 export async function createProductVariant(
   productId: number | string,
   payload: CreateVariantPayload
@@ -171,3 +174,81 @@ export async function createProductVariant(
   return res.data;
 }
 
+export async function deleteProductVariant(
+  productId: number | string,
+  variantId: number | string
+): Promise<void> {
+  await adminApiClient.delete(`/products/${productId}/variants/${variantId}`);
+}
+
+export async function updateProductVariant(
+  productId: number | string,
+  variantId: number | string,
+  payload: Partial<CreateVariantPayload>
+): Promise<ProductVariant> {
+  const formData = buildFormData(payload as Record<string, any>);
+  const res = await adminApiClient.patch<ProductVariant>(
+    `/products/${productId}/variants/${variantId}`,
+    formData,
+    {
+      headers: { "Content-Type": "multipart/form-data" },
+    }
+  );
+  return res.data;
+}
+
+/**
+ * Calculate the price range for a product based on its variants
+ * @param product - The product object with variants
+ * @returns Object with minPrice, maxPrice, and display string
+ */
+export function getProductPriceRange(product: Product): {
+  minPrice: number;
+  maxPrice: number;
+  hasVariants: boolean;
+  displayPrice: string;
+} {
+  const hasVariants = product.variants && product.variants.length > 0;
+
+  // Use product base_price since variants no longer have individual prices
+  const basePrice = Number(product.base_price) || 0;
+  const salePrice = Number(product.sale_price) || null;
+
+  // Use pre-calculated min/max if available
+  if (product.minPrice && product.maxPrice) {
+    const min = Number(product.minPrice);
+    const max = Number(product.maxPrice);
+    const displayPrice = salePrice && salePrice < min
+      ? formatCurrencyHelper(salePrice)
+      : min === max
+      ? formatCurrencyHelper(min)
+      : `${formatCurrencyHelper(min)} - ${formatCurrencyHelper(max)}`;
+
+    return {
+      minPrice: min,
+      maxPrice: max,
+      hasVariants: true,
+      displayPrice,
+    };
+  }
+
+  // All variants share the same product-level pricing
+  return {
+    minPrice: salePrice || basePrice,
+    maxPrice: basePrice,
+    hasVariants: true,
+    displayPrice: salePrice
+      ? `${formatCurrencyHelper(salePrice)}`
+      : formatCurrencyHelper(basePrice),
+  };
+}
+
+/**
+ * Format currency in VND (Vietnamese Dong)
+ */
+function formatCurrencyHelper(value: number | string | null | undefined): string {
+  if (value === null || value === undefined) return '₫0';
+  const numeric = typeof value === 'string' ? Number(value) : value;
+  if (Number.isNaN(numeric)) return '₫0';
+  return numeric.toLocaleString('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 });
+}

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import MainLayout from "@/layout/MainLayout";
-import { getProductById } from "@/lib/api";
+import { getProductDetail } from "@/lib/api";
 import { addViewedProduct } from "@/lib/viewedProducts";
 import type { ProductDetail } from "@/types/products";
 import { ProductHero } from "@/components/ProductDetail/ProductHero";
@@ -13,7 +13,7 @@ import { ProductBreadcrumbs } from "@/components/ProductDetail/ProductBreadcrumb
 import { MobileStickyCart } from "@/components/ProductDetail/MobileStickyCart";
 
 export default function ProductDetail() {
-  const { productId } = useParams<{ productId: string }>();
+  const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const [product, setProduct] = useState<ProductDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -21,18 +21,22 @@ export default function ProductDetail() {
 
   useEffect(() => {
     const fetchProduct = async () => {
-      if (!productId) {
-        setError("Product ID is required");
+      if (!slug) {
+        setError("Product slug is required");
         setIsLoading(false);
         return;
       }
 
       try {
         setIsLoading(true);
-        const data = await getProductById(Number(productId));
+        const data = await getProductDetail(slug);
+        if (!data) {
+          setError("Product not found");
+          return;
+        }
         setProduct(data);
         setError(null);
-        
+
         addViewedProduct(data.id);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load product");
@@ -42,7 +46,15 @@ export default function ProductDetail() {
     };
 
     fetchProduct();
-  }, [productId]);
+  }, [slug]);
+
+  // Scroll to top when product changes
+  useEffect(() => {
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth"
+    });
+  }, [slug]);
 
   if (isLoading) {
     return (

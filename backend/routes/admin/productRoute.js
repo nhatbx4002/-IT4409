@@ -1,7 +1,7 @@
 import express from "express";
 import multer from "multer";
 
-import { createProductController, createVariantController, deleteProductController, updateProductController, getAllProductsController, searchProductsController } from "../../controllers/admin/productController.js";
+import { createProductController, createVariantController, deleteProductController, updateProductController, getAllProductsController, searchProductsController, getBrandsController } from "../../controllers/admin/productController.js";
 
 const router = express.Router();
 const upload = multer({ dest: "tmp/"})
@@ -46,6 +46,31 @@ const upload = multer({ dest: "tmp/"})
  *                   type: string
  */
 router.get("/search", searchProductsController);
+
+/**
+ * @swagger
+ * /admin/product-management/brands:
+ *   get:
+ *     summary: Lấy danh sách các thương hiệu duy nhất (Admin)
+ *     tags: [Admin, Products]
+ *     responses:
+ *       200:
+ *         description: Danh sách thương hiệu
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: string
+ *                 message:
+ *                   type: string
+ */
+router.get("/brands", getBrandsController);
 
 /**
  * @swagger

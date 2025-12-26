@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
-import { getProductById, addToWishlist } from "@/lib/api";
+import { getProductDetail, addToWishlist, addToCart } from "@/lib/api";
 import { getViewedProductIds } from "@/lib/viewedProducts";
 import type { ProductSummary } from "@/types/products";
 import { ProductCard } from "@/components/ProductsCard";
+import { toast } from "sonner";
 
 interface ViewedProductsCarouselProps {
   title?: string;
@@ -42,7 +43,7 @@ export function ViewedProductsCarousel({
 
         const productPromises = filteredIds
           .slice(0, 8)
-          .map((id) => getProductById(id).catch(() => null));
+          .map((id) => getProductDetail(String(id)).catch(() => null));
 
         const results = await Promise.all(productPromises);
         const validProducts = results.filter(
@@ -61,17 +62,32 @@ export function ViewedProductsCarousel({
     fetchViewedProducts();
   }, [excludeProductId]);
 
-  const handleAddToCart = (product: ProductSummary) => {
-    console.log("Add to cart", product);
+  const handleAddToCart = async (product: ProductSummary) => {
+    try {
+      if (!product.defaultVariantId) {
+        toast.error("Vui lòng chọn phiên bản sản phẩm");
+        return;
+      }
+
+      await addToCart(product.defaultVariantId, 1);
+      toast.success("Đã thêm vào giỏ hàng", {
+        description: `${product.name} đã được thêm vào giỏ hàng của bạn`
+      });
+    } catch (err) {
+      console.error("Error adding to cart:", err);
+      const message = err instanceof Error ? err.message : "Không thể thêm vào giỏ";
+      toast.error(message);
+    }
   };
 
   const handleAddToWishlist = async (productId: number) => {
     try {
       await addToWishlist(productId);
-      alert("Added to wishlist!");
+      toast.success("Đã thêm vào danh sách yêu thích");
     } catch (err) {
       console.error("Error adding to wishlist:", err);
-      alert("Failed to add to wishlist");
+      const message = err instanceof Error ? err.message : "Không thể thêm vào danh sách yêu thích";
+      toast.error(message);
     }
   };
 

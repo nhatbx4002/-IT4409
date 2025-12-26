@@ -5,6 +5,7 @@ import {
   getCategoryBySlug,
   updateCategory,
 } from "../repositories/categoryRepository.js";
+import { sequelize } from "../models/index.js";
 
 const buildCategoryTree = (categories) => {
   const map = new Map();
@@ -47,7 +48,16 @@ export const fetchCategoryWithChildren = async (slug) => {
 };
 
 export const createCategoryEntry = async (payload) => {
-  return createCategory(payload);
+  // Start a transaction for slug generation
+  const transaction = await sequelize.transaction();
+  try {
+    const result = await createCategory(payload, transaction);
+    await transaction.commit();
+    return result;
+  } catch (error) {
+    await transaction.rollback();
+    throw error;
+  }
 };
 
 export const updateCategoryEntry = async (id, payload) => {

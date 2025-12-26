@@ -197,10 +197,6 @@ export function Navbar() {
                 aria-label="Search"
               >
                 <Search className="h-5 w-5" />
-                {/* Keyboard shortcut hint */}
-                <span className="hidden sm:ml-2 sm:inline-block sm:absolute sm:left-full sm:ml-3 text-[10px] text-gray-400 group-hover:text-[#D4AF37] transition-colors opacity-0 group-hover:opacity-100 whitespace-nowrap">
-                  ⌘K
-                </span>
               </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>

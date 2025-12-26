@@ -155,11 +155,10 @@ export function ProductHero({ product }: ProductHeroProps) {
   const minPrice = typeof productDetail.minPrice === "number" ? productDetail.minPrice : product.price;
   const maxPrice = typeof productDetail.maxPrice === "number" ? productDetail.maxPrice : product.price;
 
-  const displayPriceText = selectedVariant
-    ? formatVnd(selectedVariant.price)
-    : minPrice === maxPrice
-    ? formatVnd(minPrice)
-    : `${formatVnd(minPrice)} - ${formatVnd(maxPrice)}`;
+  // Price is now from product level, not variant level
+  const displayPriceText = product.salePrice
+    ? `${formatVnd(product.salePrice)}`
+    : `${formatVnd(product.price)}`;
 
   const stockStatusText = selectedVariant
     ? selectedVariant.stockQuantity === 0

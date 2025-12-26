@@ -1,6 +1,6 @@
 import { adminApiClient, getPaginatedAdminData } from "./api";
 
-export type Role = "ADMIN" | "CUSTOMER" | "SUPER_ADMIN" | "customer" | "admin" | "super_admin";
+export type Role = "ADMIN" | "CUSTOMER" | "customer" | "admin";
 
 export type User = {
   id: number;

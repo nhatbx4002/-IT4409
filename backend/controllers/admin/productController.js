@@ -1,4 +1,4 @@
-import { createProductService, createVariantService, deleteProductService, updateProductService, getAllProductsService, searchProductsService } from "../../services/admin/productService.js";
+import { createProductService, createVariantService, deleteProductService, updateProductService, getAllProductsService, searchProductsService, getUniqueBrandsService } from "../../services/admin/productService.js";
 
 export const createProductController = async (req, res) => {
     try{
@@ -163,9 +163,9 @@ export const searchProductsController = async (req, res) => {
     try {
         const { q, search } = req.query; // Hỗ trợ cả 'q' và 'search' parameter
         const searchTerm = q || search || '';
-        
+
         const products = await searchProductsService(searchTerm);
-        
+
         return res.status(200).json({
             success: true,
             data: products,
@@ -175,6 +175,25 @@ export const searchProductsController = async (req, res) => {
         return res.status(500).json({
             success: false,
             message: "Search products failed",
+            error: error.message
+        });
+    }
+}
+
+//Lay danh sach brand
+export const getBrandsController = async (req, res) => {
+    try {
+        const brands = await getUniqueBrandsService();
+
+        return res.status(200).json({
+            success: true,
+            data: brands,
+            message: "Get brands successfully",
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: "Get brands failed",
             error: error.message
         });
     }

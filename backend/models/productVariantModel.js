@@ -8,7 +8,6 @@ export const ProductVariant = sequelize.define("product_variants", {
   color: DataTypes.STRING(100),
   size: DataTypes.STRING(50),
   sku: DataTypes.STRING(200),
-  price: { type: DataTypes.DECIMAL(12,2), allowNull: false, defaultValue: 0 },
   stock_quantity: { type: DataTypes.INTEGER, defaultValue: 0 },
   image_url: DataTypes.TEXT,
   created_at: { type: DataTypes.DATE, defaultValue: DataTypes.NOW },

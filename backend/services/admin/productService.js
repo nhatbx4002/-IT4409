@@ -129,13 +129,37 @@ export const updateProductService = async (productId, data = {}, files) => {
       transaction
     );
 
-    const imageUrls = await uploadProductImages(files);
-    const mergedImages =
-      data.images !== undefined
-        ? Array.isArray(data.images)
-          ? data.images
-          : []
-        : mergeProductImages(product.images, imageUrls);
+    // Upload new image files to get URLs
+    const newImageUrls = await uploadProductImages(files);
+
+    // data.images contains: [existingUrl1, existingUrl2, ..., newFile1, newFile2, ...]
+    // We need to separate existing URLs from new Files and upload the Files
+    let finalImages;
+
+    if (data.images !== undefined) {
+      // Separate existing URLs (strings) from Files
+      const existingUrls = [];
+      const newFiles = [];
+
+      if (Array.isArray(data.images)) {
+        data.images.forEach(item => {
+          if (typeof item === 'string') {
+            existingUrls.push(item);
+          } else if (item instanceof File || item?.name) {
+            newFiles.push(item);
+          }
+        });
+      }
+
+      // Upload new files if any
+      const uploadedUrls = newFiles.length > 0 ? await uploadProductImages(newFiles) : [];
+
+      // Combine: existing URLs + uploaded URLs
+      finalImages = [...existingUrls, ...uploadedUrls, ...newImageUrls];
+    } else {
+      // No images array provided, just append new uploads to existing
+      finalImages = mergeProductImages(product.images, newImageUrls);
+    }
 
     const updatedProduct = await updateProductRecord(
       product,
@@ -146,7 +170,7 @@ export const updateProductService = async (productId, data = {}, files) => {
         base_price: data.base_price,
         status: data.status,
         category_id: categoryId,
-        images: mergedImages,
+        images: finalImages,
         collection: data.collection,
         sale_price: data.sale_price,
         is_new: data.is_new,
@@ -226,5 +250,25 @@ export const searchProductsService = async (searchTerm) => {
   });
 
   return products.map(stripCategoryId);
+};
+
+export const getUniqueBrandsService = async () => {
+  try {
+    const brands = await Product.findAll({
+      attributes: [[sequelize.fn('DISTINCT', sequelize.col('brand')), 'brand']],
+      where: {
+        brand: {
+          [Op.ne]: null,
+          [Op.ne]: ''
+        }
+      },
+      order: [['brand', 'ASC']],
+      raw: true
+    });
+
+    return brands.map(item => item.brand).filter(brand => brand);
+  } catch (error) {
+    throw new Error(`Failed to fetch brands: ${error.message}`);
+  }
 };
 

@@ -1,4 +1,4 @@
-import { sendSuccess, sendError } from "../../utils/response.js";
+import { sendSuccess, sendError, sendValidationError } from "../../utils/response.js";
 import { getProductsByCategoryService, getProductDetailService, getProductDetailBySlugOrIdService, searchProductsService } from "../../services/user/productService.js";
 
 export const getProductsByCategoryController = async (req, res) => {

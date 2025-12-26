@@ -30,7 +30,6 @@ const transformVariantDetail = (variant) => {
     color: data.color || null,
     size: data.size || null,
     sku: data.sku || null,
-    price: parseFloat(data.price || 0),
     stockQuantity: data.stock_quantity || 0,
     imageUrl: data.image_url || null,
   };
@@ -43,13 +42,8 @@ const pickDefaultVariantId = (variants) => {
 
   if (!pool.length) return null;
 
-  const sorted = [...pool].sort((a, b) => {
-    const priceA = parseFloat(a.price || 0);
-    const priceB = parseFloat(b.price || 0);
-    return priceA - priceB;
-  });
-
-  return sorted[0]?.id ?? null;
+  // Pick first available variant by ID
+  return pool[0]?.id ?? null;
 };
 
 const summarizeProduct = (product) => {
@@ -102,7 +96,7 @@ const summarizeProduct = (product) => {
   };
 };
 
-// Build detailed payload for PDP with variant-derived metadata
+// Build detailed payload for PDP with product-level pricing
 const buildProductDetailData = (product) => {
   const data = product.toJSON ? product.toJSON() : product;
   const summary = summarizeProduct(product);
@@ -123,22 +117,9 @@ const buildProductDetailData = (product) => {
     ...new Set(variantsWithStock.map((v) => v.size).filter(Boolean)),
   ];
 
-  const variantPrices = variants
-    .map((v) => Number(v.price))
-    .filter((price) => !Number.isNaN(price));
-
-  const fallbackPrice =
-    summary.price ??
-    (data.price
-      ? parseFloat(data.price)
-      : data.base_price
-      ? parseFloat(data.base_price)
-      : null);
-
-  const minPrice =
-    variantPrices.length > 0 ? Math.min(...variantPrices) : fallbackPrice ?? null;
-  const maxPrice =
-    variantPrices.length > 0 ? Math.max(...variantPrices) : fallbackPrice ?? null;
+  // Use product-level pricing only
+  const productPrice = parseFloat(data.base_price || 0);
+  const salePrice = data.sale_price ? parseFloat(data.sale_price) : null;
 
   return {
     ...summary,
@@ -146,8 +127,8 @@ const buildProductDetailData = (product) => {
     variants,
     availableColors,
     availableSizes,
-    minPrice,
-    maxPrice,
+    minPrice: productPrice,
+    maxPrice: productPrice,
   };
 };
 

@@ -77,7 +77,6 @@ export const ProductStatusBadge: React.FC<{ status: string; className?: string }
 export const UserRoleBadge: React.FC<{ role: string; className?: string }> = ({ role, className }) => {
   const roleConfig: Record<string, { label: string; variant: VariantProps<typeof statusVariants>['variant'] }> = {
     admin: { label: 'Admin', variant: 'warning' },
-    super_admin: { label: 'Super Admin', variant: 'error' },
     customer: { label: 'Customer', variant: 'info' }
   };
 

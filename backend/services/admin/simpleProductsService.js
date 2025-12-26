@@ -25,7 +25,7 @@ export const getAllProductsSimple = async (page = 1, limit = 10, search = "") =>
         {
           model: ProductVariant,
           as: 'variants',
-          attributes: ['id', 'color', 'size', 'sku', 'price', 'stock_quantity', 'image_url']
+          attributes: ['id', 'color', 'size', 'sku', 'stock_quantity', 'image_url']
         }
       ],
       order: [['created_at', 'DESC']],

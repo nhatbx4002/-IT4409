@@ -19,10 +19,15 @@ import {
   Filter,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   Edit2,
   Trash2,
   MoreHorizontal,
-  Ticket
+  Ticket,
+  CheckCircle,
+  Clock,
+  Truck,
+  XCircle
 } from 'lucide-react';
 import {
   AreaChart,
@@ -43,10 +48,10 @@ import {
 } from 'recharts';
 import LoginPage from './components/LoginPage';
 import { useAuth } from './hooks/useAuth';
-import { adminApiClient, getPaginatedAdminData } from './lib/api';
 import { getKPIStats, getRevenueChart, getRecentOrders, getBestSellers, getAnalyticsData, type BestSeller } from './lib/dashboard';
-import { listProducts, createProduct, updateProduct, deleteProduct, type Product } from './lib/products';
-import { listOrders, getOrderById, updateOrderStatus, processRefund, type Order, type OrderStatus } from './lib/orders';
+import { listProducts, createProduct, updateProduct, deleteProduct, getBrands, createProductVariant, deleteProductVariant, getProductPriceRange, type Product, type ProductVariant, type CreateVariantPayload } from './lib/products';
+import { listOrders, getOrderById, updateOrderStatus, type Order, type OrderStatus } from './lib/orders';
+import { getCategories, flattenCategories, createCategory, type Category } from './lib/categories';
 import DiscountsPage from './components/DiscountsPage';
 
 type Page = 'dashboard' | 'products' | 'orders' | 'analytics' | 'settings' | 'customers' | 'discounts';
@@ -763,6 +768,11 @@ function ProductsPage() {
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Filter states
+  const [filterCategory, setFilterCategory] = useState<string>('');
+  const [filterStatus, setFilterStatus] = useState<string>('');
+  const [showFilters, setShowFilters] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<Product | null>(null);
   const [formValues, setFormValues] = useState({
@@ -773,15 +783,116 @@ function ProductsPage() {
     brand: '',
     category_id: '1',
   });
-  const [formImages, setFormImages] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [formError, setFormError] = useState<string | null>(null);
   const [formSubmitting, setFormSubmitting] = useState(false);
+
+  // Variants state
+  const [variants, setVariants] = useState<ProductVariant[]>([]);
+  const [showVariantForm, setShowVariantForm] = useState(false);
+  const [variantForm, setVariantForm] = useState({
+    color: '',
+    size: '',
+    sku: '',
+    stock_quantity: '',
+  });
+  const [variantImage, setVariantImage] = useState<File | null>(null);
+  const [variantImagePreview, setVariantImagePreview] = useState<string>('');
+  const [variantSubmitting, setVariantSubmitting] = useState(false);
+
+  // Helper: Generate slug from product name
+  const generateSlug = (name: string): string => {
+    return name
+      .toLowerCase()
+      .trim()
+      .replace(/[^\w\s-]/g, '')
+      .replace(/[\s_-]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+  };
+
+  // Helper: Generate SKU from product slug and variant properties
+  const generateVariantSKU = (color: string, size: string): string => {
+    const productSlug = editing?.slug || generateSlug(formValues.name);
+    const parts = [productSlug];
+
+    if (color) {
+      parts.push(color.toLowerCase().replace(/\s+/g, '-'));
+    }
+    if (size) {
+      parts.push(size.toLowerCase().replace(/\s+/g, '-'));
+    }
+
+    return parts.join('-');
+  };
+
+  // Track existing image URLs separately from new file uploads
+  const [existingImageUrls, setExistingImageUrls] = useState<string[]>([]);
+  const [newImageFiles, setNewImageFiles] = useState<File[]>([]);
+
+  // Generate preview URLs for images
+  useEffect(() => {
+    const previews = newImageFiles.map(file => URL.createObjectURL(file));
+    setImagePreviews([...existingImageUrls, ...previews]);
+
+    // Cleanup function to revoke object URLs
+    return () => {
+      previews.forEach(url => URL.revokeObjectURL(url));
+    };
+  }, [existingImageUrls, newImageFiles]);
+
+  // Cleanup variant image preview
+  useEffect(() => {
+    return () => {
+      if (variantImagePreview) {
+        URL.revokeObjectURL(variantImagePreview);
+      }
+    };
+  }, [variantImagePreview]);
+
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [brands, setBrands] = useState<string[]>([]);
+  const [loadingDropdowns, setLoadingDropdowns] = useState(true);
+
+  // Category modal state
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [categoryForm, setCategoryForm] = useState({
+    name: '',
+    slug: '',
+    parent_id: '' as string | number,
+  });
+  const [categoryFormError, setCategoryFormError] = useState<string | null>(null);
+  const [categoryFormSubmitting, setCategoryFormSubmitting] = useState(false);
+
+  // Auto-generate slug from name
+  useEffect(() => {
+    if (categoryForm.name) {
+      const generatedSlug = categoryForm.name
+        .toLowerCase()
+        .trim()
+        .replace(/\s+/g, '-') // Replace spaces with hyphens
+        .replace(/[^\w\-]+/g, '') // Remove special characters
+        .replace(/\-\-+/g, '-'); // Replace multiple hyphens with single
+      setCategoryForm(prev => ({ ...prev, slug: generatedSlug }));
+    } else {
+      setCategoryForm(prev => ({ ...prev, slug: '' }));
+    }
+  }, [categoryForm.name]);
 
   const loadProducts = async (nextPage = page, nextSearch = search) => {
     try {
       setLoading(true);
       setError(null);
-      const res = await listProducts({ page: nextPage, limit, search: nextSearch });
+
+      const params: any = {
+        page: nextPage,
+        limit,
+      };
+
+      if (nextSearch) params.search = nextSearch;
+      if (filterCategory) params.categoryId = Number(filterCategory);
+      if (filterStatus) params.status = filterStatus;
+
+      const res = await listProducts(params);
       setProducts(res.items);
       setTotal(res.pagination?.total);
       setPage(res.pagination?.page ?? nextPage);
@@ -792,8 +903,77 @@ function ProductsPage() {
     }
   };
 
+  const loadCategoriesAndBrands = async () => {
+    try {
+      setLoadingDropdowns(true);
+      console.log('🔄 Loading categories and brands...');
+      const [categoriesData, brandsData] = await Promise.all([
+        getCategories(),
+        getBrands()
+      ]);
+      console.log('✅ Categories loaded:', categoriesData);
+      console.log('✅ Brands loaded:', brandsData);
+
+      const flattened = flattenCategories(categoriesData);
+      console.log('✅ Flattened categories:', flattened);
+
+      setCategories(flattened);
+      setBrands(brandsData);
+    } catch (err: any) {
+      console.error('❌ Failed to load categories/brands:', err);
+    } finally {
+      setLoadingDropdowns(false);
+    }
+  };
+
+  const openCategoryModal = () => {
+    setCategoryForm({ name: '', slug: '', parent_id: '' });
+    setCategoryFormError(null);
+    setShowCategoryModal(true);
+  };
+
+  const closeCategoryModal = () => {
+    setShowCategoryModal(false);
+    setCategoryForm({ name: '', slug: '', parent_id: '' });
+    setCategoryFormError(null);
+  };
+
+  const handleCreateCategory = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setCategoryFormError(null);
+    setCategoryFormSubmitting(true);
+
+    try {
+      const payload: any = {
+        name: categoryForm.name,
+        slug: categoryForm.slug,
+      };
+
+      if (categoryForm.parent_id && categoryForm.parent_id !== '') {
+        payload.parent_id = Number(categoryForm.parent_id);
+      }
+
+      const newCategory = await createCategory(payload);
+
+      // Reload categories
+      const categoriesData = await getCategories();
+      const flattened = flattenCategories(categoriesData);
+      setCategories(flattened);
+
+      // Set the new category as selected
+      setFormValues({ ...formValues, category_id: String(newCategory.id) });
+
+      closeCategoryModal();
+    } catch (err: any) {
+      setCategoryFormError(err?.message || 'Failed to create category');
+    } finally {
+      setCategoryFormSubmitting(false);
+    }
+  };
+
   useEffect(() => {
     loadProducts(1, '');
+    loadCategoriesAndBrands();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -808,6 +988,12 @@ function ProductsPage() {
         brand: product.brand ?? '',
         category_id: product.category_id ? String(product.category_id) : '1',
       });
+      // Load existing variants
+      setVariants(product.variants || []);
+      // Load existing images as URLs
+      const existingImages = product.images || [];
+      setExistingImageUrls(existingImages);
+      setNewImageFiles([]);
     } else {
       setEditing(null);
       setFormValues({
@@ -818,15 +1004,129 @@ function ProductsPage() {
         brand: '',
         category_id: '1',
       });
+      setVariants([]);
+      setExistingImageUrls([]);
+      setNewImageFiles([]);
     }
-    setFormImages([]);
     setFormError(null);
+    setShowVariantForm(false);
+    setVariantForm({ color: '', size: '', sku: '', stock_quantity: '' });
+    setVariantImage(null);
+    setVariantImagePreview('');
     setShowModal(true);
   };
 
   const closeModal = () => {
     setShowModal(false);
     setEditing(null);
+    setExistingImageUrls([]);
+    setNewImageFiles([]);
+    setImagePreviews([]);
+    setVariants([]);
+    setShowVariantForm(false);
+    setVariantForm({ color: '', size: '', sku: '', stock_quantity: '' });
+    setVariantImage(null);
+    setVariantImagePreview('');
+  };
+
+  const handleRemoveImage = (index: number) => {
+    const existingCount = existingImageUrls.length;
+
+    if (index < existingCount) {
+      // Removing an existing URL
+      setExistingImageUrls(existingImageUrls.filter((_, i) => i !== index));
+    } else {
+      // Removing a newly uploaded file
+      setNewImageFiles(newImageFiles.filter((_, i) => i !== (index - existingCount)));
+    }
+  };
+
+  // Variant handlers
+  const handleAddVariant = () => {
+    setShowVariantForm(true);
+    setVariantForm({ color: '', size: '', sku: '', stock_quantity: '' });
+    setVariantImage(null);
+    setVariantImagePreview('');
+  };
+
+  const handleCancelVariant = () => {
+    setShowVariantForm(false);
+    setVariantForm({ color: '', size: '', sku: '', stock_quantity: '' });
+    setVariantImage(null);
+    setVariantImagePreview('');
+  };
+
+  const handleSaveVariant = async () => {
+    if (!editing) {
+      // For new products, just add to local state
+      const newVariant: ProductVariant = {
+        id: Date.now(),
+        color: variantForm.color || null,
+        size: variantForm.size || null,
+        sku: variantForm.sku || null,
+        stock_quantity: Number(variantForm.stock_quantity),
+        image_url: variantImagePreview || null,
+      };
+      setVariants([...variants, newVariant]);
+      handleCancelVariant();
+      return;
+    }
+
+    // For existing products, create via API
+    setVariantSubmitting(true);
+    try {
+      const payload: CreateVariantPayload = {
+        color: variantForm.color || null,
+        size: variantForm.size || null,
+        sku: variantForm.sku || null,
+        stock_quantity: Number(variantForm.stock_quantity),
+        image_url: variantImage || null,
+      };
+      const newVariant = await createProductVariant(editing.id, payload);
+      setVariants([...variants, newVariant]);
+      handleCancelVariant();
+    } catch (err: any) {
+      alert(err?.message || 'Failed to add variant');
+    } finally {
+      setVariantSubmitting(false);
+    }
+  };
+
+  const handleRemoveVariant = async (index: number) => {
+    const variant = variants[index];
+
+    // If editing an existing product and variant has a real ID, call API
+    if (editing && variant.id && variant.id < 1000000) {
+      const confirmed = window.confirm('Are you sure you want to delete this variant?');
+      if (!confirmed) return;
+
+      try {
+        await deleteProductVariant(editing.id, variant.id);
+        const newVariants = variants.filter((_, i) => i !== index);
+        setVariants(newVariants);
+      } catch (err: any) {
+        alert(err?.message || 'Failed to delete variant');
+      }
+    } else {
+      // For new products or locally added variants, just remove from state
+      const newVariants = variants.filter((_, i) => i !== index);
+      setVariants(newVariants);
+    }
+  };
+
+  const applyFilters = () => {
+    loadProducts(1, search);
+  };
+
+  const clearFilters = () => {
+    setFilterCategory('');
+    setFilterStatus('');
+    setSearch('');
+    loadProducts(1, '');
+  };
+
+  const handleSearch = () => {
+    loadProducts(1, search);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -841,7 +1141,8 @@ function ProductsPage() {
         sale_price: formValues.sale_price ? Number(formValues.sale_price) : undefined,
         brand: formValues.brand,
         category_id: Number(formValues.category_id),
-        images: formImages,
+        // Send both existing URLs and new Files - backend will handle them
+        images: [...existingImageUrls, ...newImageFiles],
       };
       if (editing) {
         await updateProduct(editing.id, payload);
@@ -877,6 +1178,15 @@ function ProductsPage() {
             Showing <b className="text-[#0A0A0A]">{products?.length || 0}</b>
             {typeof total === 'number' ? <> of <b className="text-[#0A0A0A]">{total}</b></> : null} products
            </span>
+           {(filterCategory || filterStatus || search) && (
+             <button
+               onClick={clearFilters}
+               className="text-xs text-red-500 hover:text-red-700 flex items-center gap-1"
+             >
+               <X className="w-3 h-3" />
+               Clear filters
+             </button>
+           )}
         </div>
         <div className="flex items-center gap-3">
           <input
@@ -886,12 +1196,25 @@ function ProductsPage() {
             onChange={(e) => setSearch(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
-                loadProducts(1, search);
+                handleSearch();
               }
             }}
             className="bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#C6A87C]"
           />
-          <button className="bg-white border border-gray-200 text-[#0A0A0A] px-5 py-2.5 uppercase text-xs tracking-wider hover:border-[#0A0A0A] transition-colors flex items-center gap-2 font-bold rounded-lg shadow-sm">
+          <button
+            onClick={handleSearch}
+            className="bg-white border border-gray-200 text-[#0A0A0A] px-4 py-2.5 uppercase text-xs tracking-wider hover:border-[#0A0A0A] transition-colors flex items-center gap-2 font-bold rounded-lg shadow-sm"
+          >
+            <Search className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className={`border transition-colors flex items-center gap-2 font-bold rounded-lg shadow-sm px-4 py-2.5 uppercase text-xs tracking-wider ${
+              showFilters
+                ? 'bg-[#0A0A0A] text-[#C6A87C] border-[#0A0A0A]'
+                : 'bg-white border-gray-200 text-[#0A0A0A] hover:border-[#0A0A0A]'
+            }`}
+          >
             <Filter className="w-4 h-4" />
             Filter
           </button>
@@ -904,6 +1227,64 @@ function ProductsPage() {
           </button>
         </div>
       </div>
+
+      {/* Filter Panel */}
+      {showFilters && (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Category Filter */}
+            <div className="space-y-2">
+              <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">Category</label>
+              <select
+                value={filterCategory}
+                onChange={(e) => setFilterCategory(e.target.value)}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-[#C6A87C] focus:border-[#C6A87C] bg-white"
+              >
+                <option value="">All Categories</option>
+                {categories.map((category) => (
+                  <option key={category.id} value={category.id}>
+                    {category.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Status Filter */}
+            <div className="space-y-2">
+              <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">Status</label>
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-[#C6A87C] focus:border-[#C6A87C] bg-white"
+              >
+                <option value="">All Status</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+                <option value="draft">Draft</option>
+              </select>
+            </div>
+
+            {/* Actions */}
+            <div className="space-y-2">
+              <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">&nbsp;</label>
+              <div className="flex gap-2">
+                <button
+                  onClick={applyFilters}
+                  className="flex-1 bg-[#0A0A0A] text-[#C6A87C] px-4 py-2 rounded-lg text-sm font-bold uppercase tracking-wider hover:bg-[#2A2A2A] transition-colors"
+                >
+                  Apply Filters
+                </button>
+                <button
+                  onClick={clearFilters}
+                  className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-semibold text-gray-600 hover:text-gray-800 hover:border-gray-300 transition-colors"
+                >
+                  Clear
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Product Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
@@ -965,7 +1346,9 @@ function ProductsPage() {
               </h3>
               <div className="flex items-center justify-center gap-4 mt-3 pt-3 border-t border-gray-100">
                  <span className="font-medium text-sm text-gray-400">{(product as any)?.stock_quantity ?? '--'} in stock</span>
-                 <span className="font-serif text-lg font-bold text-[#0A0A0A]">{formatCurrency(product.base_price ?? 0)}</span>
+                 <span className="font-serif text-lg font-bold text-[#0A0A0A]">
+                   {getProductPriceRange(product).displayPrice}
+                 </span>
               </div>
             </div>
           </div>
@@ -1061,31 +1444,289 @@ function ProductsPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">Brand</label>
-                  <input
+                  <select
                     value={formValues.brand}
                     onChange={(e) => setFormValues({ ...formValues, brand: e.target.value })}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-[#C6A87C] focus:border-[#C6A87C]"
-                  />
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-[#C6A87C] focus:border-[#C6A87C] bg-white"
+                  >
+                    <option value="">Select Brand</option>
+                    {brands.map((brand) => (
+                      <option key={brand} value={brand}>
+                        {brand}
+                      </option>
+                    ))}
+                  </select>
+                  {brands.length === 0 && <p className="text-xs text-red-500">No brands loaded</p>}
                 </div>
                 <div className="space-y-2">
-                  <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">Category ID</label>
-                  <input
-                    type="number"
-                    value={formValues.category_id}
-                    onChange={(e) => setFormValues({ ...formValues, category_id: e.target.value })}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-[#C6A87C] focus:border-[#C6A87C]"
-                  />
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">Category</label>
+                    <button
+                      type="button"
+                      onClick={openCategoryModal}
+                      className="text-xs text-[#C6A87C] hover:text-[#a09070] font-medium flex items-center gap-1"
+                    >
+                      <Plus className="w-3 h-3" />
+                      Add New Category
+                    </button>
+                  </div>
+                  {loadingDropdowns ? (
+                    <div className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-400">
+                      Loading categories...
+                    </div>
+                  ) : (
+                    <select
+                      value={formValues.category_id}
+                      onChange={(e) => setFormValues({ ...formValues, category_id: e.target.value })}
+                      required
+                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-[#C6A87C] focus:border-[#C6A87C] bg-white"
+                    >
+                      <option value="">Select Category</option>
+                      {categories.map((category) => (
+                        <option key={category.id} value={category.id}>
+                          {category.name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                  {!loadingDropdowns && categories.length === 0 && <p className="text-xs text-red-500">No categories loaded</p>}
                 </div>
               </div>
               <div className="space-y-2">
-                <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">Images</label>
-                <input
-                  type="file"
-                  multiple
-                  onChange={(e) => setFormImages(e.target.files ? Array.from(e.target.files) : [])}
-                  className="w-full text-sm"
-                />
+                <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">Product Images</label>
+
+                {/* Image Thumbnails Grid with Wrap */}
+                <div className="flex flex-wrap gap-2">
+                  {/* Add Photos Button */}
+                  <label className="flex-shrink-0 flex items-center justify-center w-16 h-16 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-[#C6A87C] hover:bg-gray-50 transition-colors bg-white">
+                    <input
+                      type="file"
+                      multiple
+                      accept="image/*"
+                      onChange={(e) => {
+                        const files = Array.from(e.target.files || []);
+                        if (files.length > 0) {
+                          setNewImageFiles([...newImageFiles, ...files]);
+                        }
+                      }}
+                      className="hidden"
+                    />
+                    <Plus className="w-6 h-6 text-gray-400" />
+                  </label>
+
+                  {/* Image Thumbnails */}
+                  {imagePreviews.map((preview, index) => (
+                    <div
+                      key={index}
+                      className="relative group flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 border-white shadow-md hover:shadow-lg transition-all"
+                    >
+                      <img
+                        src={preview}
+                        alt={`Image ${index + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveImage(index)}
+                        className="absolute top-0 right-0 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity transform scale-90 hover:scale-100 shadow-md"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                      <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[9px] p-0.5 text-center truncate">
+                        {index + 1}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Help Text */}
+                <p className="text-[10px] text-gray-400">
+                  {imagePreviews.length > 0
+                    ? `${imagePreviews.length} image${imagePreviews.length > 1 ? 's' : ''} • Click + to add more`
+                    : 'Click + to add product images'}
+                </p>
               </div>
+
+              {/* Variants Section */}
+              <div className="space-y-3 border-t border-gray-200 pt-4">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+                    Product Variants
+                  </label>
+                  <button
+                    type="button"
+                    onClick={handleAddVariant}
+                    className="text-xs bg-[#C6A87C] hover:bg-[#B08D55] text-white px-3 py-1.5 rounded-lg font-medium flex items-center gap-1 transition-colors"
+                  >
+                    <Plus className="w-3 h-3" />
+                    Add Variant
+                  </button>
+                </div>
+
+                {/* Variant Form */}
+                {showVariantForm && (
+                  <div className="bg-gray-50 rounded-lg p-4 space-y-3 border border-gray-200">
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-semibold uppercase tracking-wider text-gray-500">Color</label>
+                        <input
+                          type="text"
+                          value={variantForm.color}
+                          onChange={(e) => {
+                            const newColor = e.target.value;
+                            const newSKU = generateVariantSKU(newColor, variantForm.size);
+                            setVariantForm({ ...variantForm, color: newColor, sku: newSKU });
+                          }}
+                          placeholder="e.g., Red, Blue"
+                          className="w-full border border-gray-200 rounded px-2 py-1.5 text-sm focus:ring-1 focus:ring-[#C6A87C] focus:border-[#C6A87C]"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-semibold uppercase tracking-wider text-gray-500">Size</label>
+                        <input
+                          type="text"
+                          value={variantForm.size}
+                          onChange={(e) => {
+                            const newSize = e.target.value;
+                            const newSKU = generateVariantSKU(variantForm.color, newSize);
+                            setVariantForm({ ...variantForm, size: newSize, sku: newSKU });
+                          }}
+                          placeholder="e.g., S, M, L, XL"
+                          className="w-full border border-gray-200 rounded px-2 py-1.5 text-sm focus:ring-1 focus:ring-[#C6A87C] focus:border-[#C6A87C]"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-semibold uppercase tracking-wider text-gray-500">SKU (Auto-generated)</label>
+                        <input
+                          type="text"
+                          value={variantForm.sku}
+                          onChange={(e) => setVariantForm({ ...variantForm, sku: e.target.value })}
+                          placeholder="Auto-generated from color & size"
+                          className="w-full border border-gray-200 rounded px-2 py-1.5 text-sm focus:ring-1 focus:ring-[#C6A87C] focus:border-[#C6A87C] bg-gray-50"
+                        />
+                        <p className="text-[9px] text-gray-400">Format: {editing?.slug || 'product-slug'}-color-size</p>
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-semibold uppercase tracking-wider text-gray-500">Stock</label>
+                        <input
+                          type="number"
+                          value={variantForm.stock_quantity}
+                          onChange={(e) => setVariantForm({ ...variantForm, stock_quantity: e.target.value })}
+                          placeholder="0"
+                          required
+                          className="w-full border border-gray-200 rounded px-2 py-1.5 text-sm focus:ring-1 focus:ring-[#C6A87C] focus:border-[#C6A87C]"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-semibold uppercase tracking-wider text-gray-500">Image</label>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              setVariantImage(file);
+                              setVariantImagePreview(URL.createObjectURL(file));
+                            }
+                          }}
+                          className="w-full text-xs"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Variant Image Preview */}
+                    {variantImagePreview && (
+                      <div className="flex items-center gap-3 p-2 bg-white rounded border border-gray-200">
+                        <img
+                          src={variantImagePreview}
+                          alt="Variant preview"
+                          className="w-12 h-12 object-cover rounded"
+                        />
+                        <span className="text-xs text-gray-600 truncate flex-1">
+                          {variantImage?.name || 'Variant image'}
+                        </span>
+                      </div>
+                    )}
+
+                    <div className="flex items-center justify-end gap-2 pt-2">
+                      <button
+                        type="button"
+                        onClick={handleCancelVariant}
+                        disabled={variantSubmitting}
+                        className="px-3 py-1.5 text-xs font-semibold text-gray-600 hover:text-gray-800 disabled:opacity-50"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleSaveVariant}
+                        disabled={variantSubmitting || !variantForm.price}
+                        className="bg-[#0A0A0A] text-[#C6A87C] px-4 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider hover:bg-[#2A2A2A] transition-colors disabled:opacity-50"
+                      >
+                        {variantSubmitting ? 'Saving...' : 'Save Variant'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Variants List */}
+                {variants.length > 0 && !showVariantForm && (
+                  <div className="space-y-2">
+                    <div className="max-h-64 overflow-y-auto pr-1 space-y-2 custom-scrollbar">
+                      {variants.map((variant, index) => (
+                        <div
+                          key={variant.id}
+                          className="flex items-center gap-3 p-3 bg-white border border-gray-200 rounded-lg hover:border-[#C6A87C] transition-colors"
+                        >
+                          {variant.image_url && (
+                            <img
+                              src={typeof variant.image_url === 'string' ? variant.image_url : URL.createObjectURL(variant.image_url as any)}
+                              alt={`Variant ${index + 1}`}
+                              className="w-10 h-10 object-cover rounded border border-gray-200 flex-shrink-0"
+                            />
+                          )}
+                          <div className="flex-1 min-w-0 grid grid-cols-4 gap-2 text-xs">
+                            <div>
+                              <span className="text-gray-400">Color:</span>
+                              <span className="ml-1 font-medium">{variant.color || '—'}</span>
+                            </div>
+                            <div>
+                              <span className="text-gray-400">Size:</span>
+                              <span className="ml-1 font-medium">{variant.size || '—'}</span>
+                            </div>
+                            <div>
+                              <span className="text-gray-400">SKU:</span>
+                              <span className="ml-1 font-medium">{variant.sku || '—'}</span>
+                            </div>
+                            <div>
+                              <span className="text-gray-400">Stock:</span>
+                              <span className="ml-1 font-medium">{variant.stock_quantity ?? 0}</span>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveVariant(index)}
+                            className="text-red-500 hover:text-red-700 p-1 flex-shrink-0"
+                            title="Remove variant"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                    {variants.length > 3 && (
+                      <p className="text-xs text-gray-400 italic text-center">
+                        Scroll to see all {variants.length} variants
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {variants.length === 0 && !showVariantForm && (
+                  <p className="text-xs text-gray-400 italic">No variants added yet. Click "Add Variant" to create product variants.</p>
+                )}
+              </div>
+
               {formError && <p className="text-sm text-red-600">{formError}</p>}
               <div className="flex items-center justify-end gap-3 pt-2">
                 <button
@@ -1102,6 +1743,87 @@ function ProductsPage() {
                   className="bg-[#0A0A0A] text-[#C6A87C] px-5 py-2 rounded-lg text-sm font-bold uppercase tracking-wider hover:bg-[#2A2A2A] transition-colors disabled:opacity-50"
                 >
                   {formSubmitting ? 'Saving...' : editing ? 'Update Product' : 'Create Product'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Category Modal */}
+      {showCategoryModal && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 px-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 relative">
+            <button
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+              onClick={closeCategoryModal}
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <h3 className="font-serif text-xl font-bold text-[#0A0A0A] mb-4">
+              Add New Category
+            </h3>
+            <form className="space-y-4" onSubmit={handleCreateCategory}>
+              <div className="space-y-2">
+                <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+                  Category Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={categoryForm.name}
+                  onChange={(e) => setCategoryForm({ ...categoryForm, name: e.target.value })}
+                  required
+                  placeholder="e.g., Summer Collection"
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-[#C6A87C] focus:border-[#C6A87C]"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+                  Slug (Auto-generated)
+                </label>
+                <input
+                  type="text"
+                  value={categoryForm.slug}
+                  onChange={(e) => setCategoryForm({ ...categoryForm, slug: e.target.value })}
+                  placeholder="e.g., summer-collection"
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-[#C6A87C] focus:border-[#C6A87C] bg-gray-50"
+                />
+                <p className="text-xs text-gray-400">Auto-generated from name. You can edit it if needed.</p>
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+                  Parent Category (Optional)
+                </label>
+                <select
+                  value={categoryForm.parent_id}
+                  onChange={(e) => setCategoryForm({ ...categoryForm, parent_id: e.target.value })}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-[#C6A87C] focus:border-[#C6A87C] bg-white"
+                >
+                  <option value="">No Parent (Top Level)</option>
+                  {categories.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-gray-400">Optional: Select a parent category to create a subcategory</p>
+              </div>
+              {categoryFormError && <p className="text-sm text-red-600">{categoryFormError}</p>}
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={closeCategoryModal}
+                  className="px-4 py-2 text-sm font-semibold text-gray-600 hover:text-gray-800"
+                  disabled={categoryFormSubmitting}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={categoryFormSubmitting}
+                  className="bg-[#0A0A0A] text-[#C6A87C] px-5 py-2 rounded-lg text-sm font-bold uppercase tracking-wider hover:bg-[#2A2A2A] transition-colors disabled:opacity-50"
+                >
+                  {categoryFormSubmitting ? 'Creating...' : 'Create Category'}
                 </button>
               </div>
             </form>
@@ -1179,28 +1901,94 @@ function OrdersPage() {
     }
   };
 
-  const handleRefund = async (orderId: number | string) => {
-    const reason = window.prompt('Enter refund reason');
-    const amountInput = window.prompt('Enter refund amount');
-    if (!reason || !amountInput) return;
-    const amount = Number(amountInput);
-    if (Number.isNaN(amount)) {
-      setActionMessage('Invalid refund amount');
-      return;
-    }
-    try {
-      await processRefund(orderId, { reason, amount });
-      setActionMessage('Refund processed');
-      loadOrders(pagination.page);
-      if (selectedOrder?.id === orderId) {
-        loadDetail(orderId);
-      }
-    } catch (err: any) {
-      setActionMessage(err?.message || 'Failed to process refund');
-    }
+  const statusOptions: OrderStatus[] = ['pending', 'confirmed', 'shipping', 'completed', 'canceled'];
+
+  // Status configuration with icons and colors
+  const statusConfig: Record<OrderStatus, { icon: React.ReactNode; color: string; bgColor: string; label: string }> = {
+    pending: { icon: <Clock className="w-3.5 h-3.5" />, color: 'text-orange-700', bgColor: 'bg-orange-100', label: 'Pending' },
+    confirmed: { icon: <CheckCircle className="w-3.5 h-3.5" />, color: 'text-blue-700', bgColor: 'bg-blue-100', label: 'Confirmed' },
+    shipping: { icon: <Truck className="w-3.5 h-3.5" />, color: 'text-indigo-700', bgColor: 'bg-indigo-100', label: 'Shipping' },
+    completed: { icon: <CheckCircle className="w-3.5 h-3.5" />, color: 'text-green-700', bgColor: 'bg-green-100', label: 'Completed' },
+    canceled: { icon: <XCircle className="w-3.5 h-3.5" />, color: 'text-red-700', bgColor: 'bg-red-100', label: 'Canceled' },
   };
 
-  const statusOptions: OrderStatus[] = ['pending', 'confirmed', 'shipping', 'completed', 'canceled', 'paid', 'refunded'];
+  // Status dropdown component with portal-like behavior
+  const StatusDropdown = ({ orderId, currentStatus }: { orderId: number | string; currentStatus: string }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const [position, setPosition] = useState({ top: 0, left: 0 });
+    const buttonRef = React.useRef<HTMLButtonElement>(null);
+
+    const toggleDropdown = () => {
+      if (!isOpen && buttonRef.current) {
+        const rect = buttonRef.current.getBoundingClientRect();
+        setPosition({
+          top: rect.bottom + 8,
+          left: rect.right - 192, // 192 is the width of the dropdown (w-48)
+        });
+      }
+      setIsOpen(!isOpen);
+    };
+
+    return (
+      <div className="relative">
+        <button
+          ref={buttonRef}
+          onClick={toggleDropdown}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-white border border-gray-200 rounded-lg hover:border-[#C6A87C] hover:shadow-sm transition-all duration-200"
+        >
+          <span>Change Status</span>
+          <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+        </button>
+
+        {isOpen && (
+          <>
+            <div
+              className="fixed inset-0 z-40"
+              onClick={() => setIsOpen(false)}
+            />
+            <div
+              className="fixed w-48 bg-white rounded-lg shadow-xl border border-gray-100 py-1.5 z-50"
+              style={{ top: `${position.top}px`, left: `${position.left}px` }}
+            >
+              <div className="px-3 py-2 border-b border-gray-100">
+                <p className="text-[10px] uppercase tracking-wider font-semibold text-gray-500">Change Status</p>
+              </div>
+              {statusOptions.map((status) => {
+                const config = statusConfig[status];
+                const isCurrentStatus = status === currentStatus;
+
+                return (
+                  <button
+                    key={status}
+                    onClick={() => {
+                      handleStatusUpdate(orderId, status);
+                      setIsOpen(false);
+                    }}
+                    disabled={isCurrentStatus}
+                    className={`
+                      w-full flex items-center gap-3 px-3 py-2.5 text-xs font-medium transition-all duration-150 mx-1.5 my-0.5 rounded-md
+                      ${isCurrentStatus
+                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                        : 'hover:bg-gray-50 text-gray-700'
+                      }
+                    `}
+                  >
+                    <span className={`flex items-center justify-center w-6 h-6 rounded-full ${config.bgColor} ${config.color}`}>
+                      {config.icon}
+                    </span>
+                    <span className="capitalize">{status}</span>
+                    {isCurrentStatus && (
+                      <span className="ml-auto text-[10px] text-gray-400">Current</span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div className="space-y-6">
@@ -1239,7 +2027,7 @@ function OrdersPage() {
       {error && <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-700">{error}</div>}
 
       {!loading && !error && (
-        <div className="bg-white border border-border-light">
+        <div className="bg-white border border-border-light overflow-visible">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
@@ -1249,19 +2037,13 @@ function OrdersPage() {
                   <th className="text-left px-6 py-4 text-[11px] uppercase tracking-widest font-semibold text-gray-600">Total</th>
                   <th className="text-left px-6 py-4 text-[11px] uppercase tracking-widest font-semibold text-gray-600">Status</th>
                   <th className="text-left px-6 py-4 text-[11px] uppercase tracking-widest font-semibold text-gray-600">Created</th>
-                  <th className="text-right px-6 py-4 text-[11px] uppercase tracking-widest font-semibold text-gray-600">Actions</th>
+                  <th className="text-right px-6 py-4 text-[11px] uppercase tracking-widest font-semibold text-gray-600 w-40">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {orders.map((order) => {
                   const status = (order as any)?.status || 'pending';
-                  const statusClass = status.toLowerCase() === 'completed'
-                    ? 'bg-green-100 text-green-700'
-                    : status.toLowerCase() === 'processing' || status.toLowerCase() === 'shipping'
-                      ? 'bg-blue-100 text-blue-700'
-                      : status.toLowerCase() === 'canceled'
-                        ? 'bg-red-100 text-red-700'
-                        : 'bg-orange-100 text-orange-700';
+                  const config = statusConfig[status as OrderStatus] || statusConfig.pending;
                   return (
                     <tr key={order.id} className="border-b border-border-light hover:bg-gray-50/50 transition-colors">
                       <td className="px-6 py-5">
@@ -1279,7 +2061,8 @@ function OrdersPage() {
                         <span className="font-semibold text-sm">{formatCurrency((order as any)?.total_amount ?? (order as any)?.totalAmount ?? 0)}</span>
                       </td>
                       <td className="px-6 py-5">
-                        <span className={`inline-block px-3 py-1 text-[10px] uppercase tracking-wider rounded-full ${statusClass}`}>
+                        <span className={`inline-flex items-center gap-1.5 px-3 py-1 text-[10px] uppercase tracking-wider rounded-full font-semibold ${config.bgColor} ${config.color}`}>
+                          {config.icon}
                           {status}
                         </span>
                       </td>
@@ -1287,28 +2070,7 @@ function OrdersPage() {
                         <span className="text-sm text-gray-600">{formatDate((order as any)?.created_at ?? (order as any)?.createdAt)}</span>
                       </td>
                       <td className="px-6 py-5 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <select
-                            value=""
-                            onChange={(e) => {
-                              const next = e.target.value as OrderStatus;
-                              if (next) handleStatusUpdate(order.id, next);
-                              e.target.value = '';
-                            }}
-                            className="text-xs border border-gray-200 rounded px-2 py-1"
-                          >
-                            <option value="">Status</option>
-                            {statusOptions.map((s) => (
-                              <option key={s} value={s}>{s}</option>
-                            ))}
-                          </select>
-                          <button
-                            onClick={() => handleRefund(order.id)}
-                            className="text-xs text-[#C6A87C] hover:text-[#0A0A0A]"
-                          >
-                            Refund
-                          </button>
-                        </div>
+                        <StatusDropdown orderId={order.id} currentStatus={status} />
                       </td>
                     </tr>
                   );
@@ -1355,28 +2117,7 @@ function OrdersPage() {
               <h3 className="font-serif text-xl font-bold text-[#0A0A0A]">Order #{selectedOrder.id}</h3>
               <p className="text-gray-500 text-sm">Placed on {formatDate((selectedOrder as any)?.created_at ?? (selectedOrder as any)?.createdAt)}</p>
             </div>
-            <div className="flex items-center gap-3">
-              <select
-                value=""
-                onChange={(e) => {
-                  const next = e.target.value as OrderStatus;
-                  if (next) handleStatusUpdate(selectedOrder.id, next);
-                  e.target.value = '';
-                }}
-                className="text-xs border border-gray-200 rounded px-3 py-2"
-              >
-                <option value="">Update Status</option>
-                {statusOptions.map((s) => (
-                  <option key={s} value={s}>{s}</option>
-                ))}
-              </select>
-              <button
-                onClick={() => handleRefund(selectedOrder.id)}
-                className="bg-[#0A0A0A] text-[#C6A87C] px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider hover:bg-[#2A2A2A]"
-              >
-                Refund
-              </button>
-            </div>
+            <StatusDropdown orderId={selectedOrder.id} currentStatus={(selectedOrder as any)?.status || 'pending'} />
           </div>
 
           {detailLoading ? (
@@ -1394,7 +2135,16 @@ function OrdersPage() {
                 </div>
                 <div>
                   <p className="text-xs uppercase tracking-widest font-bold text-gray-500">Status</p>
-                  <p className="font-semibold capitalize">{(selectedOrder as any)?.status}</p>
+                  {(() => {
+                    const status = (selectedOrder as any)?.status || 'pending';
+                    const config = statusConfig[status as OrderStatus] || statusConfig.pending;
+                    return (
+                      <span className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold capitalize ${config.bgColor} ${config.color}`}>
+                        {config.icon}
+                        {status}
+                      </span>
+                    );
+                  })()}
                 </div>
               </div>
 
@@ -1568,7 +2318,6 @@ function CustomersPage() {
                       >
                         <option value="customer">Customer</option>
                         <option value="admin">Admin</option>
-                        <option value="super_admin">Super Admin</option>
                       </select>
                     </td>
                     <td className="px-6 py-5">

@@ -8,6 +8,7 @@ import type { WishlistItem as ApiWishlistItem } from "@/types/wishlist";
 import type { ProductSummary } from "@/types/products";
 import { WishlistProductCard } from "@/components/WishlistProductCard";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 const transformToProductSummary = (item: ApiWishlistItem): ProductSummary | null => {
   if (!item.product) return null;
@@ -32,6 +33,7 @@ const transformToProductSummary = (item: ApiWishlistItem): ProductSummary | null
   
   return {
     id: product.id,
+    slug: product.slug || null,
     name: product.name,
     brand: product.brand || "",
     description: product.description || "",
@@ -46,6 +48,17 @@ const transformToProductSummary = (item: ApiWishlistItem): ProductSummary | null
     inStock: hasStock,
     isNew: product.is_new === true,
     defaultVariantId: defaultVariant?.id ?? null,
+    category: product.category ? {
+      id: product.category.id,
+      name: product.category.name,
+      slug: product.category.slug,
+    } : null,
+    collection: product.collection || null,
+    discountPercent: product.sale_price
+      ? Math.round(((product.base_price - product.sale_price) / product.base_price) * 100)
+      : null,
+    createdAt: product.created_at ? new Date(product.created_at).toISOString() : null,
+    updatedAt: product.updated_at ? new Date(product.updated_at).toISOString() : null,
   };
 };
 
@@ -102,9 +115,11 @@ export default function Wishlist() {
     try {
       await removeFromWishlist(productId);
       setProducts((prev) => prev.filter((product) => product.id !== productId));
+      toast.success("Đã xoá khỏi danh sách yêu thích");
     } catch (err) {
       console.error("Error removing from wishlist:", err);
-      alert("Failed to remove item from wishlist");
+      const message = err instanceof Error ? err.message : "Không thể xoá khỏi danh sách yêu thích";
+      toast.error(message);
     }
   };
 
@@ -113,7 +128,7 @@ export default function Wishlist() {
       // Get the product from the products list
       const product = products.find(p => p.id === productId);
       if (!product) {
-        alert("Product not found");
+        toast.error("Không tìm thấy sản phẩm");
         return;
       }
 
@@ -121,23 +136,26 @@ export default function Wishlist() {
       // In a real implementation, you'd show a modal to select variant/quantity
       const defaultVariantId = product.defaultVariantId;
       if (!defaultVariantId) {
-        alert("Vui lòng chọn phiên bản sản phẩm");
+        toast.error("Vui lòng chọn phiên bản sản phẩm");
         return;
       }
-      
+
       // Add to cart
       await addToCart(defaultVariantId, 1);
-      
+
       // Remove from wishlist after adding to cart
       await removeFromWishlist(productId);
-      
+
       // Update products list
       setProducts((prev) => prev.filter((p) => p.id !== productId));
-      
-      alert("Product moved to cart!");
+
+      toast.success("Đã chuyển vào giỏ hàng!", {
+        description: `${product.name} đã được thêm vào giỏ hàng của bạn`
+      });
     } catch (err) {
       console.error("Error moving to cart:", err);
-      alert(err instanceof Error ? err.message : "Failed to move item to cart");
+      const message = err instanceof Error ? err.message : "Không thể chuyển vào giỏ hàng";
+      toast.error(message);
     }
   };
 

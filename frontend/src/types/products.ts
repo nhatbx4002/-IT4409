@@ -35,7 +35,6 @@ export interface ProductVariantDetail {
   color: string | null;
   size: string | null;
   sku: string | null;
-  price: number;
   stockQuantity: number;
   imageUrl: string | null;
 }

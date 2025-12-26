@@ -247,16 +247,16 @@ export function Collections() {
           <aside
             className={`
               hidden lg:block sticky top-0 self-start
-              transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]
+              transition-[width,transform,opacity] duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]
               ${isDesktopFilterVisible
                 ? 'w-1/4 opacity-100 translate-x-0'
-                : 'w-0 opacity-0 -translate-x-4 overflow-hidden'
+                : 'w-0 opacity-0 -translate-x-8 overflow-hidden'
               }
             `}
           >
             <div className={`
-              transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]
-              ${isDesktopFilterVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}
+              transition-[opacity,transform] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] delay-100
+              ${isDesktopFilterVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'}
             `}>
               <FilterSidebar
                 filters={filters}
@@ -266,7 +266,7 @@ export function Collections() {
             </div>
           </aside>
 
-          <main className="flex-1">
+          <main className="flex-1 transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]">
             <div className="mb-6">
               {activeFilterCount > 0 && (
                 <div className="mb-4 flex flex-wrap items-center gap-2 border-b border-black/10 pb-4">
@@ -380,12 +380,12 @@ export function Collections() {
                     onClick={() =>
                       setIsDesktopFilterVisible(!isDesktopFilterVisible)
                     }
-                    className="hidden lg:flex items-center gap-2 px-4 py-2 border border-black/20 hover:border-[#D4AF37] transition-all duration-300"
+                    className="hidden lg:flex items-center gap-2 px-4 py-2 border border-black/20 hover:border-[#D4AF37] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0"
                     style={{
                       fontFamily: FONT_SANS,
                     }}
                   >
-                    <SlidersHorizontal className="w-4 h-4" />
+                    <SlidersHorizontal className={`w-4 h-4 transition-transform duration-300 ${isDesktopFilterVisible ? 'rotate-180' : 'rotate-0'}`} />
                     {isDesktopFilterVisible ? "ẨN BỘ LỌC" : "HIỆN BỘ LỌC"}
                   </button>
                 </div>
@@ -430,11 +430,8 @@ export function Collections() {
                   className={`
                     grid gap-6 mb-12
                     grid-cols-1 sm:grid-cols-2
-                    transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]
-                    ${isDesktopFilterVisible
-                      ? "lg:grid-cols-3 xl:grid-cols-4"
-                      : "lg:grid-cols-4 xl:grid-cols-5"
-                    }
+                    lg:grid-cols-4
+                    transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]
                   `}
                 >
                   {paginatedProducts.map((product) => (

@@ -163,7 +163,8 @@ export const previewShippingFee = async (userId, locationData, promotionCode) =>
         for (const item of cart.cart_items) {
             const variant = item.product_variant;
             if (variant && variant.product) {
-                const price = parseFloat(variant.price || variant.product.base_price || 0);
+                // Use product-level pricing (base_price or sale_price)
+                const price = parseFloat(variant.product.sale_price || variant.product.base_price || 0);
                 subtotal += price * item.quantity;
             }
         }
@@ -241,7 +242,8 @@ export const createOrder = async (userId, shippingAddressId, paymentMethod, note
                 throw new Error(`Sản phẩm "${variant.product.name}" hết hàng.`);
             }
 
-            const unitPrice = parseFloat(variant.price || variant.product.base_price || 0);
+            // Use product-level pricing (base_price or sale_price)
+            const unitPrice = parseFloat(variant.product.sale_price || variant.product.base_price || 0);
             const lineTotal = unitPrice * item.quantity;
             subtotal += lineTotal;
 

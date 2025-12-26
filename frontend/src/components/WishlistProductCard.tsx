@@ -41,9 +41,9 @@ export function WishlistProductCard({
       <div className="relative aspect-[3/4] w-full overflow-hidden bg-[#F4F4F4] rounded-sm">
         
         {/* Product Images */}
-        <div 
+        <div
             className="relative h-full w-full cursor-pointer"
-            onClick={() => navigate(`/products/${product.id}`)}
+            onClick={() => navigate(`/products/${product.slug || product.id}`)}
         >
           {product.images.map((image, idx) => (
             <ImageWithFallback
@@ -106,7 +106,7 @@ export function WishlistProductCard({
 
         {/* Name - Serif Font cho đồng bộ với tiêu đề Wishlist */}
         <h3
-          onClick={() => navigate(`/products/${product.id}`)}
+          onClick={() => navigate(`/products/${product.slug || product.id}`)}
           className="cursor-pointer font-['Playfair_Display'] text-[18px] font-medium leading-tight text-[#111] hover:underline hover:decoration-1 hover:underline-offset-4"
         >
           {product.name}

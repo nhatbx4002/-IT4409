@@ -31,7 +31,7 @@ export function ProductCard({
 
   return (
     <div
-      className={`group relative flex h-full max-h-[640px] flex-col transition-all duration-500 ${isHovered ? "translate-y-[-2px]" : ""}`}
+      className={`group relative flex h-full flex-col transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${isHovered ? "translate-y-[-2px]" : ""}`}
       onMouseEnter={() => {
         setIsHovered(true);
         if (product.images.length > 1) {
@@ -43,8 +43,8 @@ export function ProductCard({
         setImageByIndex(0);
       }}
     >
-      {/* Image Container - 320x400px aspect ratio */}
-      <div className="relative aspect-4/5 max-h-[400px] w-full shrink-0 overflow-hidden rounded-t-2xl bg-white/80 backdrop-blur-sm">
+      {/* Image Container - responsive aspect ratio */}
+      <div className="relative aspect-4/5 w-full overflow-hidden rounded-t-2xl bg-white/80 backdrop-blur-sm">
         {/* Product Images */}
         <div className="relative w-full h-full">
           {product.images.map((image, idx) => (
@@ -94,7 +94,7 @@ export function ProductCard({
         >
           <div className="flex items-center justify-between gap-2 text-sm text-[#111827]">
             <button
-              onClick={() => navigate(`/products/${product.id}`)}
+              onClick={() => navigate(`/products/${product.slug || product.id}`)}
               className="flex items-center gap-2 rounded-full px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#111827] transition hover:text-[#D4AF37]"
             >
               <Eye className="h-4 w-4" />
@@ -136,9 +136,9 @@ export function ProductCard({
             {product.brand}
           </div>
 
-          {/* Product Name - Playfair Display, 20px, Bold */}
+          {/* Product Name - Playfair Display, responsive size */}
           <h3
-            className="min-h-[28px] overflow-hidden text-ellipsis font-['Playfair_Display'] text-[16px] font-semibold leading-snug text-[#111827] line-clamp-2"
+            className="min-h-[28px] overflow-hidden text-ellipsis font-['Playfair_Display'] text-base font-semibold leading-snug text-[#111827] line-clamp-2 sm:text-lg"
             title={product.name}
           >
             {product.name}
@@ -168,14 +168,14 @@ export function ProductCard({
             </span>
           </div>
 
-          {/* Price - 24px Bold Black */}
+          {/* Price - responsive size */}
           <div className="flex items-center gap-3 pt-1">
             {hasDiscount && (
-              <span className="text-[12px] text-[#9CA3AF] line-through">
+              <span className="text-xs text-[#9CA3AF] line-through sm:text-sm">
                 {formatVnd(product.price)}
               </span>
             )}
-            <span className="font-['Poppins'] text-[16px] font-semibold text-[#111827]">
+            <span className="font-['Poppins'] text-base font-semibold text-[#111827] sm:text-lg">
               {formatVnd(displayPrice)}
             </span>
           </div>
