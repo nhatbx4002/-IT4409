@@ -20,8 +20,9 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { useParams, useSearchParams } from "react-router-dom";
-import { addToCart, addToWishlist, getProducts } from "@/lib/api";
+import { addToCart, addToWishlist, getProducts, getCollectionProducts, getCollectionBySlug } from "@/lib/api";
 import type { ProductSummary, SortOption } from "@/types/products";
+import type { Collection, CollectionProductData } from "@/types/collections";
 import { useProductFilters } from "@/hooks/useProductFilters";
 import { EmptyState, ErrorState, LoadingState } from "@/components/feedback/AsyncStates";
 import {
@@ -53,7 +54,10 @@ export function Collections() {
   const effectiveCategory = isVietnameseCategory ? collection : category;
   const effectiveCollection = isVietnameseCategory ? undefined : collection;
 
-  const dynamicTitle =
+  // Collection state
+  const [collectionData, setCollectionData] = useState<Collection | null>(null);
+
+  const dynamicTitle = collectionData?.name ||
     (searchParams.get("title") ??
       [collection, category].filter(Boolean).join(" / ")) ||
     "Collection";
@@ -74,7 +78,7 @@ export function Collections() {
     activeFilterCount,
     buildFilterParams,
   } = useProductFilters({
-    collection: effectiveCollection as "men" | "women" | "accessories" | undefined,
+    collection: effectiveCollection,
     categoryFromUrl: effectiveCategory,
     initialSort: sortParam,
   });
@@ -90,27 +94,109 @@ export function Collections() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Helper to convert CollectionProductData to ProductSummary
+  const convertToProductSummary = (item: CollectionProductData): ProductSummary => {
+    // Parse images - can be JSON string or already an array
+    let images: string[] = [];
+    if (typeof item.images === 'string') {
+      try {
+        images = JSON.parse(item.images);
+      } catch {
+        images = [item.images];
+      }
+    } else if (Array.isArray(item.images)) {
+      images = item.images;
+    }
+
+    // Parse prices - can be string or number
+    const basePrice = typeof item.base_price === 'string'
+      ? parseFloat(item.base_price)
+      : item.base_price;
+    const salePrice = item.sale_price !== null
+      ? (typeof item.sale_price === 'string' ? parseFloat(item.sale_price) : item.sale_price)
+      : null;
+
+    const hasDiscount = salePrice !== null && salePrice < basePrice;
+    const discountPercent = hasDiscount
+      ? Math.round(((basePrice - salePrice) / basePrice) * 100)
+      : null;
+
+    return {
+      id: item.id,
+      slug: item.slug,
+      name: item.name,
+      brand: '',
+      category: null,
+      price: basePrice,
+      salePrice,
+      discountPercent,
+      images,
+      colors: [],
+      sizes: [],
+      rating: 0,
+      reviewCount: 0,
+      isNew: item.is_new,
+      inStock: item.status === 'active',
+      tags: item.tags || [],
+      createdAt: null,
+      updatedAt: null,
+      defaultVariantId: null,
+    };
+  };
+
   const currentSort = (filters.sortBy ?? sortParam) as SortOption;
   const itemsPerPage = pageSize;
+
+  // Fetch collection data when collection slug changes
+  useEffect(() => {
+    const fetchCollectionData = async () => {
+      if (effectiveCollection) {
+        try {
+          const data = await getCollectionBySlug(effectiveCollection);
+          setCollectionData(data);
+        } catch (err) {
+          console.error("Error fetching collection:", err);
+          setCollectionData(null);
+        }
+      } else {
+        setCollectionData(null);
+      }
+    };
+
+    fetchCollectionData();
+  }, [effectiveCollection]);
 
   const fetchProducts = useCallback(async () => {
     setIsLoading(true);
     setError(null);
 
     try {
-      const params = buildFilterParams({
-        sort: currentSort,
-        page: currentPage,
-        pageSize: itemsPerPage,
-      });
+      // Use collection API if we have a collection slug
+      if (effectiveCollection && collectionData) {
+        const response = await getCollectionProducts(effectiveCollection, {
+          page: currentPage,
+          limit: itemsPerPage,
+        });
 
-      // Always use getProducts (search endpoint) for consistency
-      // The URL category is already handled by categorySlug in buildFilterParams
-      const response = await getProducts(params);
+        // Convert CollectionProductData to ProductSummary
+        const convertedProducts = response.products.map(convertToProductSummary);
+        setProducts(convertedProducts);
+        setTotal(response.total);
+        // Collection API doesn't provide totalPages, calculate it
+        setTotalPages(Math.ceil(response.total / itemsPerPage));
+      } else {
+        // Use regular products API
+        const params = buildFilterParams({
+          sort: currentSort,
+          page: currentPage,
+          pageSize: itemsPerPage,
+        });
 
-      setProducts(response.products);
-      setTotal(response.total);
-      setTotalPages(response.totalPages);
+        const response = await getProducts(params);
+        setProducts(response.products);
+        setTotal(response.total);
+        setTotalPages(response.totalPages);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to fetch products");
       console.error("Error fetching products:", err);
@@ -120,7 +206,7 @@ export function Collections() {
     } finally {
       setIsLoading(false);
     }
-  }, [buildFilterParams, currentPage, currentSort, itemsPerPage]);
+  }, [buildFilterParams, currentPage, currentSort, itemsPerPage, effectiveCollection, collectionData]);
 
   useEffect(() => {
     fetchProducts();
@@ -186,7 +272,14 @@ export function Collections() {
   return (
     <MainLayout>
       <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1503341504253-dff4815485f1?auto=format&fit=crop&w=1800&q=80')] bg-cover bg-center" />
+        {collectionData?.banner_image ? (
+          <div
+            className="absolute inset-0 bg-cover bg-center"
+            style={{ backgroundImage: `url(${collectionData.banner_image})` }}
+          />
+        ) : (
+          <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1503341504253-dff4815485f1?auto=format&fit=crop&w=1800&q=80')] bg-cover bg-center" />
+        )}
         <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent" />
         <div className="relative w-full px-4 py-10 sm:px-8 lg:px-12">
           <Breadcrumb className="mb-4">
@@ -219,6 +312,16 @@ export function Collections() {
               <h1 className="mt-1 font-['Playfair_Display'] text-3xl font-semibold tracking-tight text-white sm:text-4xl">
                 {dynamicTitle}
               </h1>
+              {collectionData?.description && (
+                <p
+                  className="mt-2 text-sm text-white/90 max-w-2xl"
+                  style={{
+                    fontFamily: FONT_SANS,
+                  }}
+                >
+                  {collectionData.description}
+                </p>
+              )}
               <p
                 className="mt-2 text-xs text-white/80 sm:text-sm"
                 style={{

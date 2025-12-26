@@ -1,90 +1,112 @@
-import { ImageWithFallback } from "./figma/ImageWithFallback";
-import { Button } from "./ui/button";
+import React, { useState, useEffect, useRef } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+
+const SLIDES = [
+  {
+    id: 1,
+    image: "https://cdn.hstatic.net/files/200000886795/file/web_pc.png", 
+    link: "/collections/hon-dan-toc-dau-di-san-collection",
+    alt: "Fall Winter Collection"
+  },
+  {
+    id: 2,
+    image: "https://cdn.hstatic.net/files/200000886795/file/homepage.jpg",
+    link: "/collections/vest-nam",
+    alt: "Gentleman Suits"
+  },
+  {
+    id: 3,
+    image: "https://cdn.hstatic.net/files/200000887901/file/web_-_pc_a6763ca994c04159a3732bf7bd4303bd.jpg",
+    link: "/collections/phu-kien",
+    alt: "Accessories"
+  }
+];
+
+const AUTOPLAY_DELAY = 5000;
 
 export function Hero() {
+  const [current, setCurrent] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const resetTimeout = () => {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+  };
+
+  useEffect(() => {
+    resetTimeout();
+    if (!isPaused) {
+      timeoutRef.current = setTimeout(() => {
+        setCurrent((prev) => (prev === SLIDES.length - 1 ? 0 : prev + 1));
+      }, AUTOPLAY_DELAY);
+    }
+    return () => resetTimeout();
+  }, [current, isPaused]);
+
+  const nextSlide = () => {
+    setCurrent((prev) => (prev === SLIDES.length - 1 ? 0 : prev + 1));
+  };
+
+  const prevSlide = () => {
+    setCurrent((prev) => (prev === 0 ? SLIDES.length - 1 : prev - 1));
+  };
+
   return (
-    <section className="relative w-full overflow-hidden bg-[#050509]">
-      {/* Background Imagery */}
-      <div className="absolute inset-0">
-        <div className="absolute inset-y-0 right-0 w-full md:w-1/2 bg-linear-to-l from-black via-black/40 to-transparent">
-          <ImageWithFallback
-            src="https://images.unsplash.com/photo-1552374196-c4e7ffc6e126?auto=format&fit=crop&w=1300&q=80"
-            alt="Tailored menswear on model"
-            className="h-full w-full object-cover"
+    <section 
+      className="relative w-full overflow-hidden bg-black"
+      style={{ height: '85vh', minHeight: '600px' }} 
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
+    >
+      
+      {/* --- SLIDES --- */}
+      {SLIDES.map((slide, index) => (
+        <a
+          key={slide.id}
+          href={slide.link}
+          className={`absolute inset-0 block h-full w-full transition-opacity duration-[1000ms] ${
+            index === current ? "opacity-100 z-10 pointer-events-auto" : "opacity-0 z-0 pointer-events-none"
+          }`}
+        >
+          <img
+            src={slide.image}
+            alt={slide.alt}
+            className={`h-full w-full object-cover object-top transition-transform duration-[10000ms] ease-linear ${
+              index === current ? "scale-110" : "scale-100"
+            }`}
           />
-          {/* Glass gradient over image */}
-          <div className="pointer-events-none absolute inset-0 bg-linear-to-l from-black via-black/40 to-transparent" />
-        </div>
-        {/* Subtle vignette */}
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.08),transparent_60%),radial-gradient(circle_at_bottom,rgba(0,0,0,0.85),rgba(0,0,0,1))]" />
+          {/* Lớp phủ nhẹ giúp nút bấm rõ hơn */}
+          <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-colors" />
+        </a>
+      ))}
+
+      {/* --- SIMPLE BUTTONS (Luôn hiển thị hoặc hover nhẹ) --- */}
+      {/* Nút Trái */}
+      <button 
+        onClick={(e) => { e.preventDefault(); prevSlide(); }}
+        className="absolute left-4 top-1/2 z-30 -translate-y-1/2 rounded-full bg-black/20 p-3 text-white transition-colors hover:bg-black/50"
+      >
+        <ChevronLeft className="h-6 w-6" />
+      </button>
+
+      {/* Nút Phải */}
+      <button 
+        onClick={(e) => { e.preventDefault(); nextSlide(); }}
+        className="absolute right-4 top-1/2 z-30 -translate-y-1/2 rounded-full bg-black/20 p-3 text-white transition-colors hover:bg-black/50"
+      >
+        <ChevronRight className="h-6 w-6" />
+      </button>
+
+      {/* --- PROGRESS LINE (Giữ lại để biết thời gian slide chạy) --- */}
+      <div className="absolute bottom-8 left-1/2 z-30 flex -translate-x-1/2 gap-3">
+        {SLIDES.map((_, index) => (
+          <div
+            key={index}
+            className={`h-[2px] w-12 transition-colors duration-300 ${index === current ? "bg-white" : "bg-white/30"}`}
+          />
+        ))}
       </div>
 
-      {/* Content */}
-<section 
-  className="relative min-h-screen w-full flex items-center overflow-hidden"
-  style={{ 
-    backgroundImage: `linear-gradient(to right, rgba(0, 0, 0, 0.8) 20%, rgba(0, 0, 0, 0.2) 100%), url('https://cdn.hstatic.net/files/200000886795/file/web_pc.png')`,
-    backgroundSize: 'cover',
-    backgroundPosition: 'center',
-    backgroundRepeat: 'no-repeat'
-  }}
->
-  {/* Container giới hạn độ rộng của chữ nhưng ảnh vẫn tràn màn hình */}
-  <div className="relative mx-auto w-full max-w-6xl px-6 py-16 sm:px-8 lg:px-0">
-    <div className="max-w-xl space-y-7">
-      {/* Tiêu đề chính */}
-      <h1 className="font-['Playfair_Display'] text-4xl font-semibold leading-tight text-white sm:text-5xl lg:text-6xl">
-        Thời Trang Cao Cấp
-        <br />
-        Dành Cho Quý Ông Hiện Đại
-      </h1>
-
-      <p className="max-w-md text-sm leading-relaxed text-slate-200 sm:text-base">
-        Khám phá bộ sưu tập áo vest len Ý, áo sơ mi hoàn thiện thủ công và
-        các phụ kiện da cao cấp được tuyển chọn cho các buổi tối, phòng họp và mọi khoảnh khắc.
-      </p>
-
-      {/* Nút bấm */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
-        <Button
-          className="h-12 rounded-full bg-[#D4AF37] px-8 text-xs font-semibold uppercase tracking-[0.2em] text-black transition hover:-translate-y-0.5 hover:bg-[#B6911F]"
-        >
-          Mua Sắm Mùa Mới
-        </Button>
-        <button
-          type="button"
-          className="inline-flex items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-slate-200 transition hover:text-white"
-        >
-          Khám Phá Bộ Sưu Tập Tối
-          <span className="h-px w-10 bg-slate-500" />
-        </button>
-      </div>
-
-      {/* Thông số bổ sung */}
-      <div className="flex flex-wrap gap-6 pt-4 text-xs text-slate-300">
-        <div className="space-y-1">
-          <p className="font-semibold tracking-[0.2em] text-slate-400">ÁO VEST</p>
-          <p>Len Ý · Nửa lót · Hoàn thiện thủ công</p>
-        </div>
-        <div className="space-y-1">
-          <p className="font-semibold tracking-[0.2em] text-slate-400">GIAO HÀNG</p>
-          <p>May đo miễn phí & giao hàng toàn cầu</p>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-      {/* Scroll Hint */}
-      <div className="pointer-events-none absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-xs text-slate-300">
-        <span className="tracking-[0.3em] uppercase">Cuộn</span>
-        <div className="flex h-10 w-px items-start justify-center overflow-hidden bg-slate-600/60">
-          <div className="h-10 w-px animate-[scrollLine_1.6s_ease-in-out_infinite] bg-[#D4AF37]" />
-        </div>
-      </div>
     </section>
   );
 }
-
-// Tailwind keyframes (add to tailwind config if not already present):
-// keyframes: { scrollLine: { '0%, 100%': { transform: 'translateY(-100%)' }, '50%': { transform: 'translateY(0%)' } } }

@@ -55,6 +55,11 @@ export const listOrders = async ({
             total_amount: order.total_amount,
             created_at: order.created_at,
             updated_at: order.updated_at,
+            user: order.user ? {
+                id: order.user.id,
+                name: order.user.name,
+                email: order.user.email
+            } : null,
             items: [] // Will be populated when fetching individual order
         }));
 
@@ -123,7 +128,12 @@ export const getOrderDetail = async (orderId) => {
         notes: order.notes,
         created_at: order.created_at,
         updated_at: order.updated_at,
-        items: order.order_items?.map(item => ({
+        user: order.user ? {
+            id: order.user.id,
+            name: order.user.name,
+            email: order.user.email
+        } : null,
+        order_items: order.order_items?.map(item => ({
             id: item.id,
             order_id: item.order_id,
             product_id: item.product_id,
@@ -131,6 +141,11 @@ export const getOrderDetail = async (orderId) => {
             unit_price: item.unit_price,
             line_total: item.line_total,
             product_name: item.product?.name || null,
+            product: item.product ? {
+                id: item.product.id,
+                name: item.product.name,
+                slug: item.product.slug
+            } : null,
             variant_name: null // Add variant when ProductVariant is integrated
         })) || []
     };
@@ -181,7 +196,12 @@ export const updateOrderStatus = async (orderId, newStatus) => {
         email: order.user?.email || null,
         total_amount: order.total_amount,
         created_at: order.created_at,
-        updated_at: order.updated_at
+        updated_at: order.updated_at,
+        user: order.user ? {
+            id: order.user.id,
+            name: order.user.name,
+            email: order.user.email
+        } : null
     };
 };
 
@@ -224,6 +244,11 @@ export const processRefund = async (orderId, refundData) => {
         total_amount: order.total_amount,
         notes: order.notes,
         created_at: order.created_at,
-        updated_at: order.updated_at
+        updated_at: order.updated_at,
+        user: order.user ? {
+            id: order.user.id,
+            name: order.user.name,
+            email: order.user.email
+        } : null
     };
 };

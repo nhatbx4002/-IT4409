@@ -25,13 +25,6 @@ export const getProductsByCategoryController = async (req, res) => {
     const page = req.query.page ? Math.max(1, parseInt(req.query.page, 10)) : 1;
     const pageSize = req.query.pageSize ? Math.max(1, parseInt(req.query.pageSize, 10)) : 12;
 
-    // Validate collection
-    if (collection && !['men', 'women', 'accessories'].includes(collection)) {
-        return sendValidationError(res, [
-            { message: "Invalid collection. Must be 'men', 'women', or 'accessories'" }
-        ]);
-    }
-
     // Validate sort
     const validSorts = ['featured', 'newest', 'price-low', 'price-high', 'popular'];
     if (!validSorts.includes(sort)) {
@@ -133,14 +126,6 @@ export const listProductsController = async (req, res) => {
     const page = req.query.page ? Math.max(1, parseInt(req.query.page, 10)) : 1;
     const pageSize = req.query.pageSize ? Math.max(1, parseInt(req.query.pageSize, 10)) : 12;
 
-    // Validate collection
-    if (collection && !['men', 'women', 'accessories'].includes(collection)) {
-        return res.status(400).json({
-            success: false,
-            message: "Invalid collection. Must be 'men', 'women', or 'accessories'",
-        });
-    }
-
     // Validate sort
     const validSorts = ['featured', 'newest', 'price-low', 'price-high', 'popular'];
     if (!validSorts.includes(sort)) {
@@ -207,14 +192,6 @@ export const searchProductsController = async (req, res) => {
     const sort = req.query.sort || 'featured';
     const page = req.query.page ? Math.max(1, parseInt(req.query.page, 10)) : 1;
     const pageSize = req.query.pageSize ? Math.max(1, parseInt(req.query.pageSize, 10)) : 12;
-
-    // Validate collection
-    if (collection && !['men', 'women', 'accessories'].includes(collection)) {
-        return res.status(400).json({
-            success: false,
-            message: "Invalid collection. Must be 'men', 'women', or 'accessories'",
-        });
-    }
 
     // Validate sort
     const validSorts = ['featured', 'newest', 'price-low', 'price-high', 'popular'];

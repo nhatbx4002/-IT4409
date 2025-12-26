@@ -88,6 +88,7 @@ export const findAllOrders = () =>
     include: [
       {
         model: User,
+        as: 'user',
         attributes: ["id", "name", "email", "phone"],
       },
       { model: ShippingAddress, as: "shipping_address" },
@@ -100,7 +101,7 @@ export const findAllOrders = () =>
 export const findOrderWithRelations = (orderId) =>
   Order.findByPk(orderId, {
     include: [
-      { model: User },
+      { model: User, as: 'user' },
       { model: ShippingAddress, as: "shipping_address" },
       { model: OrderItem, as: "order_items" }
     ],
@@ -117,7 +118,7 @@ export const findOrderById = (orderId) =>
     include: [
       { model: ShippingAddress, as: "shipping_address" },
       { model: Payment },
-      { model: User },
+      { model: User, as: 'user' },
       { model: Discount, as: "discount", attributes: ["id", "name", "code", "discount_type", "discount_value"] }
     ],
   });

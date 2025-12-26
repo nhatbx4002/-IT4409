@@ -46,6 +46,7 @@ export interface ProductDetail extends ProductSummary {
 
 export interface ProductFilterParams {
   q?: string;
+  collection?: string;
   categorySlug?: string;
   categorySlugs?: string[];
   sizes?: string[];
@@ -83,6 +84,7 @@ export interface ProductFiltersState {
   priceRange: [number, number];
   brands: string[];
   inStockOnly: boolean;
+  collection?: string;
   sortBy?: SortOption;
 }
 

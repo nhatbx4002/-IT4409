@@ -331,10 +331,19 @@ export const createOrder = async (userId, shippingAddressId, paymentMethod, note
 
         return {
             order: newOrder,
+            user: await User.findByPk(userId, { attributes: ['id', 'email', 'name'] }),
             paymentUrl: paymentUrl,
             financials: { subtotal, shippingFee, discountAmount: discountInfo.amount, totalAmount }
         };
     });
+
+    // Send order confirmation email (outside transaction)
+    if (result.user && result.user.email) {
+        sendOrderStatusEmail(result.user.email, result.order.id, 'pending', {
+            total_amount: result.order.total_amount,
+            notes: result.order.notes
+        });
+    }
 
     return result;
 };
@@ -439,6 +448,7 @@ export const getAllOrdersAdmin = async ({
         include: [
             {
                 model: User,
+                as: 'user',
                 attributes: ["id", "name", "email", "phone"],
                 where: Object.keys(userWhere).length ? userWhere : undefined,
             },
@@ -499,8 +509,11 @@ export const updateOrderStatusAdmin = async (orderId, newStatus) => {
     }
 
     // GỬI EMAIL THÔNG BÁO
-    if (order.User && order.User.email) {
-        sendOrderStatusEmail(order.User.email, order.id, newStatus);
+    if (order.user && order.user.email) {
+        sendOrderStatusEmail(order.user.email, order.id, newStatus, {
+            total_amount: order.total_amount,
+            notes: order.notes
+        });
     }
 
     return order;
@@ -520,20 +533,23 @@ export const handleVnPayCallback = async (vnpParams) => {
 
     // Lấy SecureHash từ params
     const secureHash = vnpParams['vnp_SecureHash'];
-    delete vnpParams['vnp_SecureHash'];
-    delete vnpParams['vnp_SecureHashType'];
+
+    // Clone params to avoid modifying original req.query
+    const params = { ...vnpParams };
+    delete params['vnp_SecureHash'];
+    delete params['vnp_SecureHashType'];
 
     // Sắp xếp và tạo chuỗi để verify
     let sorted = {};
     let str = [];
-    for (let key in vnpParams) {
-        if (vnpParams.hasOwnProperty(key)) {
+    for (let key in params) {
+        if (Object.prototype.hasOwnProperty.call(params, key)) {
             str.push(encodeURIComponent(key));
         }
     }
     str.sort();
     for (let key of str) {
-        sorted[key] = encodeURIComponent(vnpParams[key]).replace(/%20/g, "+");
+        sorted[key] = encodeURIComponent(params[key]).replace(/%20/g, "+");
     }
 
     const signData = querystring.stringify(sorted, { encode: false });
@@ -622,8 +638,11 @@ export const handleVnPayCallback = async (vnpParams) => {
     });
 
     // Gửi email thông báo nếu thanh toán thành công
-    if (result.success && order.User && order.User.email) {
-        sendOrderStatusEmail(order.User.email, order.id, result.orderStatus);
+    if (result.success && order.user && order.user.email) {
+        sendOrderStatusEmail(order.user.email, order.id, result.orderStatus, {
+            total_amount: order.total_amount,
+            notes: order.notes
+        });
     }
 
     return result;

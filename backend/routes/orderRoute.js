@@ -44,6 +44,9 @@ const router = express.Router();
  */
 router.get('/payment/vnpay/callback', vnPayCallback);
 
+// Alias route for backward compatibility with existing orders
+router.get('/vnpay_return', vnPayCallback);
+
 // Middleware xác thực cho các route còn lại
 router.use(authenticateToken);
 

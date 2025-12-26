@@ -19,6 +19,11 @@ export type OrderItem = {
   line_total?: number | string;
   product_name?: string;
   variant_name?: string;
+  product?: {
+    id: number;
+    name: string;
+    slug: string;
+  } | null;
 };
 
 export type Order = {
@@ -32,9 +37,18 @@ export type Order = {
   address?: string | null;
   provider?: string | null;
   total_amount?: number | string;
+  subtotal_amount?: number | string;
+  discount_amount?: number | string;
+  notes?: string | null;
   created_at?: string;
   updated_at?: string;
   items?: OrderItem[];
+  order_items?: OrderItem[];
+  user?: {
+    id: number;
+    name: string;
+    email: string;
+  } | null;
 };
 
 export type Pagination = {

@@ -56,6 +56,8 @@ export const useProductFilters = (options?: UseProductFiltersOptions) => {
             return { ...prev, priceRange: DEFAULT_PRICE_RANGE };
           case 'inStockOnly':
             return { ...prev, inStockOnly: false };
+          case 'collection':
+            return { ...prev, collection: undefined };
           default:
             return prev;
         }

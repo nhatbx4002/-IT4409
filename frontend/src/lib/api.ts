@@ -20,6 +20,10 @@ import type {
   RemoveFromWishlistResponse,
 } from '@/types/wishlist';
 import type { ProductReviewsResponse, ReviewItem } from '@/types/reviews';
+import type {
+  Collection,
+  CollectionProductsResponse
+} from '@/types/collections';
 import { clearAuthSession, getAccessToken, getStoredUser, getRefreshToken, setAuthSession } from './auth';
 
 const getApiBaseUrl = (): string => {
@@ -716,4 +720,34 @@ export async function getPaymentStatus(orderId: number): Promise<PaymentStatusRe
 export async function getMyOrders(): Promise<Order[]> {
   const response = await apiClient.get<ApiResponse<Order[]>>('/orders');
   return unwrapResponse(response.data);
+}
+
+// ==============================
+// COLLECTIONS API
+// ==============================
+
+/**
+ * Get all active collections
+ */
+export async function getActiveCollections(): Promise<Collection[]> {
+  return getRequest<Collection[]>('/collections');
+}
+
+/**
+ * Get collection by slug
+ */
+export async function getCollectionBySlug(slug: string): Promise<Collection> {
+  return getRequest<Collection>(`/collections/${encodeURIComponent(slug)}`);
+}
+
+/**
+ * Get products in a collection with pagination
+ */
+export async function getCollectionProducts(
+  slug: string,
+  params: { page?: number; limit?: number } = {}
+): Promise<CollectionProductsResponse> {
+  return getRequest<CollectionProductsResponse>(`/collections/${encodeURIComponent(slug)}/products`, {
+    params,
+  });
 }
