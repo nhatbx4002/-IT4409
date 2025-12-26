@@ -11,11 +11,11 @@ import { BackToTop } from "@/components/BackToTop";
 
 const resetPasswordSchema = z
   .object({
-    password: z.string().min(6, "Password must be at least 6 characters"),
+    password: z.string().min(6, "Mật khẩu phải có ít nhất 6 ký tự"),
     confirmPassword: z.string(),
   })
   .refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords do not match",
+    message: "Mật khẩu không khớp",
     path: ["confirmPassword"],
   });
 
@@ -45,7 +45,7 @@ export default function ResetPasswordPage() {
     const emailParam = searchParams.get("email");
 
     if (!tokenParam) {
-      setError("Invalid or missing reset token. Please request a new password reset.");
+      setError("Token đặt lại mật khẩu không hợp lệ hoặc đã hết hạn. Vui lòng yêu cầu lại.");
     } else {
       setToken(tokenParam);
       setEmail(emailParam);
@@ -54,7 +54,7 @@ export default function ResetPasswordPage() {
 
   const onSubmit = async (data: ResetPasswordFormData) => {
     if (!token) {
-      setError("Invalid reset token. Please request a new password reset.");
+      setError("Token đặt lại mật khẩu không hợp lệ. Vui lòng yêu cầu lại.");
       return;
     }
 
@@ -69,7 +69,7 @@ export default function ResetPasswordPage() {
         navigate("/login");
       }, 2000);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to reset password. Please try again.";
+      const errorMessage = err instanceof Error ? err.message : "Đặt lại mật khẩu thất bại. Vui lòng thử lại.";
       setError(errorMessage);
     } finally {
       setIsLoading(false);
@@ -155,7 +155,7 @@ export default function ResetPasswordPage() {
               }}
             >
               <ArrowLeft className="w-4 h-4" />
-              Back to Login
+              Quay lại đăng nhập
             </Link>
 
             {/* Header */}
@@ -169,7 +169,7 @@ export default function ResetPasswordPage() {
                   marginBottom: "8px",
                 }}
               >
-                Reset Password
+                Đặt lại mật khẩu
               </h1>
               <p
                 style={{
@@ -178,7 +178,7 @@ export default function ResetPasswordPage() {
                   color: "#6B7280",
                 }}
               >
-                {email ? `Enter your new password for ${email}` : "Enter your new password"}
+                {email ? `Nhập mật khẩu mới cho ${email}` : "Nhập mật khẩu mới"}
               </p>
             </div>
 
@@ -202,7 +202,7 @@ export default function ResetPasswordPage() {
                       marginBottom: "4px",
                     }}
                   >
-                    Password reset successful!
+                    Đặt lại mật khẩu thành công!
                   </p>
                   <p
                     style={{
@@ -211,7 +211,7 @@ export default function ResetPasswordPage() {
                       color: "#16A34A",
                     }}
                   >
-                    Redirecting to login page...
+                    Đang chuyển về trang đăng nhập...
                   </p>
                 </div>
               </div>
@@ -255,14 +255,14 @@ export default function ResetPasswordPage() {
                       display: "block",
                     }}
                   >
-                    New Password
+                    Mật khẩu mới
                   </label>
                   <div className="relative">
                     <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-[#9CA3AF]" />
                     <input
                       id="password"
                       type={showPassword ? "text" : "password"}
-                      placeholder="Enter your new password"
+                      placeholder="Nhập mật khẩu mới"
                       {...register("password")}
                       className={`w-full h-[52px] bg-[rgba(243,244,246,0.5)] border rounded-lg pl-12 pr-12 transition-all focus:outline-none focus:border-2 focus:bg-white focus:shadow-[0_0_0_4px_rgba(212,175,55,0.1)] ${
                         errors.password
@@ -310,14 +310,14 @@ export default function ResetPasswordPage() {
                       display: "block",
                     }}
                   >
-                    Confirm Password
+                    Xác nhận mật khẩu
                   </label>
                   <div className="relative">
                     <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-[#9CA3AF]" />
                     <input
                       id="confirmPassword"
                       type={showConfirmPassword ? "text" : "password"}
-                      placeholder="Confirm your new password"
+                      placeholder="Nhập lại mật khẩu mới"
                       {...register("confirmPassword")}
                       className={`w-full h-[52px] bg-[rgba(243,244,246,0.5)] border rounded-lg pl-12 pr-12 transition-all focus:outline-none focus:border-2 focus:bg-white focus:shadow-[0_0_0_4px_rgba(212,175,55,0.1)] ${
                         errors.confirmPassword
@@ -364,7 +364,7 @@ export default function ResetPasswordPage() {
                     color: "#1A1A1A",
                   }}
                 >
-                  {isLoading ? "Resetting..." : "Reset Password"}
+                  {isLoading ? "Đang đặt lại..." : "Đặt lại mật khẩu"}
                 </button>
               </form>
             )}
@@ -380,7 +380,7 @@ export default function ResetPasswordPage() {
                     color: "#6B7280",
                   }}
                 >
-                  Invalid or missing reset token.
+                  Token đặt lại mật khẩu không hợp lệ hoặc đã hết hạn.
                 </p>
                 <Link
                   to="/forgot-password"
@@ -393,7 +393,7 @@ export default function ResetPasswordPage() {
                     textDecoration: "none",
                   }}
                 >
-                  Request a new password reset
+                  Yêu cầu đặt lại mật khẩu mới
                 </Link>
               </div>
             )}

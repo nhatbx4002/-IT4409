@@ -11,7 +11,7 @@ import type { ProductSummary, ProductFilterParams } from "@/types/products";
 import { LoadingState, ErrorState, EmptyState } from "@/components/feedback/AsyncStates";
 import { FONT_SANS, FONT_SERIF } from "@/theme/constants";
 
-const categories = ["All", "Suits", "Shirts", "Pants", "Shoes"];
+const categories = ["Tất cả", "Vest", "Áo sơ mi", "Quần", "Giày"];
 
 export function MensCollection() {
   const [selectedCategories, setSelectedCategories] = useState<string[]>(["All"]);
@@ -103,7 +103,7 @@ export function MensCollection() {
       {/* Categories */}
       <div>
         <h3 className="mb-4 tracking-wider text-sm" style={{ fontWeight: 600 }}>
-          CATEGORY
+          DANH MỤC
         </h3>
         <div className="space-y-3">
           {categories.map(category => (
@@ -128,7 +128,7 @@ export function MensCollection() {
       {/* Price Range */}
       <div>
         <h3 className="mb-4 tracking-wider text-sm" style={{ fontWeight: 600 }}>
-          PRICE RANGE
+          KHOẢNG GIÁ
         </h3>
         <div className="space-y-4">
           <Slider
@@ -140,23 +140,23 @@ export function MensCollection() {
             className="**:[[role=slider]]:bg-[#D4AF37] **[[role=slider]]:border-[#D4AF37]"
           />
           <div className="flex items-center justify-between text-sm text-[#666666]">
-            <span>${priceRange[0]}</span>
-            <span>${priceRange[1]}</span>
+            <span>{priceRange[0].toLocaleString('vi-VN', {style: 'currency', currency: 'VND'})}</span>
+            <span>{priceRange[1].toLocaleString('vi-VN', {style: 'currency', currency: 'VND'})}</span>
           </div>
         </div>
       </div>
 
       {/* Clear Filters */}
-      {(selectedCategories.length > 0 && !selectedCategories.includes("All")) && (
+      {(selectedCategories.length > 0 && !selectedCategories.includes("Tất cả")) && (
         <Button
           variant="outline"
           className="w-full border-[#D4AF37] text-[#D4AF37] hover:bg-[#D4AF37] hover:text-black"
           onClick={() => {
-            setSelectedCategories(["All"]);
+            setSelectedCategories(["Tất cả"]);
             setPriceRange([0, 5000]);
           }}
         >
-          Clear All Filters
+          Xoá tất cả bộ lọc
         </Button>
       )}
     </div>
@@ -168,9 +168,9 @@ export function MensCollection() {
       <div className="border-b border-black/10">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center gap-2 text-sm text-[#666666]">
-            <a href="#" className="hover:text-[#D4AF37] transition-colors">Home</a>
+            <a href="#" className="hover:text-[#D4AF37] transition-colors">Trang chủ</a>
             <span>/</span>
-            <span className="text-black">Men's Collection</span>
+            <span className="text-black">Bộ Sưu Tập Nam</span>
           </div>
         </div>
       </div>
@@ -182,10 +182,10 @@ export function MensCollection() {
             className="mb-4"
             style={{ fontSize: '48px', fontFamily: FONT_SERIF, fontWeight: 700 }}
           >
-            Men's Collection
+            Bộ Sưu Tập Nam
           </h1>
           <p className="text-[#666666] max-w-2xl mx-auto" style={{ fontSize: '18px', lineHeight: 1.6, fontFamily: FONT_SANS }}>
-            Discover timeless elegance with our curated selection of premium menswear
+            Khám phá vẻ đẹp vượt thời gian với bộ sưu tập thời trang nam cao cấp được tuyển chọn
           </p>
         </div>
       </div>
@@ -206,7 +206,7 @@ export function MensCollection() {
             <div className="flex items-center justify-between mb-8 pb-6 border-b border-black/10">
               <div className="flex items-center gap-4">
                 <p className="text-sm text-[#666666]">
-                  {isLoading ? 'Loading...' : `Showing ${sortedProducts.length} products`}
+                  {isLoading ? 'Đang tải...' : `Hiển thị ${sortedProducts.length} sản phẩm`}
                 </p>
                 
                 {/* Mobile Filter Button */}
@@ -218,12 +218,12 @@ export function MensCollection() {
                       className="lg:hidden border-[#D4AF37] text-[#D4AF37]"
                     >
                       <SlidersHorizontal className="h-4 w-4 mr-2" />
-                      Filters
+                      Bộ lọc
                     </Button>
                   </SheetTrigger>
                   <SheetContent side="left" className="w-80">
                     <SheetHeader>
-                      <SheetTitle>Filters</SheetTitle>
+                      <SheetTitle>Bộ lọc</SheetTitle>
                     </SheetHeader>
                     <div className="mt-8">
                       <FilterContent />
@@ -234,23 +234,23 @@ export function MensCollection() {
 
               {/* Sort By */}
               <div className="flex items-center gap-3">
-                <label className="text-sm text-[#666666] hidden sm:block">Sort by:</label>
+                <label className="text-sm text-[#666666] hidden sm:block">Sắp xếp:</label>
                 <Select value={sortBy} onValueChange={setSortBy}>
                   <SelectTrigger className="w-[180px]">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="featured">Featured</SelectItem>
-                    <SelectItem value="price-low">Price: Low to High</SelectItem>
-                    <SelectItem value="price-high">Price: High to Low</SelectItem>
-                    <SelectItem value="name">Name: A to Z</SelectItem>
+                    <SelectItem value="featured">Nổi bật</SelectItem>
+                    <SelectItem value="price-low">Giá: Thấp đến Cao</SelectItem>
+                    <SelectItem value="price-high">Giá: Cao đến Thấp</SelectItem>
+                    <SelectItem value="name">Tên: A → Z</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
 
             {/* Loading State */}
-            {isLoading && <LoadingState message="Loading products..." />}
+            {isLoading && <LoadingState message="Đang tải sản phẩm..." />}
 
             {error && !isLoading && (
               <ErrorState message={error} onRetry={fetchProducts} />
@@ -282,7 +282,7 @@ export function MensCollection() {
                             className="w-full text-black uppercase tracking-wider"
                             style={{ backgroundColor: '#D4AF37', fontSize: '14px', fontWeight: 600 }}
                           >
-                            Quick Add
+                            Thêm Nhanh
                           </Button>
                         </div>
                       </div>
@@ -329,7 +329,7 @@ export function MensCollection() {
 
             {/* No Results */}
             {!isLoading && !error && sortedProducts.length === 0 && (
-              <EmptyState title="No products found" />
+              <EmptyState title="Không tìm thấy sản phẩm" />
             )}
 
           </div>

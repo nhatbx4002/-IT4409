@@ -9,13 +9,13 @@ export function EditorialSection() {
             className="mb-4"
             style={{ fontSize: '36px', fontFamily: "'Playfair Display', serif", fontWeight: 600 }}
           >
-            Style Guide
+            Cẩm nang phong cách
           </h2>
           <p 
             className="text-[#666666] max-w-2xl mx-auto"
             style={{ fontSize: '18px', lineHeight: 1.6 }}
           >
-            Expert tips and inspiration for your wardrobe
+            Bí quyết và cảm hứng thời trang cho tủ đồ của bạn
           </p>
         </div>
 
@@ -41,29 +41,27 @@ export function EditorialSection() {
                   className="text-xs tracking-[0.2em] uppercase"
                   style={{ color: '#D4AF37' }}
                 >
-                  Autumn 2025
+                  Thu 2025
                 </span>
               </div>
               <h3 
                 className="mb-4"
                 style={{ fontSize: '28px', fontFamily: "'Playfair Display', serif", fontWeight: 500 }}
               >
-                The Modern Gentleman's Guide
+                Cẩm nang quý ông hiện đại
               </h3>
               <p 
                 className="text-[#666666] mb-6"
                 style={{ fontSize: '16px', lineHeight: 1.5 }}
               >
-                Master the essential techniques for building a versatile wardrobe. 
-                Discover how to select premium pieces that combine timeless elegance with 
-                contemporary style, perfect for the modern gentleman.
+                Nắm vững bí quyết xây dựng tủ đồ đa năng. Khám phá cách chọn lựa các món đồ cao cấp kết hợp giữa sự thanh lịch vượt thời gian và phong cách hiện đại, phù hợp cho quý ông ngày nay.
               </p>
               <a 
                 href="#" 
                 className="inline-flex items-center gap-2 hover:gap-4 transition-all"
                 style={{ color: '#D4AF37', fontSize: '14px', fontWeight: 600 }}
               >
-                READ MORE
+                XEM THÊM
                 <span>→</span>
               </a>
             </div>
@@ -80,29 +78,27 @@ export function EditorialSection() {
                   className="text-xs tracking-[0.2em] uppercase"
                   style={{ color: '#D4AF37' }}
                 >
-                  Styling Tips
+                  Mẹo phối đồ
                 </span>
               </div>
               <h3 
                 className="mb-4"
                 style={{ fontSize: '28px', fontFamily: "'Playfair Display', serif", fontWeight: 500 }}
               >
-                Power Dressing Essentials
+                Bí quyết phối đồ lịch lãm
               </h3>
               <p 
                 className="text-[#666666] mb-6"
                 style={{ fontSize: '16px', lineHeight: 1.5 }}
               >
-                From boardroom to evening events, discover the key pieces every gentleman 
-                needs. Learn how premium accessories elevate your look and make a lasting 
-                impression in any professional or social setting.
+                Từ công sở đến sự kiện tối, khám phá những món đồ không thể thiếu cho quý ông. Tìm hiểu cách phụ kiện cao cấp nâng tầm phong cách và tạo dấu ấn trong mọi dịp quan trọng.
               </p>
               <a 
                 href="#" 
                 className="inline-flex items-center gap-2 hover:gap-4 transition-all"
                 style={{ color: '#D4AF37', fontSize: '14px', fontWeight: 600 }}
               >
-                READ MORE
+                XEM THÊM
                 <span>→</span>
               </a>
             </div>

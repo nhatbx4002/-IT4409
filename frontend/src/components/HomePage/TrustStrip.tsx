@@ -10,15 +10,15 @@ export function TrustStrip() {
         <div className="flex flex-wrap gap-x-6 gap-y-2 text-[11px] sm:text-xs">
           <p className="flex items-center gap-2">
             <span className="h-1.5 w-1.5 rounded-full bg-[#22C55E]" />
-            Trusted by 20,000+ clients worldwide
+            Được hơn 20.000 khách hàng tin tưởng
           </p>
           <p className="flex items-center gap-2">
             <span className="h-1.5 w-1.5 rounded-full bg-[#D4AF37]" />
-            Complimentary alterations on all suits
+            Miễn phí chỉnh sửa cho mọi bộ vest
           </p>
           <p className="flex items-center gap-2">
             <span className="h-1.5 w-1.5 rounded-full bg-slate-400" />
-            Express shipping within 48 hours
+            Giao hàng nhanh trong 48 giờ
           </p>
         </div>
       </div>

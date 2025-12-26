@@ -19,23 +19,23 @@ import { signUp } from "@/lib/api";
 
 const signUpSchema = z
   .object({
-    firstName: z.string().min(1, "First name is required"),
-    lastName: z.string().min(1, "Last name is required"),
-    email: z.string().email("Please enter a valid email address"),
+    firstName: z.string().min(1, "Vui lòng nhập tên"),
+    lastName: z.string().min(1, "Vui lòng nhập họ"),
+    email: z.string().email("Vui lòng nhập địa chỉ email hợp lệ"),
     phone: z.string().optional(),
     password: z
       .string()
-      .min(8, "Password must be at least 8 characters")
-      .regex(/[a-z]/, "Password must contain at least one lowercase letter")
-      .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
-      .regex(/\d/, "Password must contain at least one number"),
+      .min(8, "Mật khẩu phải có ít nhất 8 ký tự")
+      .regex(/[a-z]/, "Mật khẩu phải có ít nhất một chữ thường")
+      .regex(/[A-Z]/, "Mật khẩu phải có ít nhất một chữ hoa")
+      .regex(/\d/, "Mật khẩu phải có ít nhất một số"),
     confirmPassword: z.string(),
     terms: z.boolean().refine((val) => val === true, {
-      message: "You must agree to the terms and conditions",
+      message: "Bạn phải đồng ý với điều khoản và chính sách",
     }),
   })
   .refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords do not match",
+    message: "Mật khẩu không khớp",
     path: ["confirmPassword"],
   });
 
@@ -103,7 +103,7 @@ export function SignUpForm() {
       // Note: Backend không trả về token trong signUp response, nên có thể cần gọi signIn
       // Hoặc redirect về login page
       navigate("/login", {
-        state: { message: "Account created successfully! Please login." },
+        state: { message: "Tạo tài khoản thành công! Vui lòng đăng nhập." },
       });
     } catch (err) {
       const errorMessage =
@@ -143,7 +143,7 @@ export function SignUpForm() {
             letterSpacing: "2px",
           }}
         >
-          Start Your Journey
+          Bắt đầu hành trình của bạn
         </p>
         <h1
           className="mb-2"
@@ -154,7 +154,7 @@ export function SignUpForm() {
             color: "#000000",
           }}
         >
-          Create Account
+          Tạo tài khoản
         </h1>
         <p
           style={{
@@ -164,7 +164,7 @@ export function SignUpForm() {
             color: "#6B7280",
           }}
         >
-          Join our luxury fashion community
+          Tham gia cộng đồng thời trang Aristino
         </p>
       </div>
 
@@ -209,14 +209,14 @@ export function SignUpForm() {
                 color: "#000000",
               }}
             >
-              First Name
+              Tên
             </label>
             <div className="relative">
               <User className="absolute left-4 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-[#9CA3AF]" />
               <input
                 id="firstName"
                 type="text"
-                placeholder="John"
+                placeholder="Tên của bạn"
                 {...register("firstName")}
                 className={`w-full h-[52px] bg-[#F8F9FA] border-[1.5px] rounded-lg pl-12 pr-4 transition-all focus:outline-none focus:border-2 focus:shadow-[0_0_0_4px_rgba(212,175,55,0.08)] ${
                   errors.firstName
@@ -256,14 +256,14 @@ export function SignUpForm() {
                 color: "#000000",
               }}
             >
-              Last Name
+              Họ
             </label>
             <div className="relative">
               <User className="absolute left-4 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-[#9CA3AF]" />
               <input
                 id="lastName"
                 type="text"
-                placeholder="Doe"
+                placeholder="Họ của bạn"
                 {...register("lastName")}
                 className={`w-full h-[52px] bg-[#F8F9FA] border-[1.5px] rounded-lg pl-12 pr-4 transition-all focus:outline-none focus:border-2 focus:shadow-[0_0_0_4px_rgba(212,175,55,0.08)] ${
                   errors.lastName
@@ -304,14 +304,14 @@ export function SignUpForm() {
               color: "#000000",
             }}
           >
-            Email Address
+            Địa chỉ Email
           </label>
           <div className="relative">
             <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-[#9CA3AF]" />
             <input
               id="email"
               type="email"
-              placeholder="you@example.com"
+              placeholder="abc@gmail.com"
               {...register("email")}
               className={`w-full h-[52px] bg-[#F8F9FA] border-[1.5px] rounded-lg pl-12 pr-4 transition-all focus:outline-none focus:border-2 focus:shadow-[0_0_0_4px_rgba(212,175,55,0.08)] ${
                 errors.email
@@ -351,7 +351,7 @@ export function SignUpForm() {
               color: "#000000",
             }}
           >
-            Phone Number (Optional)
+            Số điện thoại (không bắt buộc)
           </label>
           <div className="relative">
             <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-[#9CA3AF]" />
@@ -371,7 +371,7 @@ export function SignUpForm() {
             <input
               id="phone"
               type="tel"
-              placeholder="(555) 123-4567"
+              placeholder="Số điện thoại của bạn"
               {...register("phone")}
               className={`w-full h-[52px] bg-[#F8F9FA] border-[1.5px] rounded-lg pl-24 pr-4 transition-all focus:outline-none focus:border-2 focus:shadow-[0_0_0_4px_rgba(212,175,55,0.08)] ${
                 errors.phone
@@ -411,14 +411,14 @@ export function SignUpForm() {
               color: "#000000",
             }}
           >
-            Create Password
+            Tạo mật khẩu
           </label>
           <div className="relative">
             <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-[#9CA3AF]" />
             <input
               id="password"
               type={showPassword ? "text" : "password"}
-              placeholder="Create a strong password"
+              placeholder="Tạo mật khẩu mạnh"
               {...register("password")}
               className={`w-full h-[52px] bg-[#F8F9FA] border-[1.5px] rounded-lg pl-12 pr-12 transition-all focus:outline-none focus:border-2 focus:shadow-[0_0_0_4px_rgba(212,175,55,0.08)] ${
                 errors.password
@@ -470,7 +470,7 @@ export function SignUpForm() {
                     color: strengthColors[passwordStrength - 1],
                   }}
                 >
-                  Password strength: {strengthLabels[passwordStrength - 1]}
+                  Độ mạnh mật khẩu: {strengthLabels[passwordStrength - 1] === "Weak" ? "Yếu" : strengthLabels[passwordStrength - 1] === "Fair" ? "Trung bình" : strengthLabels[passwordStrength - 1] === "Good" ? "Tốt" : "Mạnh"}
                 </p>
               )}
             </div>
@@ -501,14 +501,14 @@ export function SignUpForm() {
               color: "#000000",
             }}
           >
-            Confirm Password
+            Xác nhận mật khẩu
           </label>
           <div className="relative">
             <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-[#9CA3AF]" />
             <input
               id="confirmPassword"
               type={showConfirmPassword ? "text" : "password"}
-              placeholder="Re-enter your password"
+              placeholder="Nhập lại mật khẩu"
               {...register("confirmPassword")}
               className={`w-full h-[52px] bg-[#F8F9FA] border-[1.5px] rounded-lg pl-12 pr-12 transition-all focus:outline-none focus:border-2 focus:shadow-[0_0_0_4px_rgba(212,175,55,0.08)] ${
                 errors.confirmPassword
@@ -577,21 +577,21 @@ export function SignUpForm() {
               lineHeight: "1.5",
             }}
           >
-            I agree to{" "}
+            Tôi đồng ý với
             <a
               href="#"
               className="hover:underline"
               style={{ color: "#D4AF37", textDecoration: "underline" }}
             >
-              Terms of Service
-            </a>{" "}
-            and{" "}
+              Điều khoản dịch vụ
+            </a>
+            và
             <a
               href="#"
               className="hover:underline"
               style={{ color: "#D4AF37", textDecoration: "underline" }}
             >
-              Privacy Policy
+              Chính sách bảo mật
             </a>
           </label>
           {errors.terms && (
@@ -636,7 +636,7 @@ export function SignUpForm() {
             }
           }}
         >
-          {isLoading ? "CREATING ACCOUNT..." : "CREATE MY ACCOUNT"}
+          {isLoading ? "ĐANG TẠO TÀI KHOẢN..." : "TẠO TÀI KHOẢN"}
         </button>
 
         {/* Divider */}
@@ -655,7 +655,7 @@ export function SignUpForm() {
                 letterSpacing: "0.5px",
               }}
             >
-              OR SIGN UP WITH
+              HOẶC ĐĂNG KÝ BẰNG
             </span>
           </div>
         </div>
@@ -738,7 +738,7 @@ export function SignUpForm() {
               color: "#6B7280",
             }}
           >
-            Already have an account?{" "}
+            Đã có tài khoản? 
           </span>
           <Link
             to="/login"
@@ -751,7 +751,7 @@ export function SignUpForm() {
             }}
             className="hover:underline"
           >
-            Sign In
+            Đăng nhập
           </Link>
         </div>
       </form>

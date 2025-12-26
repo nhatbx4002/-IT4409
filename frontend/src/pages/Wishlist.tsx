@@ -175,11 +175,11 @@ export default function Wishlist() {
               <div className="flex-1">
                 <div className="flex items-center gap-3 mb-3">
                   <h1 className="text-4xl font-bold text-black md:text-5xl">
-                    My Wishlist
+                    Danh sách yêu thích
                   </h1>
                 </div>
                 <p className="text-gray-600 text-base max-w-2xl">
-                  Save your favorite items and come back to them anytime
+                  Lưu lại các sản phẩm bạn yêu thích và quay lại bất cứ lúc nào
                 </p>
               </div>
 
@@ -187,21 +187,21 @@ export default function Wishlist() {
               <div className="flex flex-col gap-4 md:items-end">
                 <p className="text-sm text-gray-600">
                   <span className="font-semibold text-black text-lg">
-                    {itemCount} {itemCount === 1 ? "item" : "items"}
+                    {itemCount} {itemCount === 1 ? "sản phẩm" : "sản phẩm"}
                   </span>
                 </p>
                 
                 {/* User Status */}
                 {!user && (
                   <div className="inline-flex items-center gap-2 rounded-lg bg-red-50 border border-red-200 px-4 py-2 text-sm text-red-700">
-                    Please login to save your wishlist
+                    Vui lòng đăng nhập để lưu danh sách yêu thích
                   </div>
                 )}
 
                 {/* Sort Dropdown */}
                 <div className="flex items-center gap-3">
                   <label htmlFor="sort" className="text-sm font-medium text-gray-700">
-                    Sort by
+                    Sắp xếp theo
                   </label>
                   <select
                     id="sort"
@@ -209,9 +209,9 @@ export default function Wishlist() {
                     onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
                     className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-900 hover:border-gray-400 focus:border-black focus:outline-none focus:ring-2 focus:ring-black/10"
                   >
-                    <option value="recent">Recently Added</option>
-                    <option value="price-asc">Price: Low to High</option>
-                    <option value="price-desc">Price: High to Low</option>
+                    <option value="recent">Mới thêm gần đây</option>
+                    <option value="price-asc">Giá: Thấp đến Cao</option>
+                    <option value="price-desc">Giá: Cao đến Thấp</option>
                   </select>
                 </div>
               </div>
@@ -223,7 +223,7 @@ export default function Wishlist() {
             <div className="flex items-center justify-center py-20">
               <div className="text-center">
                 <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-black border-r-transparent"></div>
-                <p className="mt-4 text-gray-600">Loading your wishlist...</p>
+                <p className="mt-4 text-gray-600">Đang tải danh sách yêu thích...</p>
               </div>
             </div>
           )}
@@ -242,16 +242,16 @@ export default function Wishlist() {
                 <Heart className="h-12 w-12 text-gray-400" />
               </div>
               <h2 className="mt-6 text-2xl font-bold text-black">
-                Your wishlist is empty
+                Danh sách yêu thích của bạn trống
               </h2>
               <p className="mt-3 max-w-md text-gray-600">
-                Start adding items you love by clicking the heart icon on products
+                Bắt đầu thêm các sản phẩm bạn yêu thích bằng cách nhấp vào biểu tượng trái tim trên sản phẩm
               </p>
               <Button 
                 className="mt-6 bg-black text-white hover:bg-gray-800 px-8 py-6 text-base font-semibold"
                 onClick={() => navigate('/collections')}
               >
-                Browse Products
+                Xem Sản Phẩm
               </Button>
             </div>
           )}

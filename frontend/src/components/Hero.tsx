@@ -20,60 +20,64 @@ export function Hero() {
       </div>
 
       {/* Content */}
-      <div className="relative mx-auto flex min-h-[80vh] max-w-6xl flex-col justify-center px-6 py-16 sm:px-8 lg:px-0">
-        <div className="max-w-xl space-y-7">
-          <div className="inline-flex items-center gap-3 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-xs uppercase tracking-[0.24em] text-[#E5E7EB] backdrop-blur">
-            <span className="h-1.5 w-1.5 rounded-full bg-[#D4AF37]" />
-            <span>Autumn Atelier · 2025</span>
-          </div>
+<section 
+  className="relative min-h-screen w-full flex items-center overflow-hidden"
+  style={{ 
+    backgroundImage: `linear-gradient(to right, rgba(0, 0, 0, 0.8) 20%, rgba(0, 0, 0, 0.2) 100%), url('https://cdn.hstatic.net/files/200000886795/file/web_pc.png')`,
+    backgroundSize: 'cover',
+    backgroundPosition: 'center',
+    backgroundRepeat: 'no-repeat'
+  }}
+>
+  {/* Container giới hạn độ rộng của chữ nhưng ảnh vẫn tràn màn hình */}
+  <div className="relative mx-auto w-full max-w-6xl px-6 py-16 sm:px-8 lg:px-0">
+    <div className="max-w-xl space-y-7">
+      {/* Tiêu đề chính */}
+      <h1 className="font-['Playfair_Display'] text-4xl font-semibold leading-tight text-white sm:text-5xl lg:text-6xl">
+        Thời Trang Cao Cấp
+        <br />
+        Dành Cho Quý Ông Hiện Đại
+      </h1>
 
-          <h1 className="font-['Playfair_Display'] text-4xl font-semibold leading-tight text-white sm:text-5xl lg:text-6xl">
-            Tailored Luxury
-            <br />
-            for the Modern Gentleman
-          </h1>
+      <p className="max-w-md text-sm leading-relaxed text-slate-200 sm:text-base">
+        Khám phá bộ sưu tập áo vest len Ý, áo sơ mi hoàn thiện thủ công và
+        các phụ kiện da cao cấp được tuyển chọn cho các buổi tối, phòng họp và mọi khoảnh khắc.
+      </p>
 
-          <p className="max-w-md text-sm leading-relaxed text-slate-200 sm:text-base">
-            Discover Italian wool suits, hand-finished shirting and leather
-            essentials curated for evenings, boardrooms and every moment in
-            between.
-          </p>
+      {/* Nút bấm */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+        <Button
+          className="h-12 rounded-full bg-[#D4AF37] px-8 text-xs font-semibold uppercase tracking-[0.2em] text-black transition hover:-translate-y-0.5 hover:bg-[#B6911F]"
+        >
+          Mua Sắm Mùa Mới
+        </Button>
+        <button
+          type="button"
+          className="inline-flex items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-slate-200 transition hover:text-white"
+        >
+          Khám Phá Bộ Sưu Tập Tối
+          <span className="h-px w-10 bg-slate-500" />
+        </button>
+      </div>
 
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
-            <Button
-              className="h-12 rounded-full bg-[#D4AF37] px-8 text-xs font-semibold uppercase tracking-[0.2em] text-black transition hover:-translate-y-0.5 hover:bg-[#B6911F]"
-            >
-              Shop New Season
-            </Button>
-            <button
-              type="button"
-              className="inline-flex items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-slate-200 transition hover:text-white"
-            >
-              Explore Evening Edit
-              <span className="h-px w-10 bg-slate-500" />
-            </button>
-          </div>
-
-          <div className="flex flex-wrap gap-6 pt-4 text-xs text-slate-300">
-            <div className="space-y-1">
-              <p className="font-semibold tracking-[0.2em] text-slate-400">
-                SUITS
-              </p>
-              <p>Italian wool · Half canvassed · Hand finished</p>
-            </div>
-            <div className="space-y-1">
-              <p className="font-semibold tracking-[0.2em] text-slate-400">
-                EXPRESS
-              </p>
-              <p>Complimentary tailoring & worldwide delivery</p>
-            </div>
-          </div>
+      {/* Thông số bổ sung */}
+      <div className="flex flex-wrap gap-6 pt-4 text-xs text-slate-300">
+        <div className="space-y-1">
+          <p className="font-semibold tracking-[0.2em] text-slate-400">ÁO VEST</p>
+          <p>Len Ý · Nửa lót · Hoàn thiện thủ công</p>
+        </div>
+        <div className="space-y-1">
+          <p className="font-semibold tracking-[0.2em] text-slate-400">GIAO HÀNG</p>
+          <p>May đo miễn phí & giao hàng toàn cầu</p>
         </div>
       </div>
+    </div>
+  </div>
+</section>
 
       {/* Scroll Hint */}
       <div className="pointer-events-none absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-xs text-slate-300">
-        <span className="tracking-[0.3em] uppercase">Scroll</span>
+        <span className="tracking-[0.3em] uppercase">Cuộn</span>
         <div className="flex h-10 w-px items-start justify-center overflow-hidden bg-slate-600/60">
           <div className="h-10 w-px animate-[scrollLine_1.6s_ease-in-out_infinite] bg-[#D4AF37]" />
         </div>

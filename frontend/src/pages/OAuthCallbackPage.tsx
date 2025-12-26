@@ -109,7 +109,7 @@ export default function OAuthCallbackPage() {
                 marginBottom: '8px',
               }}
             >
-              Authenticating...
+              Đang xác thực...
             </h2>
             <p
               style={{
@@ -118,7 +118,7 @@ export default function OAuthCallbackPage() {
                 color: '#6B7280',
               }}
             >
-              Please wait while we sign you in
+              Vui lòng chờ trong khi chúng tôi đăng nhập cho bạn
             </p>
           </div>
         )}
@@ -135,7 +135,7 @@ export default function OAuthCallbackPage() {
                 marginBottom: '8px',
               }}
             >
-              Success!
+              Thành công!
             </h2>
             <p
               style={{
@@ -144,7 +144,7 @@ export default function OAuthCallbackPage() {
                 color: '#6B7280',
               }}
             >
-              Redirecting to home page...
+              Đang chuyển hướng về trang chủ...
             </p>
           </div>
         )}
@@ -161,7 +161,7 @@ export default function OAuthCallbackPage() {
                 marginBottom: '8px',
               }}
             >
-              Authentication Failed
+              Xác thực thất bại
             </h2>
             <p
               style={{
@@ -184,7 +184,7 @@ export default function OAuthCallbackPage() {
                 color: '#1A1A1A',
               }}
             >
-              Back to Login
+              Quay lại đăng nhập
             </button>
           </div>
         )}

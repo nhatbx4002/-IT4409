@@ -19,7 +19,7 @@ type EmptyStateProps = {
   onAction?: () => void;
 };
 
-export function LoadingState({ message = 'Loading...', description }: LoadingStateProps) {
+export function LoadingState({ message = 'Đang tải...', description }: LoadingStateProps) {
   return (
     <div className="text-center py-16 flex flex-col items-center gap-3">
       <Loader2 className="w-10 h-10 animate-spin" style={{ color: BRAND_GOLD }} />
@@ -47,7 +47,7 @@ export function LoadingState({ message = 'Loading...', description }: LoadingSta
   );
 }
 
-export function ErrorState({ message, onRetry, retryLabel = 'Retry' }: ErrorStateProps) {
+export function ErrorState({ message, onRetry, retryLabel = 'Thử lại' }: ErrorStateProps) {
   return (
     <div className="text-center py-16 flex flex-col items-center gap-4">
       <AlertTriangle className="w-10 h-10 text-red-600" />

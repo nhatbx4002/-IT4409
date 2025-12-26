@@ -10,11 +10,11 @@ import { Navbar } from "@/components/Navbar";
 import { BackToTop } from "@/components/BackToTop";
 
 const emailSchema = z.object({
-  email: z.string().email("Please enter a valid email address"),
+  email: z.string().email("Vui lòng nhập địa chỉ email hợp lệ"),
 });
 
 const otpSchema = z.object({
-  otp: z.string().length(6, "OTP must be 6 digits"),
+  otp: z.string().length(6, "OTP phải gồm 6 chữ số"),
 });
 
 type EmailFormData = z.infer<typeof emailSchema>;
@@ -45,9 +45,9 @@ export default function ForgotPasswordPage() {
       await sendOTP(data.email);
       setEmail(data.email);
       setStep("otp");
-      setSuccess("OTP has been sent to your email");
+      setSuccess("OTP đã được gửi tới email của bạn");
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to send OTP. Please try again.";
+      const errorMessage = err instanceof Error ? err.message : "Gửi OTP thất bại. Vui lòng thử lại.";
       setError(errorMessage);
     } finally {
       setIsLoading(false);
@@ -63,7 +63,7 @@ export default function ForgotPasswordPage() {
       const result = await verifyOTP(email, data.otp);
       navigate(`/reset-password?token=${encodeURIComponent(result.token)}&email=${encodeURIComponent(email)}`);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Invalid or expired OTP. Please try again.";
+      const errorMessage = err instanceof Error ? err.message : "OTP không hợp lệ hoặc đã hết hạn. Vui lòng thử lại.";
       setError(errorMessage);
     } finally {
       setIsLoading(false);
@@ -78,9 +78,9 @@ export default function ForgotPasswordPage() {
 
     try {
       await sendOTP(email);
-      setSuccess("OTP has been resent to your email");
+      setSuccess("OTP đã được gửi lại tới email của bạn");
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to resend OTP. Please try again.";
+      const errorMessage = err instanceof Error ? err.message : "Gửi lại OTP thất bại. Vui lòng thử lại.";
       setError(errorMessage);
     } finally {
       setIsLoading(false);
@@ -166,7 +166,7 @@ export default function ForgotPasswordPage() {
               }}
             >
               <ArrowLeft className="w-4 h-4" />
-              Back to Login
+              Quay lại đăng nhập
             </Link>
 
             {/* Header */}
@@ -180,7 +180,7 @@ export default function ForgotPasswordPage() {
                   marginBottom: "8px",
                 }}
               >
-                {step === "email" ? "Forgot Password?" : "Verify OTP"}
+                {step === "email" ? "Quên mật khẩu?" : "Xác thực OTP"}
               </h1>
               <p
                 style={{
@@ -190,8 +190,8 @@ export default function ForgotPasswordPage() {
                 }}
               >
                 {step === "email"
-                  ? "Enter your email address and we'll send you an OTP to reset your password"
-                  : `Enter the 6-digit OTP sent to ${email}`}
+                  ? "Nhập địa chỉ email và chúng tôi sẽ gửi mã OTP để đặt lại mật khẩu cho bạn"
+                  : `Nhập mã OTP gồm 6 số đã gửi tới ${email}`}
               </p>
             </div>
 
@@ -254,14 +254,14 @@ export default function ForgotPasswordPage() {
                       display: "block",
                     }}
                   >
-                    Email Address
+                    Địa chỉ Email
                   </label>
                   <div className="relative">
                     <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-[#9CA3AF]" />
                     <input
                       id="email"
                       type="email"
-                      placeholder="Enter your email"
+                      placeholder="Nhập email của bạn"
                       {...emailForm.register("email")}
                       className={`w-full h-[52px] bg-[rgba(243,244,246,0.5)] border rounded-lg pl-12 pr-4 transition-all focus:outline-none focus:border-2 focus:bg-white focus:shadow-[0_0_0_4px_rgba(212,175,55,0.1)] ${
                         emailForm.formState.errors.email
@@ -301,7 +301,7 @@ export default function ForgotPasswordPage() {
                     color: "#1A1A1A",
                   }}
                 >
-                  {isLoading ? "Sending..." : "Send OTP"}
+                  {isLoading ? "Đang gửi..." : "Gửi OTP"}
                 </button>
               </form>
             )}
@@ -321,7 +321,7 @@ export default function ForgotPasswordPage() {
                       display: "block",
                     }}
                   >
-                    Enter OTP
+                    Nhập mã OTP
                   </label>
                   <input
                     id="otp"
@@ -368,7 +368,7 @@ export default function ForgotPasswordPage() {
                       color: "#1A1A1A",
                     }}
                   >
-                    {isLoading ? "Verifying..." : "Verify OTP"}
+                    {isLoading ? "Đang xác thực..." : "Xác thực OTP"}
                   </button>
 
                   <button
@@ -385,7 +385,7 @@ export default function ForgotPasswordPage() {
                       color: "#D4AF37",
                     }}
                   >
-                    Resend OTP
+                    Gửi lại OTP
                   </button>
                 </div>
               </form>

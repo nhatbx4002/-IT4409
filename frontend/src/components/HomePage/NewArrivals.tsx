@@ -37,10 +37,9 @@ export function NewArrivals() {
   const handleAddToWishlist = async (productId: number) => {
     try {
       await addToWishlist(productId);
-      alert("Added to wishlist!");
+      // Toast notification sẽ được xử lý bởi component cha
     } catch (err) {
       console.error("Error adding to wishlist:", err);
-      alert("Failed to add to wishlist");
     }
   };
 
@@ -52,13 +51,13 @@ export function NewArrivals() {
             className="mb-4"
             style={{ fontSize: '36px', fontFamily: "'Playfair Display', serif", fontWeight: 600 }}
           >
-            New Arrivals - Autumn Collection 2025
+            Hàng Mới - Bộ Sưu Tập Thu 2025
           </h2>
           <p 
             className="text-[#666666] max-w-2xl mx-auto"
             style={{ fontSize: '18px', lineHeight: 1.6 }}
           >
-            Discover the latest additions to our exclusive collection
+            Khám phá những sản phẩm mới nhất trong bộ sưu tập độc quyền của chúng tôi
           </p>
         </div>
 
@@ -69,7 +68,7 @@ export function NewArrivals() {
         {error && !isLoading && <ErrorState message={error} />}
 
         {/* Empty State */}
-        {!isLoading && !error && products.length === 0 && <EmptyState message="No new arrivals available" />}
+        {!isLoading && !error && products.length === 0 && <EmptyState message="Chưa có hàng mới" />}
 
         {/* Product Grid using reusable luxury ProductCard */}
         {!isLoading && !error && products.length > 0 && (
@@ -96,7 +95,7 @@ export function NewArrivals() {
               className="px-10 py-6 border-2 hover:bg-[#D4AF37] hover:text-black hover:border-[#D4AF37] transition-colors"
               style={{ borderColor: '#D4AF37', color: '#D4AF37' }}
             >
-              VIEW ALL
+              XEM TẤT CẢ
             </Button>
           </div>
         )}

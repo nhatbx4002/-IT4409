@@ -39,7 +39,7 @@ const INITIAL_ITEMS: CartItem[] = [
   {
     id: "lux-suit-01",
     brand: "ARISTINO",
-    name: "Italian Wool Suit",
+    name: "Vest len Ý sang trọng",
     size: "L",
     color: "Navy Blue",
     stockStatus: "in",
@@ -52,7 +52,7 @@ const INITIAL_ITEMS: CartItem[] = [
   {
     id: "lux-coat-02",
     brand: "ARISTINO",
-    name: "Cashmere Overcoat",
+    name: "Áo khoác Cashmere",
     size: "L",
     color: "Charcoal",
     stockStatus: "low",
@@ -64,7 +64,7 @@ const INITIAL_ITEMS: CartItem[] = [
   {
     id: "lux-shoes-03",
     brand: "ARISTINO",
-    name: "Handcrafted Leather Shoes",
+    name: "Giày da thủ công",
     size: "42 EU",
     color: "Espresso",
     stockStatus: "in",
@@ -78,21 +78,21 @@ const INITIAL_ITEMS: CartItem[] = [
 const RECOMMENDED: RecommendedProduct[] = [
   {
     id: "rec-01",
-    name: "Tailored Silk Shirt",
+    name: "Áo sơ mi lụa cao cấp",
     price: 189,
     image:
       "https://images.unsplash.com/photo-1490337457136-328fj87583f9?auto=format&fit=crop&w=360&q=80",
   },
   {
     id: "rec-02",
-    name: "Italian Leather Belt",
+    name: "Thắt lưng da Ý",
     price: 129,
     image:
       "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=360&q=80",
   },
   {
     id: "rec-03",
-    name: "Suede Chelsea Boots",
+    name: "Boot Chelsea da lộn",
     price: 349,
     image:
       "https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&w=360&q=80",
@@ -100,17 +100,17 @@ const RECOMMENDED: RecommendedProduct[] = [
 ];
 
 const FEATURE_LIST = [
-  { icon: "🚚", copy: "Free shipping on orders $200+" },
-  { icon: "🔒", copy: "Secure checkout guaranteed" },
-  { icon: "↩️", copy: "30-day easy returns" },
+  { icon: "🚚", copy: "Miễn phí vận chuyển cho đơn từ $200" },
+  { icon: "🔒", copy: "Thanh toán an toàn tuyệt đối" },
+  { icon: "↩️", copy: "Đổi trả dễ dàng trong 30 ngày" },
 ];
 
 const PAYMENT_LOGOS = ["Visa", "Mastercard", "Amex", "PayPal"];
 
 const formatCurrency = (value: number) =>
-  new Intl.NumberFormat("en-US", {
+  new Intl.NumberFormat("vi-VN", {
     style: "currency",
-    currency: "USD",
+    currency: "VND",
     maximumFractionDigits: 0,
   }).format(value);
 
@@ -171,14 +171,14 @@ export default function CartPage() {
           <div className="grid gap-8 lg:grid-cols-[minmax(0,840px)_360px]">
             <div>
               <nav aria-label="Breadcrumb" className="text-sm text-[#9CA3AF]">
-                Home <span className="mx-1">{">"}</span> Shopping Cart
+                Trang chủ <span className="mx-1">{">"}</span> Giỏ hàng
               </nav>
               <header className="mt-4">
                 <h1 className="font-['Playfair_Display'] text-4xl font-bold text-[#1A1A1A]">
-                  Shopping Cart
+                  Giỏ hàng
                 </h1>
                 <p className="mt-2 text-sm text-[#6B7280]">
-                  {itemCount} {itemCount === 1 ? "item" : "items"}
+                  {itemCount} {itemCount === 1 ? "sản phẩm" : "sản phẩm"}
                 </p>
               </header>
               <div className="mt-6 h-px w-full bg-[#E5E7EB]" />
@@ -252,13 +252,13 @@ const CartItemCard = ({
         <p className="text-xs tracking-[0.2em] text-[#D4AF37]">{item.brand}</p>
         <p className="font-semibold text-lg text-[#111827]">{item.name}</p>
         <p className="text-sm text-[#6B7280]">
-          Size: {item.size} • Color: {item.color}
+          Kích cỡ: {item.size} • Màu sắc: {item.color}
         </p>
       </div>
       <span
         className={`inline-flex w-fit items-center rounded-full px-3 py-1 text-xs font-semibold ${stockStyles[item.stockStatus]}`}
       >
-        {item.stockStatus === "in" ? "In Stock" : "Low Stock"}
+        {item.stockStatus === "in" ? "Còn hàng" : "Sắp hết"}
       </span>
     </div>
     <div className="flex flex-col justify-between gap-4 sm:items-center">
@@ -284,7 +284,7 @@ const QuantityControl = ({
   <div className="flex items-center gap-2">
     <button
       type="button"
-      aria-label="Decrease quantity"
+      aria-label="Giảm số lượng"
       disabled={quantity === 1}
       onClick={onDecrease}
       className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#D1D5DB] text-sm text-[#111827] transition hover:border-[#B6BBC6] disabled:cursor-not-allowed disabled:opacity-40"
@@ -294,12 +294,12 @@ const QuantityControl = ({
     <input
       readOnly
       value={quantity}
-      aria-label="Current quantity"
+      aria-label="Số lượng hiện tại"
       className="h-9 w-12 rounded-lg border border-[#D1D5DB] text-center text-sm font-medium text-[#111827]"
     />
     <button
       type="button"
-      aria-label="Increase quantity"
+      aria-label="Tăng số lượng"
       onClick={onIncrease}
       className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#D1D5DB] text-sm text-[#111827] transition hover:border-[#B6BBC6]"
     >
@@ -326,12 +326,12 @@ const PriceStack = ({
     ) : null}
     <button
       type="button"
-      aria-label={`Remove ${item.name}`}
+      aria-label={`Xóa ${item.name}`}
       onClick={onRemove}
       className="mt-2 inline-flex items-center justify-end text-sm text-[#9CA3AF] transition hover:text-[#DC2626]"
     >
       <Trash2 className="mr-1 h-4 w-4" />
-      Remove
+      Xóa
     </button>
   </div>
 );
@@ -341,15 +341,15 @@ const EmptyCartState = () => (
     <div className="flex h-20 w-20 items-center justify-center rounded-full bg-[#E5E7EB]/40 text-[#9CA3AF]">
       <ShoppingBag className="h-10 w-10" />
     </div>
-    <p className="mt-6 text-xl text-[#6B7280]">Your cart is empty</p>
+    <p className="mt-6 text-xl text-[#6B7280]">Giỏ hàng của bạn đang trống</p>
     <button
       type="button"
       className="mt-6 rounded-full bg-[#D4AF37] px-8 py-3 text-sm font-semibold uppercase text-black transition hover:bg-[#B6911F]"
     >
-      Continue Shopping
+      Tiếp tục mua sắm
     </button>
     <div className="mt-8 w-full">
-      <p className="text-sm font-medium text-[#1A1A1A]">Recommended for you</p>
+      <p className="text-sm font-medium text-[#1A1A1A]">Gợi ý cho bạn</p>
       <div className="mt-4 grid gap-4 sm:grid-cols-3">
         {RECOMMENDED.map((product) => (
           <div
@@ -392,15 +392,15 @@ const PromoCodeCard = ({
   <div
     className={`rounded-2xl bg-white p-6 shadow-[0_2px_8px_rgba(0,0,0,0.06)] ${className}`}
   >
-    <p className="text-base font-semibold text-[#1A1A1A]">Promo Code</p>
+    <p className="text-base font-semibold text-[#1A1A1A]">Mã khuyến mãi</p>
     <p className="text-sm text-[#6B7280]">
-      Unlock exclusive savings with your luxury membership code.
+      Nhập mã thành viên để nhận ưu đãi đặc biệt.
     </p>
     <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:gap-0">
       <input
         value={promoCode}
         onChange={(event) => onChange(event.target.value)}
-        placeholder="Enter promo code"
+        placeholder="Nhập mã khuyến mãi"
         className="h-[52px] flex-1 rounded-full border border-[#D1D5DB] px-5 text-sm text-[#111827] focus:border-[#D4AF37] focus:outline-none sm:rounded-r-none sm:border-r-0"
       />
       <button
@@ -408,7 +408,7 @@ const PromoCodeCard = ({
         onClick={onApply}
         className="flex h-[52px] items-center justify-center rounded-full bg-[#D4AF37] px-8 text-sm font-semibold uppercase tracking-wide text-black transition hover:-translate-y-0.5 hover:bg-[#B6911F] sm:rounded-l-none sm:border-l sm:border-l-white"
       >
-        Apply
+        Áp dụng
       </button>
     </div>
     {status === "success" && isApplied && (
@@ -420,7 +420,7 @@ const PromoCodeCard = ({
     {status === "error" && (
       <div className="mt-3 flex items-center gap-2 text-sm text-[#DC2626]">
         <AlertCircle className="h-4 w-4" />
-        Invalid code
+        Mã không hợp lệ
       </div>
     )}
   </div>
@@ -441,21 +441,21 @@ const OrderSummaryCard = ({
 }) => (
   <aside className="h-fit rounded-2xl bg-white p-6 shadow-[0_2px_8px_rgba(0,0,0,0.06)] lg:sticky lg:top-28">
     <div>
-      <p className="text-lg font-semibold text-[#1A1A1A]">Order Summary</p>
+      <p className="text-lg font-semibold text-[#1A1A1A]">Tóm tắt đơn hàng</p>
       <div className="my-4 h-px bg-[#E5E7EB]" />
     </div>
     <div className="space-y-3 text-sm">
-      <SummaryRow label="Subtotal" value={formatCurrency(subtotal)} />
+      <SummaryRow label="Tạm tính" value={formatCurrency(subtotal)} />
       <SummaryRow
-        label="Shipping"
+        label="Phí vận chuyển"
         value={
-          shipping === 0 && subtotal > 0 ? "Free" : formatCurrency(shipping)
+          shipping === 0 && subtotal > 0 ? "Miễn phí" : formatCurrency(shipping)
         }
       />
-      <SummaryRow label="Tax (estimated)" value={formatCurrency(tax)} />
+      <SummaryRow label="Thuế (ước tính)" value={formatCurrency(tax)} />
       {discount > 0 && (
         <SummaryRow
-          label="Discount"
+          label="Giảm giá"
           value={`-${formatCurrency(discount)}`}
           valueClass="text-[#10B981]"
         />
@@ -464,13 +464,13 @@ const OrderSummaryCard = ({
     <div className="my-5 h-px bg-[#E5E7EB]" />
     <div className="flex items-center justify-between">
       <span className="text-sm font-semibold tracking-[0.2em] text-[#374151]">
-        TOTAL
+        TỔNG CỘNG
       </span>
       <div className="text-right">
         <p className="text-2xl font-bold text-[#1A1A1A]">
           {formatCurrency(total)}
         </p>
-        <p className="text-xs text-[#6B7280]">USD</p>
+        <p className="text-xs text-[#6B7280]">VND</p>
       </div>
     </div>
     <ul className="mt-6 space-y-4">
@@ -485,7 +485,7 @@ const OrderSummaryCard = ({
       type="button"
       className="mt-6 flex w-full items-center justify-center gap-2 rounded-full bg-[#D4AF37] py-4 text-sm font-bold uppercase tracking-wide text-black transition hover:-translate-y-0.5 hover:bg-[#B6911F]"
     >
-      Proceed to Checkout
+      Tiến hành thanh toán
       <ArrowRight className="h-4 w-4" />
     </button>
     <div className="mt-4 flex flex-wrap items-center justify-center gap-4">
@@ -502,7 +502,7 @@ const OrderSummaryCard = ({
       type="button"
       className="mt-6 w-full text-center text-sm font-semibold text-[#D4AF37] transition hover:text-[#B6911F]"
     >
-      ← Continue Shopping
+      ← Tiếp tục mua sắm
     </button>
   </aside>
 );
