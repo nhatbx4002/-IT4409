@@ -9,8 +9,8 @@ import { signIn, signInWithGoogle, signInWithFacebook } from "@/lib/api";
 import { setAuthSession } from "@/lib/auth";
 
 const loginSchema = z.object({
-  email: z.string().email("Please enter a valid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
+  email: z.string().email("Vui lòng nhập email hợp lệ"),
+  password: z.string().min(6, "Mật khẩu phải có ít nhất 6 ký tự"),
   remember: z.boolean().optional(),
 });
 
@@ -56,7 +56,7 @@ export function LoginForm() {
 
       navigate(safeRedirect);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Login failed. Please try again.";
+      const errorMessage = err instanceof Error ? err.message : "Đăng nhập thất bại. Vui lòng thử lại.";
       setError(errorMessage);
     } finally {
       setIsLoading(false);
@@ -88,7 +88,7 @@ export function LoginForm() {
             color: "#111111",
           }}
         >
-          Login
+          Đăng nhập
         </h1>
         <p
           style={{
@@ -98,9 +98,9 @@ export function LoginForm() {
             color: "#6B7280",
           }}
         >
-          Enter your email and password to continue
+          Nhập email và mật khẩu để tiếp tục
         </p>
-      </div>
+        </div>
 
       {/* Error Message */}
       {error && (
@@ -138,7 +138,7 @@ export function LoginForm() {
               color: "#111111",
             }}
           >
-            Email Address
+            Email
           </label>
           <div className="relative">
             <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-[#9CA3AF]" />
@@ -185,7 +185,7 @@ export function LoginForm() {
                 color: "#111111",
               }}
             >
-              Password
+                Mật khẩu
             </label>
             <Link
               to="/forgot-password"
@@ -198,7 +198,7 @@ export function LoginForm() {
               }}
               className="hover:underline"
             >
-              Forgot Password?
+                Quên mật khẩu?
             </Link>
           </div>
           <div className="relative">
@@ -206,7 +206,7 @@ export function LoginForm() {
             <input
               id="password"
               type={showPassword ? "text" : "password"}
-              placeholder="Enter your password"
+              placeholder="Nhập mật khẩu"
               {...register("password")}
               className={`w-full h-[52px] bg-[rgba(243,244,246,0.5)] border rounded-lg pl-12 pr-12 transition-all focus:outline-none focus:border-2 focus:bg-white focus:shadow-[0_0_0_4px_rgba(212,175,55,0.1)] ${
                 errors.password
@@ -262,7 +262,7 @@ export function LoginForm() {
               color: "#6B7280",
             }}
           >
-            Remember me for 30 days
+            Ghi nhớ trong 30 ngày
           </label>
         </div>
 
@@ -294,7 +294,7 @@ export function LoginForm() {
             }
           }}
         >
-          {isLoading ? "SIGNING IN..." : "SIGN IN"}
+          {isLoading ? "ĐANG ĐĂNG NHẬP..." : "ĐĂNG NHẬP"}
         </button>
 
         {/* Divider */}
@@ -311,7 +311,7 @@ export function LoginForm() {
                 color: "#9CA3AF",
               }}
             >
-              or
+              hoặc
             </span>
           </div>
         </div>
@@ -355,7 +355,7 @@ export function LoginForm() {
               fill="#EA4335"
             />
           </svg>
-          Continue with Google
+          Tiếp tục với Google
         </button>
 
         {/* Facebook SSO Button */}
@@ -385,7 +385,7 @@ export function LoginForm() {
               fill="#1877F2"
             />
           </svg>
-          Continue with Facebook
+          Tiếp tục với Facebook
         </button>
 
         {/* Footer */}
@@ -397,7 +397,7 @@ export function LoginForm() {
               color: "#6B7280",
             }}
           >
-            Don't have an account?{" "}
+            Chưa có tài khoản?{" "}
           </span>
           <Link
             to="/signup"
@@ -410,7 +410,7 @@ export function LoginForm() {
             }}
             className="hover:underline"
           >
-            Sign Up
+            Đăng ký
           </Link>
         </div>
       </form>

@@ -6,7 +6,11 @@ export const User = sequelize.define("users", {
   id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
   email: { type: DataTypes.STRING, unique: true },
   password: DataTypes.STRING(255), // Hashed password
-  name: DataTypes.STRING(100),
+  name: {
+    type: DataTypes.STRING(100),
+    allowNull: true,
+    defaultValue: null
+  },
   phone: DataTypes.STRING(20),
   role: { type: DataTypes.STRING(20), defaultValue: "customer" },
   is_locked: { type: DataTypes.BOOLEAN, defaultValue: false }, //lock account

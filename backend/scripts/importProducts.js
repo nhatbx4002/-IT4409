@@ -4616,6 +4616,433 @@ const PRODUCTS = [
       "tags": [],
       "created_at": "2025-12-24T19:13:45.224Z",
       "updated_at": "2025-12-24T19:13:45.224Z"
+    },
+    {
+      "id": 166,
+      "name": "Áo Polo Nam Aristino Golf APSG02AS2",
+      "description": "Tên sản phẩm: Áo Polo Nam Aristino Golf APSG02AS2\nKiểu dáng: Tech golf : form áo polo shirt golf rộng hơn form poloshirt reg thường\nThiết kế:\nÁo polo với phom Tech golf thiết kế này có độ suông rộng mang lại sự thoải mái tuyệt đối nhưng vẫn giữ được sự chỉn chu, phù hợp với những quý ông năng động.\nMàu sắc nam tính và thiết kế khỏe khoắn mang đến diện mạo thời thượng, lịch lãm cho người mặc.\nChất liệu:\n88% Polyester giúp áo bền màu, sắc nét, có độ trơn mượt và mỏng nhẹ, tạo sự thoải mái khi vận động.\n12% Spandex giúp áo bền bỉ, thoáng khí và có độ co giãn tuyệt vời.\nMàu sắc: Xanh tím than 24 Can Pha\nSize: S, M, L, XL, XXL\nSản xuất: Việt Nam\n\nHướng dẫn bảo quản và giặt ủi:\n\nTreo áo: Sử dụng móc treo để giữ phom dáng áo và tránh nhăn.\nNơi lưu trữ: Cất áo ở nơi khô ráo, thoáng mát, tránh ánh sáng mặt trời trực tiếp.\nGiặt máy: Giặt ở chế độ nhẹ với nước lạnh để duy trì độ bền màu và tính năng Anti UV.\nKhông sử dụng chất tẩy mạnh: Tránh sử dụng chất tẩy rửa mạnh để bảo vệ chất liệu áo.\nỦi ở nhiệt độ thấp: Sử dụng bàn ủi ở nhiệt độ thấp để tránh làm hỏng vải.\n\nLƯU Ý: Hình ảnh chỉ mang tính chất minh họa. Sản phẩm thực tế có thể khác về màu sắc so với hình ảnh minh họa do ánh sáng khi chụp ảnh hoặc do màn hình hiển thị trên thiết bị của khách hàng.",
+      "brand": "Aristino Golf",
+      "base_price": 1250000,
+      "sale_price": null,
+      "category_id": 2,
+      "images": [
+        "https://cdn.hstatic.net/products/200000887901/upload_8362f38aa7ce4e988bdb81320eb96b70.jpg",
+        "https://cdn.hstatic.net/products/200000887901/upload_4543b50894e247f7ae22a46fb4da7f4c.jpg",
+        "https://cdn.hstatic.net/products/200000887901/upload_bb5ba74abf2946e984e7eb9a56da73e1.jpg",
+        "https://cdn.hstatic.net/products/200000887901/upload_8f815d9a09d449f08d7b626c7a1a0229.jpg",
+        "https://cdn.hstatic.net/products/200000887901/upload_8a9d6247825e4337be9b079e05c01398.jpg",
+        "https://product.hstatic.net/200000887901/product/dsc08610_68712e707d484ac38b1282fff47a3473.jpg",
+        "https://product.hstatic.net/200000887901/product/img_0398.1_9e1d55b23562406b9ac41cb7d07ee97c.jpg",
+        "https://cdn.hstatic.net/products/200000887901/upload_486423ebdd314e488f47394deab2be65.jpg",
+        "https://cdn.hstatic.net/products/200000887901/upload_f6de90308fb84b169d375c8df9e6759f.jpg",
+        "https://cdn.hstatic.net/products/200000887901/upload_62ce506a78fc4dc6b15f9bfd580fa806.jpg"
+      ],
+      "status": "active",
+      "collection": null,
+      "slug": "ao-polo-nam-aristino-golf-apsg02as2",
+      "is_new": true,
+      "tags": [
+        "NEW"
+      ],
+      "created_at": "2025-12-26T04:01:57.643Z",
+      "updated_at": "2025-12-26T04:01:57.643Z"
+    },
+    {
+      "id": 167,
+      "name": "Áo Polo Nam Aristino Regular Fit APS085AS3",
+      "description": "Tên sản phẩm: Áo Polo Nam Aristino Regular Fit APS085AS3\nKiểu dáng: Dáng vừa/ Regular Fit\nThiết kế:\nÁo Polo phom dáng Regular Fit suông nhẹ nhưng vẫn vừa vặn, tôn dáng tối đa khi mặc.\nThiết kế cổ thanh lịch kết hợp họa tiết đan lát, đem đến diện mạo thời thượng cho người mặc.\nChất liệu:  97% Mercerized Cotton 3% Spandex\n- Mercerized Cotton vải mềm mịn, thấm hút mồ hôi tốt, giúp người mặc cảm thấy mát mẻ và thoải mái.\n- Spandex tăng cường khả năng đàn hồi của vải, giúp trang phục co giãn theo cơ thể mà không làm mất dáng.\nMàu sắc: Vàng 39\nSize: S, M, L, XL, XXL\nSản xuất: Việt Nam\n\nHướng dẫn bảo quản và giặt ủi:\n\nGiặt ở nhiệt độ không quá 30°C. \n Không sử dụng chất tẩy mạnh. \n Là/ủi ở nhiệt độ thấp.  \nPhơi nơi thoáng mát, tránh ánh nắng trực tiếp để giữ chất lượng vải và màu sắc.\n\nLưu ý: Hình ảnh chỉ mang tính chất minh họa. Sản phẩm thực tế có thể khác về màu sắc do ánh sáng khi chụp ảnh hoặc màn hình hiển thị.",
+      "brand": "Aristino",
+      "base_price": 1100000,
+      "sale_price": null,
+      "category_id": 2,
+      "images": [
+        "https://cdn.hstatic.net/products/200000887901/upload_8907f20f1f3d4f8eabe1b53b4c60a24d.jpg",
+        "https://cdn.hstatic.net/products/200000887901/upload_f548c37a9aac4bbb92cfc0dfb35720ca.jpg",
+        "https://cdn.hstatic.net/products/200000887901/upload_1e6f2492bd32464bb35d0579339140d5.jpg",
+        "https://cdn.hstatic.net/products/200000887901/upload_8605e53ced9d464989761f14518e3840.jpg",
+        "https://cdn.hstatic.net/products/200000887901/upload_c604b02d6c424b0d8e6627fb232508ff.jpg",
+        "https://product.hstatic.net/200000887901/product/ntc_8450_-_copy_811cf65b38f9403bb53f0f8add7aa828.jpg",
+        "https://product.hstatic.net/200000887901/product/img_3597.1_454e3daac2d549c3b140172b3c85fc7c.jpg",
+        "https://cdn.hstatic.net/products/200000887901/upload_f35478ffbf19489785d5046cc2333a0a.jpg",
+        "https://cdn.hstatic.net/products/200000887901/upload_218133926eb944b7ad57a80b9f81516e.jpg",
+        "https://cdn.hstatic.net/products/200000887901/upload_c7d655e7c9b641d6a573a102f68ab77f.jpg"
+      ],
+      "status": "active",
+      "collection": null,
+      "slug": "ao-polo-nam-aristino-regular-fit-aps085as3",
+      "is_new": true,
+      "tags": [
+        "NEW"
+      ],
+      "created_at": "2025-12-26T04:02:03.815Z",
+      "updated_at": "2025-12-26T04:02:03.815Z"
+    },
+    {
+      "id": 168,
+      "name": "Áo Polo Nam Aristino Regular Fit APS137AS4",
+      "description": "Tên sản phẩm: Áo Polo Nam Aristino Regular Fit Cotton mềm mại thấm hút mồ hôi tốt và giữ phom tốt APS137AS4\nKiểu dáng: Dáng vừa / Regular fit\nThiết kế:\nÁo polo mang đến sự mềm mại, thoáng mát và thấm hút mồ hôi tối ưu, giúp bạn luôn dễ chịu trong mọi hoạt động. \nChất liệu tự nhiên, an toàn cho da, phù hợp với cả thời tiết nóng bức. \nThiết kế có cổ thanh lịch với họa tiết thêu, dễ dàng phối đồ, lý tưởng cho phong cách năng động và lịch sự.\nChất liệu:\n95% Cotton mềm mại, thấm hút mồ hôi tốt và giữ phom tốt.\n5% Spandex tạo độ đàn hồi cao, mang lại cảm giác thoải mái.\nMàu sắc: Đen 1\nSize: S, M, L, XL, XXL\nSản xuất: Việt Nam\n\nHướng dẫn bảo quản và giặt ủi:\n\nGiặt ở nhiệt độ không quá 30°C. \nKhông sử dụng chất tẩy mạnh. \nLà/ủi ở nhiệt độ thấp.\n Phơi nơi thoáng mát, tránh ánh nắng trực tiếp để giữ chất lượng vải và màu sắc.\n\nLưu ý: Hình ảnh chỉ mang tính chất minh họa. Sản phẩm thực tế có thể khác về màu sắc do ánh sáng khi chụp ảnh hoặc màn hình hiển thị.",
+      "brand": "Aristino",
+      "base_price": 850000,
+      "sale_price": null,
+      "category_id": 2,
+      "images": [
+        "https://cdn.hstatic.net/products/200000887901/upload_21dd3261acc349a488af2a6ce720cb82.jpg",
+        "https://cdn.hstatic.net/products/200000887901/upload_2b8b6648a5124eb98e1f5440bf992d48.jpg",
+        "https://cdn.hstatic.net/products/200000887901/upload_ceee6150261f4792aa5854989fd56916.jpg",
+        "https://cdn.hstatic.net/products/200000887901/upload_ad8a58ee89474430a4ba646e59afeaeb.jpg",
+        "https://product.hstatic.net/200000887901/product/ntc_9024_ad49e97c0ca7425d8a5616c831a08d9a.jpg",
+        "https://product.hstatic.net/200000887901/product/img_2319.1_24b6a7849abc4a8d864117349596e3b2.jpg",
+        "https://product.hstatic.net/200000887901/product/img_2319_e54d10347b7547f6bc2ba83b80f7f1de.jpg",
+        "https://product.hstatic.net/200000887901/product/img_2320_af68edb5fd024e5dac9a744d862c562c.jpg",
+        "https://cdn.hstatic.net/products/200000887901/upload_534df57ab02f4a0b93060b6b057e224c.jpg",
+        "https://product.hstatic.net/200000887901/product/img_2322_e2ff65c430784bf89df2276239060b35.jpg"
+      ],
+      "status": "active",
+      "collection": null,
+      "slug": "ao-polo-nam-aristino-regular-fit-aps137as4",
+      "is_new": true,
+      "tags": [
+        "NEW"
+      ],
+      "created_at": "2025-12-26T04:02:11.487Z",
+      "updated_at": "2025-12-26T04:02:11.487Z"
+    },
+    {
+      "id": 169,
+      "name": "Áo Sơ Mi Nam Kẻ Aristino Business Perfect fit 1SS013AS3",
+      "description": "Tên sản phẩm: Áo Sơ Mi Nam Kẻ Aristino Business Perfect fit 1SS013AS3\nMã rút gọn: 1SS013AS3\nKiểu dáng: Dáng mặc buông, vạt bằng/ Perfect Fit\nThiết kế:\nÁo sơ mi cổ bẻ cổ điển, chỉn chu cho người mặc cho công việc, thường ngày. \nĐiểm nhấn có thuê chữ ký Aristino tinh tế ở phần cánh tay.\nHọa tiết Caro với các tông màu chủ đạo là xanh navy, cam và trắng – tạo sự tương phản bắt mắt, thích hợp cho mùa hè hoặc các hoạt động ngoài trời.\nKhuy áo: Thiết kế khuy cài dọc phía trước cùng màu tạo sự đồng nhất.\nChất liệu:\n100% Cotton(bông)\nPhối với:\nÁo sơ mi ngắn tay này dễ dàng phối với quần âu, quần jeans, hoặc áo khoác casual.\nPhù hợp với nhiều dịp khác nhau như đi làm, tham dự sự kiện, hoặc đi chơi.\nMàu sắc: Đen kẻ cam\nSize: 38/39/40/41/42/43\nSản xuất: Việt Nam\n\nHướng dẫn bảo quản và giặt ủi:\n\nGiặt ở nhiệt độ không quá 30°C.\nKhông sử dụng chất tẩy mạnh.\nLà/ủi ở nhiệt độ thấp để giữ chất lượng vải.\nPhơi nơi thoáng mát, tránh ánh nắng trực tiếp để duy trì màu sắc và độ bền của áo.\n\nLưu ý:\n\nHình ảnh chỉ mang tính chất minh họa. Sản phẩm thực tế có thể khác về màu sắc do ánh sáng khi chụp hoặc màn hình hiển thị của thiết bị khách hàng.",
+      "brand": "Aristino Business",
+      "base_price": 1495000,
+      "sale_price": null,
+      "category_id": 1,
+      "images": [
+        "https://cdn.hstatic.net/products/200000887901/upload_7317bbbb784d41a5b84d2fcc46d1e8e5.jpg",
+        "https://cdn.hstatic.net/products/200000887901/upload_381900435aab4a27acf45d5dadebd84a.jpg",
+        "https://cdn.hstatic.net/products/200000887901/upload_fe380fbfab7c4afa9e618965a1abb763.jpg",
+        "https://cdn.hstatic.net/products/200000887901/upload_90fa02a592804585a46be4dfde9d53eb.jpg",
+        "https://cdn.hstatic.net/products/200000887901/upload_f03fc08f344c42e68f2d9e47697ab202.jpg"
+      ],
+      "status": "active",
+      "collection": null,
+      "slug": "ao-so-mi-nam-ke-aristino-business-perfect-fit-1ss013as3",
+      "is_new": true,
+      "tags": [
+        "NEW"
+      ],
+      "created_at": "2025-12-26T04:02:19.047Z",
+      "updated_at": "2025-12-26T04:02:19.047Z"
+    },
+    {
+      "id": 170,
+      "name": "Bộ Suits Nam Xám Kẻ Aristino Business Premio 1SU0050S0",
+      "description": "Tên sản phẩm: Bộ Suits Nam Xám Kẻ Aristino Business Premio 1SU0050S0\nMã sản phẩm: 1SU0050S0\nKiểu dáng: Premio\nThiết kế: \nÁo vest:\nMàu sắc: Xám chì đậm với họa tiết kẻ caro chìm rất tinh tế.\nKiểu dáng: Cổ ve rộng cổ điển, form áo suông vừa vặn, tạo sự sang trọng và chuyên nghiệp.\nChi tiết: Hai nút cài phía trước, hai túi nắp ở hai bên và một túi ngực bên trái. Lớp lót trong có họa tiết hình móc cách điệu, tạo điểm nhấn sang trọng bên trong.\nQuần tây:\nMàu sắc & họa tiết: Đồng bộ với áo vest, cùng họa tiết caro chìm trên nền xám đậm.\nKiểu dáng: Dáng quần suông, ống đứng, tôn dáng thanh lịch.\nChi tiết: Cạp quần có đai lưng với khuy cài và khóa kéo, túi xẻ hai bên và túi sau có nút cài.\nChất liệu: \n70% Wool len cao cấp, được dệt hoàn toàn từ lông cừu tự nhiên.\n30% Polyester tạo độ sắc nét, bền màu và đứng dáng.\nMàu sắc: Xám 108 Kẻ jacquard\nSize: S, M, L, XL\nSản xuất: Việt Nam\n\nHướng dẫn bảo quản và giặt ủi: \n\nKhuyến nghị giặt khô để bảo đảm chất lượng và độ bền của len và polyester. \nTránh ánh nắng trực tiếp, lưu trữ ở nơi khô ráo, thoáng mát để tránh mất dáng và đổi màu. \nSử dụng bàn ủi hơi nước ở nhiệt độ thấp, hoặc đặt một lớp vải giữa bàn ủi và áo khi là. Không nên giặt máy để tránh làm hỏng chất liệu len.\n\nLưu ý: \n\nHình ảnh chỉ mang tính chất minh họa. Sản phẩm thực tế có thể khác về màu sắc so với hình ảnh minh họa do ánh sáng khi chụp ảnh hoặc do màn hình hiển thị trên thiết bị của khách hàng.",
+      "brand": "Aristino Business",
+      "base_price": 12500000,
+      "sale_price": null,
+      "category_id": 22,
+      "images": [
+        "https://cdn.hstatic.net/products/200000887901/thi_t_k__ch_a_c__t_n_-_2025-07-05t204015.525_61837fb5ae6e4c41ad2f899787f8dddd.jpg",
+        "https://cdn.hstatic.net/products/200000887901/img_0981_87fc5a647c784b36bef99c7d6accc957.jpg",
+        "https://cdn.hstatic.net/products/200000887901/img_0966_f55f01dd3bd547b39d3ea12fedaac5e5.jpg",
+        "https://cdn.hstatic.net/products/200000887901/img_0960_c8b28ff3778b444d93d298a7a2ac4980.jpg",
+        "https://cdn.hstatic.net/products/200000887901/img_0949_510f8c55de3b48d09645df60d31d716b.jpg",
+        "https://cdn.hstatic.net/products/200000887901/img_0978_c8857e64d603402e8214f108d9b48b66.jpg",
+        "https://cdn.hstatic.net/products/200000887901/img_0985_0cb367e34d2c4675b5f3adb2995fc90b.jpg",
+        "https://cdn.hstatic.net/products/200000887901/upload_d0a1d86ac4a54067b757f6e0e9f18c0f.jpg",
+        "https://cdn.hstatic.net/products/200000887901/upload_158b91fd36b04c68b99fd9a356504a36.jpg",
+        "https://cdn.hstatic.net/products/200000887901/upload_5ddfd1a45122479a8ae7d4ce83af9c6b.jpg"
+      ],
+      "status": "active",
+      "collection": null,
+      "slug": "bo-suits-nam-xam-ke-aristino-business-premio-1su0050s0",
+      "is_new": true,
+      "tags": [
+        "NEW"
+      ],
+      "created_at": "2025-12-26T04:02:28.452Z",
+      "updated_at": "2025-12-26T04:02:28.452Z"
+    },
+    {
+      "id": 171,
+      "name": "Cặp Tài Liệu Da Bò Aristino ABC0110Z",
+      "description": "Tên sản phẩm: Cặp Tài Liệu Nam Aristino ABC0110Z\nKiểu dáng: Cặp tài liệu\nThiết kế:\nĐược thiết kế với một ngăn lớn ở giữa có miệng khóa, bên trong là các ngăn nhỏ có thể đựng các đồ dùng cá nhân tiện lợi.\nChất liệu:\nChất liệu Da bò nhập khẩu Ý, mềm mại khi sử dụng. Da được xử lý tỉ mỉ, không xảy ra hiện tượng nổ da. Bề mặt da có độ bóng tự nhiên, bền chắc và mềm mại hơn sau thời gian dài sử dụng.\nMàu sắc: Navy\nKích thước: 390x290x85 mm\nSản xuất: Trung Quốc\n\nHướng dẫn bảo quản đồ da:\n\nTránh ánh nắng trực tiếp: Để sản phẩm ở nơi thoáng mát, tránh tiếp xúc trực tiếp với ánh nắng để không làm khô và mất màu da.\nLàm sạch thường xuyên: Lau sản phẩm bằng khăn mềm sau mỗi lần sử dụng. Nếu có vết bẩn, dùng dung dịch làm sạch nhẹ nhàng để làm sạch.\nDưỡng da định kỳ: Sử dụng kem dưỡng hoặc dầu dưỡng da để duy trì độ mềm mại và bóng mượt, tránh khô nứt.\nBảo quản đúng cách: Khi không sử dụng, cất sản phẩm trong túi vải thoáng khí để giữ độ thông thoáng và bảo vệ da.\n\nLưu ý: Hình ảnh chỉ mang tính chất minh họa. Sản phẩm thực tế có thể khác về màu sắc so với hình ảnh do ánh sáng khi chụp hoặc màn hình hiển thị.",
+      "brand": "Aristino",
+      "base_price": 11150000,
+      "sale_price": null,
+      "category_id": 21,
+      "images": [
+        "https://product.hstatic.net/200000887901/product/cap-tai-lieu-nam-aristino-abc0110z__2__b4e8e156539b4a8290213415723b96dc.jpg",
+        "https://product.hstatic.net/200000887901/product/cap-tai-lieu-nam-aristino-abc0110z__3__6a956f71f0c24779ac04d67229d3f240.jpg",
+        "https://product.hstatic.net/200000887901/product/cap-tai-lieu-nam-aristino-abc0110z__4__a56e6b5235d848419ec4eed334d9cfdc.jpg",
+        "https://cdn.hstatic.net/products/200000887901/upload_e90831fa2c0a4863925c301574fb090c.jpg",
+        "https://cdn.hstatic.net/products/200000887901/upload_17300f64763744c4bb2e30f3add56d26.jpg"
+      ],
+      "status": "active",
+      "collection": null,
+      "slug": "cap-tai-lieu-da-bo-aristino-abc0110z",
+      "is_new": true,
+      "tags": [
+        "NEW"
+      ],
+      "created_at": "2025-12-26T04:02:36.248Z",
+      "updated_at": "2025-12-26T04:02:36.248Z"
+    },
+    {
+      "id": 172,
+      "name": "Cặp Tài Liệu Da Nam Aristino ABC0250Z2",
+      "description": "Tên sản phẩm: Cặp Tài Liệu Da Nam Aristino ABC0250Z2\nMã sản phầm: ABC0250Z2\nKiểu dáng: Cặp tài liệu\nThiết kế:\nLấy cảm hứng từ nghệ thuật đan tre thủ công. Từ nghệ thuật đến họa tiết kẻ biểu tượng của Aristino.\nĐương đại hóa với các họa tiết đan xen mang đầy tính biểu tượng văn hóa và tính hình học mang sự thẩm mỹ cao.\nChất liệu:\nKết hợp linh hoạt giữa canvas in họa tiết và da trơn tạo sự tương phản về hiệu ứng vật liệu và họa tiết .\nMàu sắc: Đen trắng\nKích thước: 390x290x85 mm\nSản xuất: Trung Quốc\n\nHướng dẫn bảo quản đồ da:\n\nTránh ánh nắng trực tiếp: Để sản phẩm ở nơi thoáng mát, tránh tiếp xúc trực tiếp với ánh nắng để không làm khô và mất màu da.\nLàm sạch thường xuyên: Lau sản phẩm bằng khăn mềm sau mỗi lần sử dụng. Nếu có vết bẩn, dùng dung dịch làm sạch nhẹ nhàng để làm sạch.\nDưỡng da định kỳ: Sử dụng kem dưỡng hoặc dầu dưỡng da để duy trì độ mềm mại và bóng mượt, tránh khô nứt.\nBảo quản đúng cách: Khi không sử dụng, cất sản phẩm trong túi vải thoáng khí để giữ độ thông thoáng và bảo vệ da.\n\nLưu ý: Hình ảnh chỉ mang tính chất minh họa. Sản phẩm thực tế có thể khác về màu sắc so với hình ảnh do ánh sáng khi chụp hoặc màn hình hiển thị.",
+      "brand": "Aristino",
+      "base_price": 11250000,
+      "sale_price": null,
+      "category_id": 21,
+      "images": [
+        "https://cdn.hstatic.net/products/200000887901/upload_5ae513759ada4355a9b69ee6600add7e.jpg"
+      ],
+      "status": "active",
+      "collection": null,
+      "slug": "cap-tai-lieu-da-nam-aristino-abc0250z2",
+      "is_new": true,
+      "tags": [
+        "NEW"
+      ],
+      "created_at": "2025-12-26T04:02:44.507Z",
+      "updated_at": "2025-12-26T04:02:44.507Z"
+    },
+    {
+      "id": 173,
+      "name": "Mặt Dây Lưng Nam Aristino ABK0300Z",
+      "description": "Tên sản phẩm: Mặt Dây Lưng Nam Aristino ABK0300Z\nKiểu dáng: Mặt dây lưng\nThiết kế:\nMặt dây thắt lưng với màu bạc-đen tinh tế, tạo nên sự sang trọng cho quý ông khi sử dụng.\nDễ dàng kết hợp với các loại dây lưng khác nhau.\nChất liệu:\nChất liệu: Thép không gỉ, hạn chế tối đa sự trầy xước, bền đẹp sau thời gian sử dụng lâu dài.\nMàu sắc: Bạc\nKích thước: 44mm\nSản xuất: Trung Quốc\n\nHướng dẫn bảo quản:\n\nNhỏ một vài giọt dung dịch lên khăn mềm, chà đều nhẹ nhàng mặt thắt lưng tới khi không còn thấy được vết xước.\nSử dụng khăn ẩm để lau sạch lại mặt thắt lưng.\n\nLưu ý:\n\nHình ảnh chỉ mang tính chất minh họa. Sản phẩm thực tế có thể khác về màu sắc do ánh sáng khi chụp hoặc màn hình hiển thị của thiết bị khách hàng.",
+      "brand": "Aristino",
+      "base_price": 950000,
+      "sale_price": null,
+      "category_id": 22,
+      "images": [
+        "https://product.hstatic.net/200000887901/product/mat-day-lung-nam-aristino-abk0300z_f33e3f1042584faf93d8ae9efae8fe6b.jpg"
+      ],
+      "status": "active",
+      "collection": null,
+      "slug": "mat-day-lung-nam-aristino-abk0300z",
+      "is_new": true,
+      "tags": [
+        "NEW"
+      ],
+      "created_at": "2025-12-26T04:02:51.179Z",
+      "updated_at": "2025-12-26T04:02:51.179Z"
+    },
+    {
+      "id": 174,
+      "name": "Mặt Dây Lưng Nam Aristino ABK0310Z",
+      "description": "Tên sản phẩm: Mặt Dây Lưng Nam Aristino ABK0310Z\nKiểu dáng: Mặt dây lưng\nThiết kế:\nMặt dây thắt lưng với màu bạc tinh tế, tạo nên sự sang trọng cho quý ông khi sử dụng.\nDễ dàng kết hợp với các loại dây lưng khác nhau.\nChất liệu:\nThép không gỉ, hạn chế tối đa sự trầy xước, bền đẹp sau thời gian sử dụng lâu dài.\nMàu sắc: Bạc\nKích thước: 62x40x19mm\nSản xuất: Trung Quốc\n\nHướng dẫn bảo quản:\n\nNhỏ một vài giọt dung dịch lên khăn mềm, chà đều nhẹ nhàng mặt thắt lưng tới khi không còn thấy được vết xước.\nSử dụng khăn ẩm để lau sạch lại mặt thắt lưng.\n\nLưu ý:\n\nHình ảnh chỉ mang tính chất minh họa. Sản phẩm thực tế có thể khác về màu sắc do ánh sáng khi chụp hoặc màn hình hiển thị của thiết bị khách hàng.",
+      "brand": "Aristino",
+      "base_price": 950000,
+      "sale_price": null,
+      "category_id": 22,
+      "images": [
+        "https://product.hstatic.net/200000887901/product/mat-day-lung-nam-aristino-abk0310z_0203cdc9c2c64a56b051cd92310fd387.jpg"
+      ],
+      "status": "active",
+      "collection": null,
+      "slug": "mat-day-lung-nam-aristino-abk0310z",
+      "is_new": true,
+      "tags": [
+        "NEW"
+      ],
+      "created_at": "2025-12-26T04:02:57.465Z",
+      "updated_at": "2025-12-26T04:02:57.465Z"
+    },
+    {
+      "id": 175,
+      "name": "Quần Âu Nam Aristino Golf ATRG120Z",
+      "description": "Tên sản phẩm: Quần Âu Nam Aristino Golf ATRG120Z\nKiểu dáng: Dáng thể thao/ Golf Fit\nThiết kế:\nQuần âu phom Golf Fit đặc biệt, có phần ống suông rộng thoải mái đồng thời vẫn đảm bảo sự vừa vặn như may đo.\nThiết kế thể thao khỏe khoắn, màu sắc nam tính với công nghệ diệt tiên tiến mang đến khả năng thấm hút tốt, dễ chịu cho cả ngày hoạt động.\nChất liệu: \n71% Nylon cho bề mặt vải độ mịn mượt, mỏng nhẹ.\n25% Polyester giúp áo bền màu, sắc nét và độ trơn trượt, mỏng nhẹ.\n4% spandex tạo độ co giãn cho áo\nMàu sắc: Be 66, Xám 37, Trắng 4\nSize: 29/30/31/32/33/34/35\nSản xuất: Việt Nam\n\nHướng dẫn bảo quản và giặt ủi:\n\nGiặt ở nhiệt độ không quá 30°C.\nKhông sử dụng chất tẩy mạnh.\nLà/ủi ở nhiệt độ thấp.\nPhơi nơi thoáng mát, tránh ánh nắng trực tiếp để giữ chất lượng vải và màu sắc.\n\nLưu ý: Hình ảnh chỉ mang tính chất minh họa. Sản phẩm thực tế có thể khác về màu sắc do ánh sáng khi chụp ảnh hoặc màn hình hiển thị.",
+      "brand": "Aristino Golf",
+      "base_price": 1850000,
+      "sale_price": null,
+      "category_id": 6,
+      "images": [
+        "https://product.hstatic.net/200000887901/product/img_3516.1_daad562e8ac94e70b5d2141a26296612.jpg",
+        "https://cdn.hstatic.net/products/200000887901/upload_6a521c9ee24f451b85d47bf97d72ea8a.jpg",
+        "https://cdn.hstatic.net/products/200000887901/upload_55d4b01ea6c14e9793bf97d51eacd417.jpg",
+        "https://cdn.hstatic.net/products/200000887901/upload_ba42c8365eec4de1bb83c1600079d9c0.jpg",
+        "https://cdn.hstatic.net/products/200000887901/upload_fbc637bead4644b2aabecea3500a7cf1.jpg"
+      ],
+      "status": "active",
+      "collection": null,
+      "slug": "quan-au-nam-aristino-golf-atrg120z",
+      "is_new": true,
+      "tags": [
+        "NEW"
+      ],
+      "created_at": "2025-12-26T04:03:10.130Z",
+      "updated_at": "2025-12-26T04:03:10.130Z"
+    },
+    {
+      "id": 176,
+      "name": "Quần Âu Nam Aristino Slim fit ATR0050S1",
+      "description": "Tên sản phẩm: Quần Âu Nam Aristino Slim fit ATR0050S1\nMã sản phẩm: ATR0050S1\nForm Dáng: Slim fit/ Dáng ôm\nThiết kế:\nQuần âu phom dáng Slim fit ôm vừa vặn hình thể người mặc, nhằm tôn lên dáng vẻ nam tính. \nQuần được thiết kế cơ bản với túi chéo 2 bên, màu sắc trung tính đem đến diện mạo tự tin và trẻ trung cho người mặc.\nChất liệu:\n68% Polyester: Bền màu, chống nhăn, giữ phom tốt, nhanh khô và ít thấm nước.\n29% Rayon: Mềm mại, thoáng mát, thấm hút tốt, tạo độ rũ nhẹ và cảm giác dễ chịu khi mặc.\n3% Spandex: Co giãn nhẹ, tăng độ đàn hồi, giúp trang phục linh hoạt và ôm vừa vặn.\nPhối với:\nDễ dàng kết hợp với áo T-shirt, áo Polo, sơ mi...\nPhù hợp cho các dịp đi chơi, dạo phố hoặc các hoạt động ngoài trời.\nMàu sắc: Đen 28\nKích thước: 29/30/31/32/33/34/35\nSản xuất: Việt Nam\n\nHướng dẫn bảo quản và giặt ủi:\n\nGiặt tay hoặc giặt máy ở chế độ nhẹ với nước lạnh.\nTránh sử dụng chất tẩy mạnh, không ngâm quá lâu.\nPhơi ở nơi thoáng mát, tránh ánh nắng trực tiếp để duy trì chất lượng vải.\nỦi ở nhiệt độ thấp để tránh làm hỏng chất liệu và giữ cho sản phẩm luôn phẳng đẹp.\n\nLưu ý:\n\nHình ảnh chỉ mang tính chất minh họa, màu sắc sản phẩm thực tế có thể thay đổi tùy thuộc vào điều kiện ánh sáng và thiết bị hiển thị.",
+      "brand": "Aristino",
+      "base_price": 1150000,
+      "sale_price": null,
+      "category_id": 6,
+      "images": [
+        "https://cdn.hstatic.net/products/200000887901/ntc_8534_e1a92bcab7e34d60bab0573a785c4d3b.jpg",
+        "https://cdn.hstatic.net/products/200000887901/ntc_8537_6cf0ac222ab54390816d77722045af8b.jpg",
+        "https://cdn.hstatic.net/products/200000887901/ntc_8542_a23e867c942f4a7d98a938e93c83005a.jpg",
+        "https://cdn.hstatic.net/products/200000887901/ntc_8518_50f07b7306ca4a178bbc57f2606ab7f7.jpg",
+        "https://product.hstatic.net/200000887901/product/img_2367.1_2b85d8992b5f4c96840f0b9aef798929.jpg",
+        "https://cdn.hstatic.net/products/200000887901/upload_7c7412a7b35a4fea936d9bf833132956.jpg",
+        "https://cdn.hstatic.net/products/200000887901/upload_339d279604744003894e885389cedb8a.jpg",
+        "https://cdn.hstatic.net/products/200000887901/upload_5f4c05a59db04797b4c23d8001a8e4d4.jpg",
+        "https://cdn.hstatic.net/products/200000887901/upload_6dafbb02816343e0a1d7db2b4a91dfeb.jpg"
+      ],
+      "status": "active",
+      "collection": null,
+      "slug": "quan-au-nam-aristino-slim-fit-atr0050s1",
+      "is_new": true,
+      "tags": [
+        "NEW"
+      ],
+      "created_at": "2025-12-26T04:03:18.429Z",
+      "updated_at": "2025-12-26T04:03:18.429Z"
+    },
+    {
+      "id": 177,
+      "name": "Quần âu Nam Aristino Slim fit ATR0420Z",
+      "description": "Tên sản phẩm: Quần âu Nam Aristino Slim fit ATR0420Z\nMã rút gọn: ATR0420Z\nKiểu dáng: Dáng ôm vừa, ngắn (Cropped)\nThiết kế:\nQuần âu phom dáng Cropped với độ suông vừa phải, tôn dáng và mang lại sự thoải mái cho người mặc.\nMàu sắc trung tính, dễ dàng phối hợp với nhiều trang phục khác nhau, cùng đường nét cắt may tinh tế, mang lại diện mạo lịch lãm và nổi bật cho các quý ông.\nChất liệu: 67% Polyester, 29% Viscose, 4% Spandex\n67% Polyester: Giúp quần bền màu, sắc nét, mịn màng và mỏng nhẹ.\n29% Viscose: Mang lại độ mềm mại, mịn mượt, giúp quần nhẹ nhàng, thoáng mát tối đa khi mặc.\n4% Spandex: Tạo độ co giãn nhẹ, linh hoạt và thoải mái khi vận động.\nMàu sắc: Be 46, Trắng 6\nSize: 29, 30, 31, 32, 33, 34, 35\nSản xuất: Việt Nam\n\nHướng dẫn bảo quản và giặt ủi:\n\nGiặt ở nhiệt độ không quá 30°C.\nKhông sử dụng chất tẩy mạnh.\nLà/ủi ở nhiệt độ thấp để tránh nhăn và phai màu.\nPhơi nơi thoáng mát, tránh ánh nắng trực tiếp.\n\nLưu ý: Hình ảnh chỉ mang tính chất minh họa. Sản phẩm thực tế có thể khác về màu sắc do ánh sáng khi chụp ảnh hoặc màn hình hiển thị.",
+      "brand": "Aristino",
+      "base_price": 950000,
+      "sale_price": null,
+      "category_id": 6,
+      "images": [
+        "https://product.hstatic.net/200000887901/product/-be-quan-au-nam-aristino-atr0420z__3__c61db8c6fc7143f6a9c33dadcc8ca427_99a7e4fe67704ab49a85eef8f96e067c.jpg",
+        "https://product.hstatic.net/200000887901/product/-be-quan-au-nam-aristino-atr0420z__4__a7d1fa2efddd4045b625518de98531e2_e7048cb8149e4da588c36c950d5e150d.jpg",
+        "https://product.hstatic.net/200000887901/product/61db8c6fc7143f6a9c33dadcc8ca427_large_e6d03b62fe8e46998f20ad5f86e09187_72d51c424d4340248f16444420b5b18e.jpg",
+        "https://product.hstatic.net/200000887901/product/-be-quan-au-nam-aristino-atr0420z__2__e244d5a532cf4d5581be37238e5cac43_8a42fac40c14401aa5ce5ec87014acf1.jpg",
+        "https://product.hstatic.net/200000887901/product/-be-quan-au-nam-aristino-atr0420z__5__3822a020db854d6596e1d56117d8febd_afb295174d7041d0b8e5c4de28146399.jpg",
+        "https://product.hstatic.net/200000887901/product/img_7350.1x900x900x4_d6afd2d6e5034e2093ada818f5fb83d1_0cc1f122a30f4e81939f5eb0df612dac.jpg",
+        "https://product.hstatic.net/200000887901/product/img_7350x900x900x4_d502b570f8cd488c85c2c21d35105917_7cf939f0cd754a93bd8bfb25f1af246f.jpg",
+        "https://product.hstatic.net/200000887901/product/img_7351x900x900x4_a06df9b70ea0407cb841fc4880fb837c_410fc6ddcf38438f9a161f45b31ea187.jpg",
+        "https://product.hstatic.net/200000887901/product/img_7353x900x900x4_6604926ee7a34e859536d200a678a15d_fa8d854b0f2b4699b35c1116169a8b1e.jpg",
+        "https://product.hstatic.net/200000887901/product/img_7352x900x900x4_377216e67461498880e43e7daca80f58_0eeb545a391d4ddb9140e4982f78661c.jpg"
+      ],
+      "status": "active",
+      "collection": null,
+      "slug": "quan-au-nam-aristino-slim-fit-atr0420z",
+      "is_new": true,
+      "tags": [
+        "NEW"
+      ],
+      "created_at": "2025-12-26T04:03:28.508Z",
+      "updated_at": "2025-12-26T04:03:28.508Z"
+    },
+    {
+      "id": 178,
+      "name": "Quần Âu Nam Kẻ Đen Aristino Business 1TR0110S2",
+      "description": "Tên sản phẩm: Quần Âu Nam Kẻ Đen Aristino Business 1TR0110S2\nMã sản phẩm: 1TR0110S2\nKiểu dáng: Dáng vừa/ Regular Fit\nThiết kế:\nQuần âu Aristino Business phom Regular Fit suông nhẹ, phù hợp với mọi dáng người, đem lại vẻ ngoài tự tin và lịch lãm. \nMàu sắc thời thượng, dễ kết hợp trang phục khác, đường nét cắt may tinh tế, cùng chất liệu lông cừu cao cấp đem lại diện mạo lịch lãm và nổi bật cho các quý ông.\nChất liệu:\n70% Wool có khả năng chịu lực tốt, giúp quần âu duy trì được form dáng và độ bền cao.\nChất liệu len cao cấp cũng có khả năng thoáng khí tốt, giúp quý ông luôn cảm thấy thoải mái và dễ chịu, ngay cả khi mặc trong thời gian dài.\n30% Polyester có độ bền cao và khả năng chống mài mòn tốt, giúp quần âu bền bỉ và ít bị hư hỏng do tác động từ bên ngoài. Bên cạnh đó, Polyester chống nhăn tốt, giúp quần âu luôn phẳng phiu và dễ bảo quản.\nPhối với:\nDễ kết hợp với áo sơ mi, áo thun, polo hoặc blazer để tạo phong cách lịch sự cho các dịp công sở, hội họp hoặc đi chơi.\nMàu sắc: Đen 1 kẻ\nKích thước: 29/30/31/32/33/34/35\nSản xuất: Việt Nam\n\nHướng dẫn bảo quản:\n\nGiặt tay hoặc giặt máy ở chế độ nhẹ với nước lạnh.\nTránh dùng chất tẩy mạnh, không ngâm quá lâu.\nPhơi nơi thoáng mát, tránh ánh nắng trực tiếp để giữ màu và chất lượng vải.\n\nHướng dẫn giặt ủi:\n\nỦi ở nhiệt độ thấp để tránh làm hỏng chất liệu và giữ cho quần luôn trong trạng thái tốt nhất.\n\nLưu ý:\n\nHình ảnh chỉ mang tính chất minh họa, màu sắc thực tế có thể thay đổi tùy thuộc vào điều kiện ánh sáng và màn hình hiển thị.",
+      "brand": "Aristino Business",
+      "base_price": 2800000,
+      "sale_price": null,
+      "category_id": 6,
+      "images": [
+        "https://cdn.hstatic.net/products/200000887901/ntc_8471_d81d2e9a5e2f48c690c9d1395f738928.jpg",
+        "https://cdn.hstatic.net/products/200000887901/ntc_8465_2ea719190f294602aa752bae894f2657.jpg",
+        "https://cdn.hstatic.net/products/200000887901/ntc_8450_ea5063a62b044516b2007a2835b39e8f.jpg",
+        "https://cdn.hstatic.net/products/200000887901/ntc_8476_87e06c8f7fa3451caf4b890523dbe5b3.jpg",
+        "https://product.hstatic.net/200000887901/product/img_3928.1_3a7c5f40b89448cf8caa6c81e8f3b810.jpg",
+        "https://cdn.hstatic.net/products/200000887901/upload_40637104e5e14192813f4b45e414875f.jpg",
+        "https://cdn.hstatic.net/products/200000887901/upload_7f979233dbfc4ddfb36dbedea719749f.jpg",
+        "https://cdn.hstatic.net/products/200000887901/upload_a8e5d592797a4cd48a653ae33b19b6ec.jpg",
+        "https://cdn.hstatic.net/products/200000887901/upload_93d1ae3a99d2454597f40d3a3839781e.jpg"
+      ],
+      "status": "active",
+      "collection": null,
+      "slug": "quan-au-nam-ke-den-aristino-business-1tr0110s2",
+      "is_new": true,
+      "tags": [
+        "NEW"
+      ],
+      "created_at": "2025-12-26T04:03:39.699Z",
+      "updated_at": "2025-12-26T04:03:39.699Z"
+    },
+    {
+      "id": 179,
+      "name": "Túi Cầm Tay Nam Aristino ACL0240Z4",
+      "description": "Tên sản phẩm: Túi Cầm Tay Nam Aristino ACL0240Z4\nMã sản phẩm: ACL0240Z4\nKiểu dáng: Túi Cầm Tay\nThiết kế: \nLấy cảm hứng từ nghệ thuật đan tre thủ công. \nTừ nghệ thuật đến họa tiết kẻ biểu tượng của Aristino. \nĐương đại hóa với các họa tiết đan xen mang đầy tính biểu tượng văn hóa và tính hình học mang sự thẩm mỹ cao.\nChất liệu: \nKết hợp linh hoạt giữa canvas in họa tiết và da trơn tạo sự tương phản về hiệu ứng vật liệu và họa tiết .\nMàu sắc: Vàng tre ngà\nSize: 270x210x45mm\nSản xuất: Việt Nam\nHướng dẫn bảo quản đồ da:\nTránh ánh nắng trực tiếp: Để sản phẩm ở nơi thoáng mát, tránh tiếp xúc trực tiếp với ánh nắng để không làm khô và mất màu da.\nLàm sạch thường xuyên: Lau sản phẩm bằng khăn mềm sau mỗi lần sử dụng. Nếu có vết bẩn, dùng dung dịch làm sạch nhẹ nhàng để làm sạch.\nDưỡng da định kỳ: Sử dụng kem dưỡng hoặc dầu dưỡng da để duy trì độ mềm mại và bóng mượt, tránh khô nứt.\nBảo quản đúng cách: Khi không sử dụng, cất sản phẩm trong túi vải thoáng khí để giữ độ thông thoáng và bảo vệ da.\n\nLưu ý: Hình ảnh chỉ mang tính chất minh họa. Sản phẩm thực tế có thể khác về màu sắc so với hình ảnh minh họa do ánh sáng khi chụp ảnh hoặc do màn hình hiển thị trên thiết bị của khách hàng.",
+      "brand": "Aristino",
+      "base_price": 4200000,
+      "sale_price": null,
+      "category_id": 22,
+      "images": [
+        "https://cdn.hstatic.net/products/200000887901/upload_9cf6e536c08146b681d456a897e6a198.jpg",
+        "https://cdn.hstatic.net/products/200000887901/upload_3098f6cc66a6414a94643da0b9d1ec73.jpg",
+        "https://cdn.hstatic.net/products/200000887901/upload_04e5eb7191234ec6af1429f879ef6c30.jpg",
+        "https://cdn.hstatic.net/products/200000887901/upload_e7f302ba9dc94ec0a95177a5c90b86a9.jpg",
+        "https://cdn.hstatic.net/products/200000887901/upload_76e552b92896435cb5c4b9d2e1096647.jpg",
+        "https://cdn.hstatic.net/products/200000887901/upload_0cb8807733fc414fa14ee4adacd80ce5.jpg"
+      ],
+      "status": "active",
+      "collection": null,
+      "slug": "tui-cam-tay-nam-aristino-acl0240z4",
+      "is_new": true,
+      "tags": [
+        "NEW"
+      ],
+      "created_at": "2025-12-26T04:03:50.052Z",
+      "updated_at": "2025-12-26T04:03:50.052Z"
+    },
+    {
+      "id": 180,
+      "name": "Túi Du Lịch Nam Aristino AVB0240Z4",
+      "description": "Tên sản phẩm: Túi Du Lịch Nam Da bò Aristino AVB0240Z4\nMã rút gọn: AVB0240Z4\nKiểu dáng: Túi Du Lịch\nThiết kế:\nTúi da du lịch đa năng với kích thước nhỏ gọn, đi kèm quai xách tay và dây đeo vai chắc chắn, phù hợp cho những chuyến đi ngắn ngày. \nTúi có một ngăn lớn kéo khóa và nhiều ngăn nhỏ tiện ích, đủ để chứa quần áo, hóa mỹ phẩm, và các vật dụng cá nhân cần thiết\nChất liệu:\nDa bò. Kết hợp linh hoạt giữa da dập vân họa tiết đan lát và da hạt tạo sự tương phản về hiệu ứng vật liệu.\nMàu sắc: Vàng đan lát\nKích thước: 50x310x260 mm\nSản xuất: Việt Nam\nHướng dẫn bảo quản đồ da:\nTránh ánh nắng trực tiếp: Để sản phẩm ở nơi thoáng mát, tránh tiếp xúc trực tiếp với ánh nắng để không làm khô và mất màu da.\nLàm sạch thường xuyên: Lau sản phẩm bằng khăn mềm sau mỗi lần sử dụng. Nếu có vết bẩn, dùng dung dịch làm sạch nhẹ nhàng để làm sạch.\nDưỡng da định kỳ: Sử dụng kem dưỡng hoặc dầu dưỡng da để duy trì độ mềm mại và bóng mượt, tránh khô nứt.\nBảo quản đúng cách: Khi không sử dụng, cất sản phẩm trong túi vải thoáng khí để giữ độ thông thoáng và bảo vệ da.\n\nLưu ý: Hình ảnh chỉ mang tính chất minh họa. Sản phẩm thực tế có thể khác về màu sắc so với hình ảnh do ánh sáng khi chụp hoặc màn hình hiển thị.",
+      "brand": "Aristino",
+      "base_price": 16250000,
+      "sale_price": null,
+      "category_id": 22,
+      "images": [
+        "https://cdn.hstatic.net/products/200000887901/upload_cf4ac8716b214e529bcae18b1e818fb1.jpg",
+        "https://cdn.hstatic.net/products/200000887901/upload_c320c8a234cc4c8bac22c4789eeb30b2.jpg",
+        "https://cdn.hstatic.net/products/200000887901/upload_b8ef80d1bbb043eaa66dba1a02548708.jpg",
+        "https://cdn.hstatic.net/products/200000887901/upload_1c91e61997bc4e899db4ac064ec1eae4.jpg",
+        "https://cdn.hstatic.net/products/200000887901/upload_e4b2df13deb840bb93556ffcadd613c1.jpg",
+        "https://cdn.hstatic.net/products/200000887901/upload_ed6bd0077aaf420a9dec50af38c24903.jpg",
+        "https://cdn.hstatic.net/products/200000887901/upload_e526bcfd8d2846baa3c3fab51e077fcb.jpg",
+        "https://cdn.hstatic.net/products/200000887901/upload_d84c9edc8ca2496e8b1dcec4fbbad042.jpg",
+        "https://cdn.hstatic.net/products/200000887901/upload_e23fb4a3541d4c35bcd50911216a448b.jpg"
+      ],
+      "status": "active",
+      "collection": null,
+      "slug": "tui-du-lich-nam-aristino-avb0240z4",
+      "is_new": true,
+      "tags": [
+        "NEW"
+      ],
+      "created_at": "2025-12-26T04:03:57.860Z",
+      "updated_at": "2025-12-26T04:03:57.860Z"
+    },
+    {
+      "id": 181,
+      "name": "Túi Tote Nam Aristino ATO0250Z4",
+      "description": "Tên sản phẩm: Túi Tote Nam Aristino ATO0250Z4\nMã rút gọn: ATO0250Z4\nBộ sưu tập: Đan Lát\nKiểu dáng: Túi Tote\nThiết kế:\nLấy cảm hứng từ nghệ thuật đan tre thủ công. Từ nghệ thuật đến họa tiết kẻ biểu tượng của Aristino.\nĐương đại hóa với các họa tiết đan xen mang đầy tính biểu tượng văn hóa và tính hình học mang sự thẩm mỹ cao.\nChất liệu:\nKết hợp linh hoạt giữa canvas in họa tiết và da trơn tạo sự tương phản về hiệu ứng vật liệu và họa tiết.\nMàu sắc: Đen trắng\nKích thước: Đang cập nhật\nSản xuất: Việt Nam\n\nHướng dẫn bảo quản đồ da:\n\nTránh ánh nắng trực tiếp: Để sản phẩm ở nơi thoáng mát, tránh tiếp xúc trực tiếp với ánh nắng để không làm khô và mất màu da.\nLàm sạch thường xuyên: Lau sản phẩm bằng khăn mềm sau mỗi lần sử dụng. Nếu có vết bẩn, dùng dung dịch làm sạch nhẹ nhàng để làm sạch.\nDưỡng da định kỳ: Sử dụng kem dưỡng hoặc dầu dưỡng da để duy trì độ mềm mại và bóng mượt, tránh khô nứt.\nBảo quản đúng cách: Khi không sử dụng, cất sản phẩm trong túi vải thoáng khí để giữ độ thông thoáng và bảo vệ da.\n\nLưu ý: Hình ảnh chỉ mang tính chất minh họa. Sản phẩm thực tế có thể khác về màu sắc so với hình ảnh do ánh sáng khi chụp hoặc màn hình hiển thị.",
+      "brand": "Aristino",
+      "base_price": 9195000,
+      "sale_price": null,
+      "category_id": 22,
+      "images": [
+        "https://cdn.hstatic.net/products/200000887901/upload_02ff588e081d4fab9e4d668cd9f70318.jpg",
+        "https://cdn.hstatic.net/products/200000887901/upload_5f29377e0a164331abcd1636a62419b6.jpg",
+        "https://cdn.hstatic.net/products/200000887901/upload_813a090dfdf544feb9defdec5a9cc3f7.jpg",
+        "https://cdn.hstatic.net/products/200000887901/upload_c1026f452a3c4879be98e89c1a60780e.jpg",
+        "https://cdn.hstatic.net/products/200000887901/upload_020980865e174ae09955e082fd7d3bf6.jpg",
+        "https://cdn.hstatic.net/products/200000887901/upload_f1d6369ddc574ee4b35607d957d8978d.jpg"
+      ],
+      "status": "active",
+      "collection": null,
+      "slug": "tui-tote-nam-aristino-ato0250z4",
+      "is_new": true,
+      "tags": [
+        "NEW"
+      ],
+      "created_at": "2025-12-26T04:04:06.131Z",
+      "updated_at": "2025-12-26T04:04:06.131Z"
     }
 ];
 
@@ -4627,14 +5054,18 @@ async function main() {
   const transaction = await sequelize.transaction();
   try {
     for (const item of PRODUCTS) {
-      if (item.slug) {
-        const existing = await Product.findOne({
+      let existing = null;
+      if (item.id) {
+        existing = await Product.findByPk(item.id, { transaction });
+      }
+      if (!existing && item.slug) {
+        existing = await Product.findOne({
           where: { slug: item.slug },
           transaction,
         });
-        if (existing) {
-          continue;
-        }
+      }
+      if (existing) {
+        continue;
       }
 
       await Product.create(

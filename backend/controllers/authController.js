@@ -64,6 +64,11 @@ export const refreshAccessToken = async (req, res) => {
 
     const newAccessToken = createAccessToken(user);
 
+    // Đảm bảo name không null/undefined
+    const displayName = user.name && user.name.trim() !== ""
+      ? user.name
+      : user.email?.split("@")[0] || "User";
+
     sendSuccess(res, {
       message: "Token refreshed successfully",
       data: {
@@ -71,7 +76,7 @@ export const refreshAccessToken = async (req, res) => {
         user: {
           id: user.id,
           email: user.email,
-          name: user.name,
+          name: displayName,
           role: user.role
         }
       }
@@ -183,13 +188,18 @@ export const signInGoogleController = {
       // Lưu tokens vào database
       await signInGoogle.saveTokensToDatabase(user, accessToken, refreshToken);
 
+      // Đảm bảo name không null/undefined - fallback cho email username
+      const displayName = user.name && user.name.trim() !== ""
+        ? user.name
+        : user.email?.split("@")[0] || "User";
+
       // Redirect về frontend với tokens trong URL params
       const params = {
         accessToken,
         refreshToken,
         userId: user.id.toString(),
         email: user.email,
-        fullName: user.name,
+        fullName: displayName,
       };
 
       if (typeof req.query?.state === "string" && req.query.state.length > 0) {
@@ -232,13 +242,18 @@ export const signInFacebookController = {
       // Lưu tokens vào database
       await signInFacebook.saveTokensToDatabase(user, accessToken, refreshToken);
 
+      // Đảm bảo name không null/undefined - fallback cho email username
+      const displayName = user.name && user.name.trim() !== ""
+        ? user.name
+        : user.email?.split("@")[0] || "User";
+
       // Redirect về frontend với tokens trong URL params
       const params = {
         accessToken,
         refreshToken,
         userId: user.id.toString(),
         email: user.email,
-        fullName: user.name,
+        fullName: displayName,
       };
 
       if (typeof req.query?.state === "string" && req.query.state.length > 0) {

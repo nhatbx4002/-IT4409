@@ -28,10 +28,15 @@ passport.use(
           );
         }
 
-        // Xử lý fullName an toàn
+        // Xử lý fullName an toàn với fallback
         const givenName = profile.name?.givenName || "";
         const familyName = profile.name?.familyName || "";
-        const fullName = `${givenName} ${familyName}`.trim() || profile.displayName || "Facebook User";
+        let fullName = `${givenName} ${familyName}`.trim();
+
+        // Nếu không có name từ profile, dùng displayName hoặc email username
+        if (!fullName) {
+            fullName = profile.displayName || email?.split("@")[0] || "Facebook User";
+        }
 
         let user = await User.findOne({ 
           where: { provider_id: facebookId, provider: "facebook" } 

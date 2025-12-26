@@ -88,8 +88,12 @@ export function Navbar() {
   }, [user]);
 
   const initials = useMemo(() => {
-    if(!user) return "U";
-    return (user.name || '').split(" ").map(p => p[0]).join("").slice(0,2).toUpperCase();
+    if(!user || !user.name) return "U";
+    const parts = user.name.trim().split(/\s+/);
+    if (parts.length === 0) return "U";
+    const firstInitial = parts[0][0].toUpperCase();
+    const lastInitial = parts.length > 1 ? parts[parts.length - 1][0].toUpperCase() : "";
+    return (firstInitial + lastInitial).slice(0, 2);
   },[user])
 
   // Keyboard shortcut for search (Cmd+K / Ctrl+K)
@@ -108,6 +112,7 @@ export function Navbar() {
   const handleLogout = () => {
     logout();
     setUser(null);
+    navigate("/");
   }
 
   const handleDemoLogin = () => {
@@ -200,16 +205,20 @@ export function Navbar() {
               </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     className="hover:bg-transparent hover:text-[#D4AF37] transition-colors"
                   >
                     {user ? (
                       user.avatarUrl ? (
-                        <img src={user.avatarUrl} alt={user.name} className="h-8 w-8 rounded-full object-cover"/>
-                      ): (
-                        <div className="h-8 w-8 rounded-full bg-black/80 text-white text-xs flex items-center justify-center">
+                        <img
+                          src={user.avatarUrl}
+                          alt={user.name}
+                          className="h-8 w-8 rounded-full object-cover ring-2 ring-[#D4AF37]/20"
+                        />
+                      ) : (
+                        <div className="h-8 w-8 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#B8941F] text-black text-xs font-bold flex items-center justify-center ring-2 ring-[#D4AF37]/30 shadow-md">
                           {initials}
                         </div>
                       )
@@ -402,7 +411,17 @@ export function Navbar() {
               >
                 Giỏ hàng
               </button>
-              {!user ? (
+              {user ? (
+                <button
+                  className="w-full rounded-lg px-3 py-2 text-left text-red-600 hover:bg-red-50"
+                  onClick={() => {
+                    handleLogout();
+                    setMobileNavOpen(false);
+                  }}
+                >
+                  Đăng xuất
+                </button>
+              ) : (
                 <button
                   className="mt-2 w-full rounded-full bg-[#111827] px-3 py-2 text-xs font-semibold uppercase tracking-[0.24em] text-white hover:bg-black"
                   onClick={() => {
@@ -412,7 +431,7 @@ export function Navbar() {
                 >
                   Đăng nhập
                 </button>
-              ) : null}
+              )}
             </div>
           </div>
         </SheetContent>

@@ -58,7 +58,8 @@ passport.use(
 
                     // Cập nhật name nếu chưa có hoặc rỗng
                     if (!existingEmailUser.name || existingEmailUser.name.trim() === "") {
-                        existingEmailUser.name = profile.displayName || googleEmail.split("@")[0];
+                        const displayName = profile.displayName || googleEmail.split("@")[0] || "User";
+                        existingEmailUser.name = displayName;
                     }
 
                     await existingEmailUser.save();
@@ -67,8 +68,9 @@ passport.use(
                 }
 
                 // Bước 3: Chưa có user nào -> Tạo tài khoản mới
+                const displayName = profile.displayName || googleEmail.split("@")[0] || "User";
                 user = await User.create({
-                    name: profile.displayName || googleEmail.split("@")[0],
+                    name: displayName,
                     email: googleEmail,
                     provider: "google",
                     provider_id: profile.id,
