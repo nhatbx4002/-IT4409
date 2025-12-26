@@ -3,6 +3,7 @@ import { SlidersHorizontal, X, ChevronLeft, ChevronRight } from "lucide-react";
 import MainLayout from "@/layout/MainLayout";
 import { FilterSidebar } from "@/components/FiltersSidebar";
 import { ProductCard } from "@/components/ProductsCard";
+import { ImageWithFallback } from "@/components/figma/ImageWithFallback";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -19,9 +20,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { useParams, useSearchParams } from "react-router-dom";
-import { addToCart, addToWishlist, getProducts } from "@/lib/api";
+import { useParams, useSearchParams, useNavigate } from "react-router-dom";
+import { addToCart, addToWishlist, getProducts, getCollectionBySlug, getCollectionProducts, getCollections } from "@/lib/api";
 import type { ProductSummary, SortOption } from "@/types/products";
+import type { Collection } from "@/types/collections";
 import { useProductFilters } from "@/hooks/useProductFilters";
 import { EmptyState, ErrorState, LoadingState } from "@/components/feedback/AsyncStates";
 import {
@@ -35,6 +37,7 @@ import { toast } from "sonner";
 export function Collections() {
   const { collection, category } = useParams();
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
 
   const isNew = searchParams.get("new") === "1";
   const pageSize = Number(searchParams.get("pageSize") ?? 12);
@@ -58,13 +61,18 @@ export function Collections() {
       [collection, category].filter(Boolean).join(" / ")) ||
     "Collection";
 
-  const crumbs = [
-    { label: "Trang chủ", href: "/" },
-    ...(collection
-      ? [{ label: capitalize(collection), href: `/collections/${collection}` }]
-      : []),
-    ...(category ? [{ label: category }] : []),
-  ];
+  // State declarations
+  const [currentPage, setCurrentPage] = useState(1);
+  const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
+  const [isDesktopFilterVisible, setIsDesktopFilterVisible] = useState(true);
+  const [products, setProducts] = useState<ProductSummary[]>([]);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [collectionData, setCollectionData] = useState<Collection | null>(null);
+  const [allCollections, setAllCollections] = useState<Collection[]>([]);
+  const [productCounts, setProductCounts] = useState<Record<number, number>>({});
 
   const {
     filters,
@@ -79,59 +87,127 @@ export function Collections() {
     initialSort: sortParam,
   });
 
-  const [currentPage, setCurrentPage] = useState(1);
-  const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
-  const [isDesktopFilterVisible, setIsDesktopFilterVisible] = useState(true);
-
-
-  const [products, setProducts] = useState<ProductSummary[]>([]);
-  const [total, setTotal] = useState(0);
-  const [totalPages, setTotalPages] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const crumbs = [
+    { label: "Trang chủ", href: "/" },
+    ...(collectionData
+      ? [{ label: collectionData.name, href: `/collections/${collectionData.slug}` }]
+      : collection
+      ? [{ label: capitalize(collection), href: `/collections/${collection}` }]
+      : []),
+    ...(category ? [{ label: category }] : []),
+  ];
 
   const currentSort = (filters.sortBy ?? sortParam) as SortOption;
   const itemsPerPage = pageSize;
+
+  // Check if we should use collection API (has collection slug and not a Vietnamese category)
+  const shouldUseCollectionAPI = effectiveCollection && !isVietnameseCategory;
+  
+  // Check if we're on the collections listing page (no collection slug)
+  const isCollectionsListingPage = !collection && !category;
+
+  // Fetch all collections for listing page
+  const fetchCollections = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const collections = await getCollections();
+      setAllCollections(collections);
+
+      // Fetch product counts for each collection
+      const counts: Record<number, number> = {};
+      await Promise.all(
+        collections.map(async (col) => {
+          try {
+            const response = await getCollectionProducts(col.slug, {
+              page: 1,
+              limit: 1,
+            });
+            counts[col.id] = response.total || 0;
+          } catch (err) {
+            console.error(`Error fetching count for collection ${col.slug}:`, err);
+            counts[col.id] = 0;
+          }
+        })
+      );
+      setProductCounts(counts);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to fetch collections");
+      console.error("Error fetching collections:", err);
+      setAllCollections([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   const fetchProducts = useCallback(async () => {
     setIsLoading(true);
     setError(null);
 
     try {
-      const params = buildFilterParams({
-        sort: currentSort,
-        page: currentPage,
-        pageSize: itemsPerPage,
-      });
+      if (shouldUseCollectionAPI && effectiveCollection) {
+        // Use collection API
+        const [collection, collectionProducts] = await Promise.all([
+          getCollectionBySlug(effectiveCollection),
+          getCollectionProducts(effectiveCollection, {
+            page: currentPage,
+            limit: itemsPerPage,
+          }),
+        ]);
 
-      // Always use getProducts (search endpoint) for consistency
-      // The URL category is already handled by categorySlug in buildFilterParams
-      const response = await getProducts(params);
+        setCollectionData(collection);
+        setProducts(collectionProducts.products);
+        setTotal(collectionProducts.total);
+        // Calculate total pages
+        const calculatedTotalPages = Math.ceil(collectionProducts.total / itemsPerPage);
+        setTotalPages(calculatedTotalPages);
+      } else {
+        // Use regular product search
+        const params = buildFilterParams({
+          sort: currentSort,
+          page: currentPage,
+          pageSize: itemsPerPage,
+        });
 
-      setProducts(response.products);
-      setTotal(response.total);
-      setTotalPages(response.totalPages);
+        const response = await getProducts(params);
+
+        setProducts(response.products);
+        setTotal(response.total);
+        setTotalPages(response.totalPages);
+        setCollectionData(null);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to fetch products");
       console.error("Error fetching products:", err);
       setProducts([]);
       setTotal(0);
       setTotalPages(0);
+      setCollectionData(null);
     } finally {
       setIsLoading(false);
     }
-  }, [buildFilterParams, currentPage, currentSort, itemsPerPage]);
+  }, [shouldUseCollectionAPI, effectiveCollection, buildFilterParams, currentPage, currentSort, itemsPerPage]);
 
   useEffect(() => {
-    fetchProducts();
+    if (isCollectionsListingPage) {
+      fetchCollections();
+    } else {
+      fetchProducts();
+    }
   }, [
+    isCollectionsListingPage,
+    fetchCollections,
     fetchProducts,
-    filters.sizes,
-    filters.colors,
-    filters.priceRange,
-    filters.brands,
-    filters.inStockOnly,
-    filters.categories,
+    // Only include filter dependencies if not using collection API
+    ...(shouldUseCollectionAPI ? [] : [
+      filters.sizes,
+      filters.colors,
+      filters.priceRange,
+      filters.brands,
+      filters.inStockOnly,
+      filters.categories,
+    ]),
   ]);
 
   useEffect(() => {
@@ -183,11 +259,136 @@ export function Collections() {
     }
   };
 
+  // Render collections listing page
+  if (isCollectionsListingPage) {
+    return (
+      <MainLayout>
+        <section className="relative overflow-hidden">
+          <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1503341504253-dff4815485f1?auto=format&fit=crop&w=1800&q=80')] bg-cover bg-center" />
+          <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent" />
+          <div className="relative w-full px-4 py-10 sm:px-8 lg:px-12">
+            <Breadcrumb className="mb-4">
+              <BreadcrumbList>
+                <BreadcrumbItem>
+                  <BreadcrumbLink
+                    href="/"
+                    className="text-white/80 hover:text-[#D4AF37] transition-colors duration-300"
+                  >
+                    Trang chủ
+                  </BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator className="text-white/60" />
+                <BreadcrumbItem>
+                  <BreadcrumbPage className="text-white">Collections</BreadcrumbPage>
+                </BreadcrumbItem>
+              </BreadcrumbList>
+            </Breadcrumb>
+
+            <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#D4AF37]">
+                  Bộ Sưu Tập
+                </p>
+                <h1 className="mt-1 font-['Playfair_Display'] text-3xl font-semibold tracking-tight text-white sm:text-4xl">
+                  Tất Cả Collections
+                </h1>
+                <p
+                  className="mt-2 text-xs text-white/80 sm:text-sm"
+                  style={{
+                    fontFamily: FONT_SANS,
+                  }}
+                >
+                  {isLoading
+                    ? "Đang tải..."
+                    : `Hiển thị ${allCollections.length} collections`}
+                </p>
+              </div>
+            </header>
+          </div>
+        </section>
+
+        <section className="bg-white pb-16 pt-6">
+          <div className="mx-auto w-full px-6 sm:px-8">
+            {isLoading && <LoadingState message="Đang tải collections..." />}
+            {error && !isLoading && (
+              <ErrorState message={error} onRetry={fetchCollections} />
+            )}
+            {!isLoading && !error && allCollections.length === 0 && (
+              <EmptyState
+                title="Chưa có collections nào"
+                actionLabel="Quay lại trang chủ"
+                onAction={() => navigate("/")}
+              />
+            )}
+            {!isLoading && !error && allCollections.length > 0 && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {allCollections.map((col) => (
+                  <div
+                    key={col.id}
+                    onClick={() => navigate(`/collections/${col.slug}`)}
+                    className="group cursor-pointer relative overflow-hidden aspect-3/4 bg-gray-100"
+                  >
+                    <ImageWithFallback
+                      src={col.banner_image || "https://images.unsplash.com/photo-1503341504253-dff4815485f1?auto=format&fit=crop&w=1800&q=80"}
+                      alt={col.name}
+                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                    />
+                    <div className="absolute inset-0 bg-black/30 group-hover:bg-black/50 transition-colors duration-300"></div>
+                    
+                    <div
+                      className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                      style={{
+                        boxShadow: 'inset 0 0 0 3px #D4AF37'
+                      }}
+                    ></div>
+                    
+                    <div className="absolute inset-0 flex flex-col items-center justify-center p-4">
+                      {col.description && (
+                        <p
+                          className="text-sm tracking-[0.3em] uppercase mb-2 text-center"
+                          style={{ color: '#D4AF37' }}
+                        >
+                          {col.description.length > 50
+                            ? col.description.substring(0, 50) + '...'
+                            : col.description}
+                        </p>
+                      )}
+                      <h3
+                        className="text-white text-center uppercase tracking-[0.2em] px-4"
+                        style={{ fontSize: '24px', fontFamily: "'Playfair Display', serif", fontWeight: 500 }}
+                      >
+                        {col.name}
+                      </h3>
+                      {productCounts[col.id] !== undefined && (
+                        <p className="text-xs text-gray-300 mt-2">
+                          {productCounts[col.id]} sản phẩm
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
+      </MainLayout>
+    );
+  }
+
   return (
     <MainLayout>
       <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1503341504253-dff4815485f1?auto=format&fit=crop&w=1800&q=80')] bg-cover bg-center" />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent" />
+        {collectionData?.banner_image ? (
+          <>
+            <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${collectionData.banner_image})` }} />
+            <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent" />
+          </>
+        ) : (
+          <>
+            <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1503341504253-dff4815485f1?auto=format&fit=crop&w=1800&q=80')] bg-cover bg-center" />
+            <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent" />
+          </>
+        )}
         <div className="relative w-full px-4 py-10 sm:px-8 lg:px-12">
           <Breadcrumb className="mb-4">
             <BreadcrumbList>
@@ -214,11 +415,21 @@ export function Collections() {
           <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#D4AF37]">
-                {collection ? capitalize(collection) : "Tất cả thời trang nam"}
+                {collectionData?.name || (collection ? capitalize(collection) : "Tất cả thời trang nam")}
               </p>
               <h1 className="mt-1 font-['Playfair_Display'] text-3xl font-semibold tracking-tight text-white sm:text-4xl">
-                {dynamicTitle}
+                {collectionData?.name || dynamicTitle}
               </h1>
+              {collectionData?.description && (
+                <p
+                  className="mt-2 text-sm text-white/90 sm:text-base max-w-2xl"
+                  style={{
+                    fontFamily: FONT_SANS,
+                  }}
+                >
+                  {collectionData.description}
+                </p>
+              )}
               <p
                 className="mt-2 text-xs text-white/80 sm:text-sm"
                 style={{
@@ -244,31 +455,33 @@ export function Collections() {
 
       <section className="bg-white pb-16 pt-6">
         <div className="mx-auto flex w-full gap-8 px-6 sm:px-8">
-          <aside
-            className={`
-              hidden lg:block sticky top-0 self-start
-              transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]
-              ${isDesktopFilterVisible
-                ? 'w-1/4 opacity-100 translate-x-0'
-                : 'w-0 opacity-0 -translate-x-4 overflow-hidden'
-              }
-            `}
-          >
-            <div className={`
-              transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]
-              ${isDesktopFilterVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}
-            `}>
-              <FilterSidebar
-                filters={filters}
-                onFilterChange={setFilters}
-                onClearFilters={handleClearFilters}
-              />
-            </div>
-          </aside>
+          {!shouldUseCollectionAPI && (
+            <aside
+              className={`
+                hidden lg:block sticky top-0 self-start
+                transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]
+                ${isDesktopFilterVisible
+                  ? 'w-1/4 opacity-100 translate-x-0'
+                  : 'w-0 opacity-0 -translate-x-4 overflow-hidden'
+                }
+              `}
+            >
+              <div className={`
+                transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]
+                ${isDesktopFilterVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}
+              `}>
+                <FilterSidebar
+                  filters={filters}
+                  onFilterChange={setFilters}
+                  onClearFilters={handleClearFilters}
+                />
+              </div>
+            </aside>
+          )}
 
           <main className="flex-1">
             <div className="mb-6">
-              {activeFilterCount > 0 && (
+              {!shouldUseCollectionAPI && activeFilterCount > 0 && (
                 <div className="mb-4 flex flex-wrap items-center gap-2 border-b border-black/10 pb-4">
                   <span
                     className="text-sm"
@@ -363,59 +576,60 @@ export function Collections() {
                 </div>
               )}
 
-                <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={() => setIsMobileFilterOpen(true)}
-                    className="lg:hidden flex items-center gap-2 px-4 py-2 border border-black/20 hover:border-[#D4AF37] transition-all duration-300"
-                    style={{
-                      fontFamily: FONT_SANS,
-                    }}
-                  >
-                    <SlidersHorizontal className="w-4 h-4" />
-                    BỘ LỌC
-                  </button>
+                {!shouldUseCollectionAPI && (
+                  <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => setIsMobileFilterOpen(true)}
+                        className="lg:hidden flex items-center gap-2 px-4 py-2 border border-black/20 hover:border-[#D4AF37] transition-all duration-300"
+                        style={{
+                          fontFamily: FONT_SANS,
+                        }}
+                      >
+                        <SlidersHorizontal className="w-4 h-4" />
+                        BỘ LỌC
+                      </button>
 
-                  <button
-                    onClick={() =>
-                      setIsDesktopFilterVisible(!isDesktopFilterVisible)
-                    }
-                    className="hidden lg:flex items-center gap-2 px-4 py-2 border border-black/20 hover:border-[#D4AF37] transition-all duration-300"
-                    style={{
-                      fontFamily: FONT_SANS,
-                    }}
-                  >
-                    <SlidersHorizontal className="w-4 h-4" />
-                    {isDesktopFilterVisible ? "ẨN BỘ LỌC" : "HIỆN BỘ LỌC"}
-                  </button>
-                </div>
+                      <button
+                        onClick={() =>
+                          setIsDesktopFilterVisible(!isDesktopFilterVisible)
+                        }
+                        className="hidden lg:flex items-center gap-2 px-4 py-2 border border-black/20 hover:border-[#D4AF37] transition-all duration-300"
+                        style={{
+                          fontFamily: FONT_SANS,
+                        }}
+                      >
+                        <SlidersHorizontal className="w-4 h-4" />
+                        {isDesktopFilterVisible ? "ẨN BỘ LỌC" : "HIỆN BỘ LỌC"}
+                      </button>
+                    </div>
 
-                <div className="flex items-center gap-3">
-                  <span className="text-sm text-[#666666]">Sắp xếp theo:</span>
-                  <Select
-                    value={currentSort}
-                    onValueChange={(value) =>
-                      setFilters((prev) => ({ ...prev, sortBy: value as SortOption }))
-                    }
-                  >
-                    <SelectTrigger className="w-48 border-black/20 focus:border-[#D4AF37]">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="featured">Nổi bật</SelectItem>
-                      <SelectItem value="newest">Mới nhất</SelectItem>
-                      <SelectItem value="price-low">
-                        Giá: Thấp đến Cao
-                      </SelectItem>
-                      <SelectItem value="price-high">
-                        Giá: Cao đến Thấp
-                      </SelectItem>
-                      <SelectItem value="popular">Phổ biến nhất</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-              </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm text-[#666666]">Sắp xếp theo:</span>
+                      <Select
+                        value={currentSort}
+                        onValueChange={(value) =>
+                          setFilters((prev) => ({ ...prev, sortBy: value as SortOption }))
+                        }
+                      >
+                        <SelectTrigger className="w-48 border-black/20 focus:border-[#D4AF37]">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="featured">Nổi bật</SelectItem>
+                          <SelectItem value="newest">Mới nhất</SelectItem>
+                          <SelectItem value="price-low">
+                            Giá: Thấp đến Cao
+                          </SelectItem>
+                          <SelectItem value="price-high">
+                            Giá: Cao đến Thấp
+                          </SelectItem>
+                          <SelectItem value="popular">Phổ biến nhất</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                )}
             </div>
 
             <div className="min-h-[50vh]">
@@ -537,13 +751,15 @@ export function Collections() {
         </div>
       </section>
 
-      <FilterSidebar
-        filters={filters}
-        onFilterChange={setFilters}
-        onClearFilters={handleClearFilters}
-        isMobileOpen={isMobileFilterOpen}
-        onMobileClose={() => setIsMobileFilterOpen(false)}
-      />
+      {!shouldUseCollectionAPI && (
+        <FilterSidebar
+          filters={filters}
+          onFilterChange={setFilters}
+          onClearFilters={handleClearFilters}
+          isMobileOpen={isMobileFilterOpen}
+          onMobileClose={() => setIsMobileFilterOpen(false)}
+        />
+      )}
 
     </MainLayout>
   );

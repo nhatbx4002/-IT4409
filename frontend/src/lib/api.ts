@@ -20,6 +20,7 @@ import type {
   RemoveFromWishlistResponse,
 } from '@/types/wishlist';
 import type { ProductReviewsResponse, ReviewItem } from '@/types/reviews';
+import type { Collection, CollectionProductsResponse } from '@/types/collections';
 import { clearAuthSession, getAccessToken, getStoredUser, getRefreshToken, setAuthSession } from './auth';
 
 const getApiBaseUrl = (): string => {
@@ -405,6 +406,27 @@ export async function getProductFilters(
 ): Promise<Record<string, unknown>> {
   return getRequest<Record<string, unknown>>('/products/filters', {
     params: filters,
+  });
+}
+
+// ==============================
+// COLLECTIONS API
+// ==============================
+
+export async function getCollections(): Promise<Collection[]> {
+  return getRequest<Collection[]>('/collections');
+}
+
+export async function getCollectionBySlug(slug: string): Promise<Collection> {
+  return getRequest<Collection>(`/collections/${encodeURIComponent(slug)}`);
+}
+
+export async function getCollectionProducts(
+  slug: string,
+  params: { page?: number; limit?: number } = {}
+): Promise<CollectionProductsResponse> {
+  return getRequest<CollectionProductsResponse>(`/collections/${encodeURIComponent(slug)}/products`, {
+    params,
   });
 }
 
