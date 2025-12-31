@@ -1,11 +1,15 @@
 import express from "express";
+import multer from "multer";
 import { authenticateToken } from "../middlewares/auth.js";
 import {
   listProductReviewsController,
   createReviewController,
+  updateReviewController,
+  deleteReviewController,
 } from "../controllers/user/reviewController.js";
 
 const router = express.Router();
+const upload = multer({ dest: "tmp/" });
 
 /**
  * @swagger
@@ -75,6 +79,76 @@ router.get("/product/:productId", listProductReviewsController);
  *       400:
  *         description: Dữ liệu không hợp lệ
  */
-router.post("/", authenticateToken, createReviewController);
+router.post("/", authenticateToken, upload.array("images", 5), createReviewController);
+
+/**
+ * @swagger
+ * /reviews/{reviewId}:
+ *   patch:
+ *     summary: Cập nhật đánh giá sản phẩm
+ *     tags: [Reviews]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: reviewId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               rating:
+ *                 type: integer
+ *                 minimum: 1
+ *                 maximum: 5
+ *               comment:
+ *                 type: string
+ *               images:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                   format: binary
+ *     responses:
+ *       200:
+ *         description: Cập nhật đánh giá thành công
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - Chỉ có thể cập nhật đánh giá của chính mình
+ *       404:
+ *         description: Không tìm thấy đánh giá
+ */
+router.patch("/:reviewId", authenticateToken, upload.array("images", 5), updateReviewController);
+
+/**
+ * @swagger
+ * /reviews/{reviewId}:
+ *   delete:
+ *     summary: Xóa đánh giá sản phẩm
+ *     tags: [Reviews]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: reviewId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Xóa đánh giá thành công
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - Chỉ có thể xóa đánh giá của chính mình
+ *       404:
+ *         description: Không tìm thấy đánh giá
+ */
+router.delete("/:reviewId", authenticateToken, deleteReviewController);
 
 export default router;

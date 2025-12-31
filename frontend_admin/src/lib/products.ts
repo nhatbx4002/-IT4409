@@ -118,7 +118,7 @@ export async function listProducts(params: ListProductParams = {}): Promise<Pagi
 }
 
 export async function getProductById(id: number | string): Promise<Product> {
-  const res = await adminApiClient.get<Product>(`/products/${id}`);
+  const res = await adminApiClient.get<Product>(`/product-management/${id}`);
   return res.data;
 }
 
@@ -130,7 +130,7 @@ export async function createProduct(payload: CreateProductPayload): Promise<Prod
     images.forEach((img) => formData.append("images", img));
   }
 
-  const res = await adminApiClient.post<Product>("/products", formData, {
+  const res = await adminApiClient.post<Product>("/product-management/create-product", formData, {
     headers: { "Content-Type": "multipart/form-data" },
   });
   return res.data;
@@ -144,14 +144,14 @@ export async function updateProduct(id: number | string, payload: UpdateProductP
     images.forEach((img) => formData.append("images", img));
   }
 
-  const res = await adminApiClient.patch<Product>(`/products/${id}`, formData, {
+  const res = await adminApiClient.patch<Product>(`/product-management/update-product/${id}`, formData, {
     headers: { "Content-Type": "multipart/form-data" },
   });
   return res.data;
 }
 
 export async function deleteProduct(id: number | string): Promise<void> {
-  await adminApiClient.delete(`/products/${id}`);
+  await adminApiClient.delete(`/product-management/${id}`);
 }
 
 export async function getBrands(): Promise<string[]> {
@@ -163,22 +163,99 @@ export async function createProductVariant(
   productId: number | string,
   payload: CreateVariantPayload
 ): Promise<ProductVariant> {
-  const formData = buildFormData(payload as Record<string, any>);
+  const formData = new FormData();
+  
+  // Add variant data (without image_url)
+  const { image_url, ...variantData } = payload;
+  Object.entries(variantData).forEach(([key, value]) => {
+    if (value !== undefined && value !== null) {
+      formData.append(key, value as any);
+    }
+  });
+  
+  // Add image file with correct field name for multer
+  if (image_url && image_url instanceof File) {
+    formData.append('variantImages', image_url);
+  }
+  
+  // Backend expects variants as array, so wrap in array
+  const variantArray = [variantData];
+  formData.append('variants', JSON.stringify(variantArray));
+  
   const res = await adminApiClient.post<ProductVariant>(
-    `/products/${productId}/variants`,
+    `/product-management/${productId}/variants`,
     formData,
     {
       headers: { "Content-Type": "multipart/form-data" },
     }
   );
-  return res.data;
+  // Backend returns array, get first item
+  return Array.isArray(res.data) ? res.data[0] : res.data;
+}
+
+export async function createProductVariants(
+  productId: number | string,
+  variants: CreateVariantPayload[]
+): Promise<ProductVariant[]> {
+  if (!variants || variants.length === 0) {
+    throw new Error('No variants to create');
+  }
+  
+  const formData = new FormData();
+  
+  // Prepare variants data (without image_url as it will be handled by files)
+  const variantsData = variants.map(v => ({
+    color: v.color,
+    size: v.size,
+    sku: v.sku,
+    stock_quantity: v.stock_quantity,
+  }));
+  
+  formData.append('variants', JSON.stringify(variantsData));
+  
+  // Append image files with correct field name
+  variants.forEach((variant) => {
+    if (variant.image_url && variant.image_url instanceof File) {
+      formData.append('variantImages', variant.image_url);
+    }
+  });
+  
+  console.log('Creating variants for product:', productId);
+  console.log('Variants data:', variantsData);
+  console.log('Variants JSON string:', JSON.stringify(variantsData));
+  console.log('Image files count:', variants.filter(v => v.image_url instanceof File).length);
+  
+  // Log FormData contents for debugging
+  for (const [key, value] of formData.entries()) {
+    if (value instanceof File) {
+      console.log(`FormData[${key}]: File - ${value.name}, size: ${value.size}`);
+    } else {
+      console.log(`FormData[${key}]:`, value);
+    }
+  }
+  
+  try {
+    const res = await adminApiClient.post<ProductVariant[]>(
+      `/product-management/${productId}/variants`,
+      formData,
+      {
+        headers: { "Content-Type": "multipart/form-data" },
+      }
+    );
+    console.log('Variants created successfully:', res.data);
+    return res.data;
+  } catch (error: any) {
+    console.error('Failed to create variants:', error);
+    console.error('Error response:', error?.response?.data);
+    throw error;
+  }
 }
 
 export async function deleteProductVariant(
   productId: number | string,
   variantId: number | string
 ): Promise<void> {
-  await adminApiClient.delete(`/products/${productId}/variants/${variantId}`);
+  await adminApiClient.delete(`/product-management/${productId}/variants/${variantId}`);
 }
 
 export async function updateProductVariant(
@@ -188,7 +265,7 @@ export async function updateProductVariant(
 ): Promise<ProductVariant> {
   const formData = buildFormData(payload as Record<string, any>);
   const res = await adminApiClient.patch<ProductVariant>(
-    `/products/${productId}/variants/${variantId}`,
+    `/product-management/${productId}/variants/${variantId}`,
     formData,
     {
       headers: { "Content-Type": "multipart/form-data" },

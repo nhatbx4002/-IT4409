@@ -1,6 +1,7 @@
 import {
   createVariantRecord,
   upsertVariantRecord,
+  deleteVariantRecord as deleteVariantRecordRepo,
 } from "../../../repositories/productVariantRepository.js";
 import { uploadVariantImages } from "./imageService.js";
 
@@ -42,4 +43,8 @@ export const upsertVariants = async (
 
     await upsertVariantRecord(productId, variantPayload, transaction);
   }
+};
+
+export const deleteVariantRecord = async (productId, variantId, transaction) => {
+  return deleteVariantRecordRepo(productId, variantId, transaction);
 };

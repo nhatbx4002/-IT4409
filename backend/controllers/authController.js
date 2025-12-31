@@ -1,4 +1,4 @@
-import { registerUser, loginUser, logoutUser, sendOtpService, verifyOtpService, resetPasswordService, signInGoogle, signInFacebook, updateUserService, verifyRefreshToken, createAccessToken } from "../services/authService.js";
+import { registerUser, loginUser, logoutUser, sendOtpService, verifyOtpService, resetPasswordService, signInGoogle, signInFacebook, updateUserService, verifyRefreshToken, createAccessToken, verifyEmailService, resendVerificationEmailService } from "../services/authService.js";
 import passport  from "passport";
 import { buildOAuthCallbackUrl, redirectOAuthError } from "../utils/oauth.js";
 import { APP_CONSTANTS } from "../config/constants.js";
@@ -163,6 +163,48 @@ export const resetPassword = async (req, res) => {
     res.json({ success: true, ...result });
   } catch (err) {
     res.status(400).json({ success: false, message: err.message });
+  }
+};
+
+// Xác thực email
+export const verifyEmail = async (req, res) => {
+  try {
+    const { token } = req.query;
+    
+    if (!token) {
+      return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/verify-email?error=missing_token`);
+    }
+
+    const result = await verifyEmailService(token);
+    
+    // Redirect về frontend với success message
+    return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/verify-email?success=true`);
+  } catch (err) {
+    console.error("Lỗi xác thực email:", err);
+    return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/verify-email?error=${encodeURIComponent(err.message)}`);
+  }
+};
+
+// Gửi lại email xác thực
+export const resendVerificationEmail = async (req, res) => {
+  try {
+    const { email } = req.body;
+    
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: "Email là bắt buộc"
+      });
+    }
+
+    const result = await resendVerificationEmailService(email);
+    
+    sendSuccess(res, {
+      message: result.message,
+      data: {}
+    });
+  } catch (error) {
+    sendError(res, error);
   }
 };
 

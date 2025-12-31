@@ -1,6 +1,6 @@
 import express from 'express';
 import passport from "passport";
-import { signUp, signIn, signOut, getCurrentUser, sendOTPEmail, verifyOTPEmail, resetPassword, signInGoogleController, facebookAuth, facebookAuthCallback, updateUser, refreshAccessToken  } from '../controllers/authController.js';
+import { signUp, signIn, signOut, getCurrentUser, sendOTPEmail, verifyOTPEmail, resetPassword, signInGoogleController, facebookAuth, facebookAuthCallback, updateUser, refreshAccessToken, verifyEmail, resendVerificationEmail  } from '../controllers/authController.js';
 import { authenticateToken } from '../middlewares/auth.js';
 import { redirectOAuthError } from "../utils/oauth.js";
 
@@ -180,6 +180,49 @@ router.post('/auth/verify-otp', verifyOTPEmail);
  *         description: Lỗi reset mật khẩu
  */
 router.post('/auth/reset-password', resetPassword);
+
+/**
+ * @swagger
+ * /auth/verify-email:
+ *   get:
+ *     summary: Xác thực email đăng ký
+ *     tags: [Auth]
+ *     parameters:
+ *       - in: query
+ *         name: token
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       302:
+ *         description: Redirect về frontend
+ */
+router.get('/auth/verify-email', verifyEmail);
+
+/**
+ * @swagger
+ * /auth/resend-verification:
+ *   post:
+ *     summary: Gửi lại email xác thực
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *             properties:
+ *               email:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Gửi email thành công
+ *       400:
+ *         description: Lỗi gửi email
+ */
+router.post('/auth/resend-verification', resendVerificationEmail);
 
 /**
  * @swagger

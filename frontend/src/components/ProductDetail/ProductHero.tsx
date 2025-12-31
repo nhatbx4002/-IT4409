@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import type { ProductDetail } from "@/types/products";
 import { ImageWithFallback } from "@/components/figma/ImageWithFallback";
-import { addToCart } from "@/lib/api";
+import { addToCart, getProductReviews } from "@/lib/api";
 import { formatVnd } from "@/lib/formatCurrency";
 import { toast } from "sonner";
 
@@ -37,6 +37,56 @@ const COLOR_HEX_MAP: Record<string, string> = {
 
 const SIZE_ORDER = ["XS", "S", "M", "L", "XL", "XXL"];
 
+// Component to render star rating with half star support
+const StarRating = ({ rating, size = "h-4 w-4" }: { rating: number; size?: string }) => {
+  const fullStars = Math.floor(rating);
+  const hasHalfStar = rating % 1 >= 0.5 && rating % 1 < 1;
+  const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+
+  return (
+    <div className="flex items-center gap-0.5">
+      {/* Full stars */}
+      {Array.from({ length: fullStars }).map((_, idx) => (
+        <Star
+          key={`full-${idx}`}
+          className={`${size} fill-[#D4AF37] text-[#D4AF37]`}
+          strokeWidth={0}
+        />
+      ))}
+      
+      {/* Half star */}
+      {hasHalfStar && (
+        <div className="relative inline-block" style={{ width: '1rem', height: '1rem' }}>
+          {/* Empty star background */}
+          <Star
+            className={`${size} absolute inset-0 text-[#E5E7EB]`}
+            strokeWidth={1.5}
+          />
+          {/* Half filled star */}
+          <div 
+            className="absolute inset-0 overflow-hidden"
+            style={{ clipPath: 'inset(0 50% 0 0)' }}
+          >
+            <Star
+              className={`${size} fill-[#D4AF37] text-[#D4AF37]`}
+              strokeWidth={0}
+            />
+          </div>
+        </div>
+      )}
+      
+      {/* Empty stars */}
+      {Array.from({ length: emptyStars }).map((_, idx) => (
+        <Star
+          key={`empty-${idx}`}
+          className={`${size} text-[#E5E7EB]`}
+          strokeWidth={1.5}
+        />
+      ))}
+    </div>
+  );
+};
+
 export function ProductHero({ product }: ProductHeroProps) {
   const productDetail = product as ProductDetail & {
     availableColors?: string[];
@@ -54,6 +104,7 @@ export function ProductHero({ product }: ProductHeroProps) {
   const [isHoverZoom, setIsHoverZoom] = useState(false);
   const [isZoomEnabled, setIsZoomEnabled] = useState(false);
   const [zoomPosition, setZoomPosition] = useState({ x: 50, y: 50 });
+  const [ratingStats, setRatingStats] = useState<{ averageRating: number; totalReviews: number } | null>(null);
 
   const { colorImageMap, baseImages } = useMemo(() => {
     const map: Record<string, string> = {};
@@ -234,6 +285,29 @@ export function ProductHero({ product }: ProductHeroProps) {
     }
   }, [defaultColor, selectedColor]);
 
+  // Load rating stats from reviews API
+  useEffect(() => {
+    const loadRatingStats = async () => {
+      try {
+        const data = await getProductReviews(product.id, { page: 1, pageSize: 1 });
+        setRatingStats({
+          averageRating: data.ratingStats?.averageRating || 0,
+          totalReviews: data.total || 0,
+        });
+      } catch (error) {
+        console.error("Failed to load rating stats", error);
+        setRatingStats({
+          averageRating: product.rating || 0,
+          totalReviews: product.reviewCount || 0,
+        });
+      }
+    };
+
+    if (product?.id) {
+      loadRatingStats();
+    }
+  }, [product?.id, product.rating, product.reviewCount]);
+
   const leadImage = galleryImages[selectedImageIndex] || galleryImages[0];
   const secondaryImages = galleryImages.filter((_, idx) => idx !== selectedImageIndex);
 
@@ -331,17 +405,13 @@ export function ProductHero({ product }: ProductHeroProps) {
             <div className="flex flex-wrap items-center gap-4 text-[13px] text-[#6B7280]">
               <span>SKU: {primarySku}</span>
               <div className="flex items-center gap-2">
-                <div className="flex items-center gap-0.5">
-                  {Array.from({ length: 5 }).map((_, idx) => (
-                    <Star
-                      key={idx}
-                      className={`h-4 w-4 ${idx < Math.round(product.rating) ? "fill-[#D4AF37] text-[#D4AF37]" : "text-[#E5E7EB]"}`}
-                      strokeWidth={idx < Math.round(product.rating) ? 0 : 1.5}
-                    />
-                  ))}
-                </div>
-                <button type="button" className="text-[13px] font-medium text-[#D4AF37] underline" onClick={() => document.getElementById("reviews")?.scrollIntoView({ behavior: "smooth" })}>
-                  ({product.reviewCount} đánh giá)
+                <StarRating rating={ratingStats?.averageRating || product.rating || 0} />
+                <button 
+                  type="button" 
+                  className="text-[13px] font-medium text-[#D4AF37] underline hover:text-[#C19A2F] transition-colors" 
+                  onClick={() => document.getElementById("reviews")?.scrollIntoView({ behavior: "smooth" })}
+                >
+                  ({ratingStats?.totalReviews || product.reviewCount || 0} đánh giá)
                 </button>
               </div>
             </div>
@@ -460,7 +530,7 @@ export function ProductHero({ product }: ProductHeroProps) {
               <button
                 onClick={() => setQuantity((q) => q + 1)}
                 disabled={
-                  !isVariantInStock || (selectedVariant && quantity >= selectedVariant.stockQuantity)
+                  !isVariantInStock || (selectedVariant ? quantity >= selectedVariant.stockQuantity : false)
                 }
                 className="flex h-10 w-10 items-center justify-center rounded-full border border-gray-300 text-[#1A1A1A] transition hover:border-[#D4AF37] disabled:opacity-50"
               >

@@ -84,3 +84,12 @@ export const upsertVariantRecord = async (
 
   return createVariantRecord(productId, variant, transaction);
 };
+
+export const deleteVariantRecord = async (productId, variantId, transaction) => {
+  const variant = await findVariantForProduct(productId, variantId, transaction);
+  if (!variant) {
+    throw new Error("Variant not found or does not belong to this product");
+  }
+  await variant.destroy({ transaction });
+  return variant;
+};

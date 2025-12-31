@@ -49,7 +49,7 @@ import {
 import LoginPage from './components/LoginPage';
 import { useAuth } from './hooks/useAuth';
 import { getKPIStats, getRevenueChart, getRecentOrders, getBestSellers, getAnalyticsData, type BestSeller } from './lib/dashboard';
-import { listProducts, createProduct, updateProduct, deleteProduct, getBrands, createProductVariant, deleteProductVariant, getProductPriceRange, type Product, type ProductVariant, type CreateVariantPayload } from './lib/products';
+import { listProducts, createProduct, updateProduct, deleteProduct, getBrands, createProductVariant, createProductVariants, deleteProductVariant, getProductPriceRange, type Product, type ProductVariant, type CreateVariantPayload } from './lib/products';
 import { listOrders, getOrderById, updateOrderStatus, type Order, type OrderStatus } from './lib/orders';
 import { getCategories, flattenCategories, createCategory, type Category } from './lib/categories';
 import DiscountsPage from './components/DiscountsPage';
@@ -789,6 +789,8 @@ function ProductsPage() {
 
   // Variants state
   const [variants, setVariants] = useState<ProductVariant[]>([]);
+  const [originalVariants, setOriginalVariants] = useState<ProductVariant[]>([]);
+  const [variantImageFiles, setVariantImageFiles] = useState<Map<number, File>>(new Map());
   const [showVariantForm, setShowVariantForm] = useState(false);
   const [variantForm, setVariantForm] = useState({
     color: '',
@@ -878,7 +880,7 @@ function ProductsPage() {
     }
   }, [categoryForm.name]);
 
-  const loadProducts = async (nextPage = page, nextSearch = search) => {
+  const loadProducts = async (nextPage = page, nextSearch = search, nextCategory = filterCategory, nextStatus = filterStatus) => {
     try {
       setLoading(true);
       setError(null);
@@ -889,8 +891,13 @@ function ProductsPage() {
       };
 
       if (nextSearch) params.search = nextSearch;
-      if (filterCategory) params.categoryId = Number(filterCategory);
-      if (filterStatus) params.status = filterStatus;
+      if (nextCategory && nextCategory !== '') {
+        const categoryId = Number(nextCategory);
+        if (!Number.isNaN(categoryId) && categoryId > 0) {
+          params.categoryId = categoryId;
+        }
+      }
+      if (nextStatus && nextStatus !== '') params.status = nextStatus;
 
       const res = await listProducts(params);
       setProducts(res.items);
@@ -989,7 +996,9 @@ function ProductsPage() {
         category_id: product.category_id ? String(product.category_id) : '1',
       });
       // Load existing variants
-      setVariants(product.variants || []);
+      const productVariants = product.variants || [];
+      setVariants(productVariants);
+      setOriginalVariants(productVariants);
       // Load existing images as URLs
       const existingImages = product.images || [];
       setExistingImageUrls(existingImages);
@@ -1005,6 +1014,7 @@ function ProductsPage() {
         category_id: '1',
       });
       setVariants([]);
+      setOriginalVariants([]);
       setExistingImageUrls([]);
       setNewImageFiles([]);
     }
@@ -1023,6 +1033,8 @@ function ProductsPage() {
     setNewImageFiles([]);
     setImagePreviews([]);
     setVariants([]);
+    setOriginalVariants([]);
+    setVariantImageFiles(new Map());
     setShowVariantForm(false);
     setVariantForm({ color: '', size: '', sku: '', stock_quantity: '' });
     setVariantImage(null);
@@ -1059,8 +1071,9 @@ function ProductsPage() {
   const handleSaveVariant = async () => {
     if (!editing) {
       // For new products, just add to local state
+      const variantId = Date.now();
       const newVariant: ProductVariant = {
-        id: Date.now(),
+        id: variantId,
         color: variantForm.color || null,
         size: variantForm.size || null,
         sku: variantForm.sku || null,
@@ -1068,6 +1081,10 @@ function ProductsPage() {
         image_url: variantImagePreview || null,
       };
       setVariants([...variants, newVariant]);
+      // Store the image file for later upload
+      if (variantImage) {
+        setVariantImageFiles(new Map(variantImageFiles).set(variantId, variantImage));
+      }
       handleCancelVariant();
       return;
     }
@@ -1115,7 +1132,7 @@ function ProductsPage() {
   };
 
   const applyFilters = () => {
-    loadProducts(1, search);
+    loadProducts(1, search, filterCategory, filterStatus);
   };
 
   const clearFilters = () => {
@@ -1139,20 +1156,120 @@ function ProductsPage() {
         description: formValues.description,
         base_price: Number(formValues.base_price),
         sale_price: formValues.sale_price ? Number(formValues.sale_price) : undefined,
-        brand: formValues.brand,
+        brand: formValues.brand || undefined,
         category_id: Number(formValues.category_id),
-        // Send both existing URLs and new Files - backend will handle them
-        images: [...existingImageUrls, ...newImageFiles],
       };
+      
+      // For new products, only send new image files
+      // For editing, send both existing URLs and new files
       if (editing) {
+        payload.images = [...existingImageUrls, ...newImageFiles];
         await updateProduct(editing.id, payload);
+        
+        // Find variants that were deleted (in original but not in current)
+        const currentVariantIds = new Set(variants.filter(v => v.id && v.id < 1000000).map(v => v.id));
+        const deletedVariants = originalVariants.filter(v => v.id && v.id < 1000000 && !currentVariantIds.has(v.id));
+        
+        // Delete removed variants
+        if (deletedVariants.length > 0) {
+          try {
+            console.log('Deleting variants for updated product:', editing.id);
+            console.log('Variants to delete:', deletedVariants);
+            
+            for (const variant of deletedVariants) {
+              if (variant.id) {
+                await deleteProductVariant(editing.id, variant.id);
+              }
+            }
+            console.log('Variants deleted successfully');
+          } catch (deleteErr: any) {
+            console.error('Error deleting variants:', deleteErr);
+            const errorMsg = deleteErr?.response?.data?.message 
+              || deleteErr?.response?.data?.error 
+              || deleteErr?.message 
+              || 'Unknown error';
+            setFormError('Product updated but some variants failed to delete: ' + errorMsg);
+          }
+        }
+        
+        // After updating product, create new variants if any (variants without real IDs)
+        const newVariants = variants.filter(v => !v.id || v.id >= 1000000);
+        if (newVariants.length > 0) {
+          try {
+            console.log('Creating new variants for updated product:', editing.id);
+            console.log('New variants to create:', newVariants);
+            
+            // Prepare variants payload with image files
+            const variantsPayload: CreateVariantPayload[] = newVariants.map(variant => ({
+              color: variant.color || null,
+              size: variant.size || null,
+              sku: variant.sku || null,
+              stock_quantity: variant.stock_quantity || 0,
+              image_url: variantImageFiles.get(variant.id) || null,
+            }));
+            
+            console.log('Variants payload:', variantsPayload);
+            
+            // Create all new variants at once
+            const createdVariants = await createProductVariants(editing.id, variantsPayload);
+            console.log('Variants created successfully:', createdVariants);
+          } catch (variantErr: any) {
+            console.error('Error creating variants:', variantErr);
+            console.error('Error response:', variantErr?.response);
+            const errorMsg = variantErr?.response?.data?.message 
+              || variantErr?.response?.data?.error 
+              || variantErr?.message 
+              || 'Unknown error';
+            setFormError('Product updated but some variants failed to create: ' + errorMsg);
+          }
+        }
       } else {
-        await createProduct(payload);
+        // Only send File objects for new products
+        payload.images = newImageFiles.length > 0 ? newImageFiles : undefined;
+        const newProduct = await createProduct(payload);
+        
+        // After creating product, create variants if any
+        if (variants.length > 0 && newProduct.id) {
+          try {
+            console.log('Creating variants for new product:', newProduct.id);
+            console.log('Variants to create:', variants);
+            console.log('Variant image files:', variantImageFiles);
+            
+            // Prepare variants payload with image files
+            const variantsPayload: CreateVariantPayload[] = variants.map(variant => ({
+              color: variant.color || null,
+              size: variant.size || null,
+              sku: variant.sku || null,
+              stock_quantity: variant.stock_quantity || 0,
+              image_url: variantImageFiles.get(variant.id) || null,
+            }));
+            
+            console.log('Variants payload:', variantsPayload);
+            
+            // Create all variants at once
+            const createdVariants = await createProductVariants(newProduct.id, variantsPayload);
+            console.log('Variants created successfully:', createdVariants);
+          } catch (variantErr: any) {
+            console.error('Error creating variants:', variantErr);
+            console.error('Error response:', variantErr?.response);
+            // Don't fail the whole operation, just log the error
+            const errorMsg = variantErr?.response?.data?.message 
+              || variantErr?.response?.data?.error 
+              || variantErr?.message 
+              || 'Unknown error';
+            setFormError('Product created but some variants failed to create: ' + errorMsg);
+          }
+        }
       }
       closeModal();
       loadProducts(page, search);
     } catch (err: any) {
-      setFormError(err?.message || 'Failed to save product');
+      console.error('Error saving product:', err);
+      const errorMessage = err?.response?.data?.message 
+        || err?.response?.data?.error 
+        || err?.message 
+        || 'Failed to save product';
+      setFormError(errorMessage);
     } finally {
       setFormSubmitting(false);
     }
@@ -1237,12 +1354,17 @@ function ProductsPage() {
               <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">Category</label>
               <select
                 value={filterCategory}
-                onChange={(e) => setFilterCategory(e.target.value)}
+                onChange={(e) => {
+                  const newCategory = e.target.value;
+                  setFilterCategory(newCategory);
+                  // Auto-apply filter when category changes
+                  loadProducts(1, search, newCategory, filterStatus);
+                }}
                 className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-[#C6A87C] focus:border-[#C6A87C] bg-white"
               >
                 <option value="">All Categories</option>
                 {categories.map((category) => (
-                  <option key={category.id} value={category.id}>
+                  <option key={category.id} value={String(category.id)}>
                     {category.name}
                   </option>
                 ))}
@@ -1254,7 +1376,12 @@ function ProductsPage() {
               <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">Status</label>
               <select
                 value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
+                onChange={(e) => {
+                  const newStatus = e.target.value;
+                  setFilterStatus(newStatus);
+                  // Auto-apply filter when status changes
+                  loadProducts(1, search, filterCategory, newStatus);
+                }}
                 className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-[#C6A87C] focus:border-[#C6A87C] bg-white"
               >
                 <option value="">All Status</option>
@@ -1392,17 +1519,17 @@ function ProductsPage() {
       {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full p-6 relative">
+          <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full max-h-[90vh] p-6 relative flex flex-col">
             <button
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 z-10"
               onClick={closeModal}
             >
               <X className="w-5 h-5" />
             </button>
-            <h3 className="font-serif text-xl font-bold text-[#0A0A0A] mb-4">
+            <h3 className="font-serif text-xl font-bold text-[#0A0A0A] mb-4 pr-8">
               {editing ? 'Edit Product' : 'Add Product'}
             </h3>
-            <form className="space-y-4" onSubmit={handleSubmit}>
+            <form className="space-y-4 overflow-y-auto flex-1" onSubmit={handleSubmit}>
               <div className="space-y-2">
                 <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">Name</label>
                 <input
@@ -1660,7 +1787,7 @@ function ProductsPage() {
                       <button
                         type="button"
                         onClick={handleSaveVariant}
-                        disabled={variantSubmitting || !variantForm.price}
+                        disabled={variantSubmitting || !variantForm.stock_quantity}
                         className="bg-[#0A0A0A] text-[#C6A87C] px-4 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider hover:bg-[#2A2A2A] transition-colors disabled:opacity-50"
                       >
                         {variantSubmitting ? 'Saving...' : 'Save Variant'}

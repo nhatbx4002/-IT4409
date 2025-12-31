@@ -99,11 +99,12 @@ export function SignUpForm() {
         phone: data.phone || undefined,
       });
 
-      // Auto login sau khi signup thành công
-      // Note: Backend không trả về token trong signUp response, nên có thể cần gọi signIn
-      // Hoặc redirect về login page
+      // Redirect về login với message về xác thực email
       navigate("/login", {
-        state: { message: "Tạo tài khoản thành công! Vui lòng đăng nhập." },
+        state: { 
+          message: "Đăng ký thành công! Vui lòng kiểm tra email để xác thực tài khoản trước khi đăng nhập.",
+          email: data.email // Lưu email để có thể gửi lại email xác thực
+        },
       });
     } catch (err) {
       const errorMessage =

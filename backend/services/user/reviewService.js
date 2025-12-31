@@ -109,3 +109,48 @@ export const createReview = async ({
   const review = await Review.create(payload);
   return review.toJSON ? review.toJSON() : review;
 };
+
+export const updateReview = async ({
+  reviewId,
+  userId,
+  rating,
+  comment,
+  images = [],
+}) => {
+  const review = await Review.findByPk(reviewId);
+  if (!review) {
+    throw new Error("Review not found");
+  }
+
+  if (review.user_id !== userId) {
+    throw new Error("You can only update your own reviews");
+  }
+
+  if (rating !== undefined) {
+    if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+      throw new Error("Rating must be an integer between 1 and 5");
+    }
+  }
+
+  const updateData = {};
+  if (rating !== undefined) updateData.rating = rating;
+  if (comment !== undefined) updateData.comment = comment || null;
+  if (images !== undefined) updateData.images = Array.isArray(images) ? images : [];
+
+  await review.update(updateData);
+  return review.toJSON ? review.toJSON() : review;
+};
+
+export const deleteReview = async ({ reviewId, userId }) => {
+  const review = await Review.findByPk(reviewId);
+  if (!review) {
+    throw new Error("Review not found");
+  }
+
+  if (review.user_id !== userId) {
+    throw new Error("You can only delete your own reviews");
+  }
+
+  await review.destroy();
+  return { success: true };
+};

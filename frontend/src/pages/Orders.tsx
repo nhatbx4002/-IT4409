@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import MainLayout from "@/layout/MainLayout";
-import { Package, Clock, Loader2, ChevronRight } from "lucide-react";
-import { getMyOrders } from "@/lib/api";
+import { Package, Clock, Loader2, ChevronRight, X } from "lucide-react";
+import { getMyOrders, cancelOrder } from "@/lib/api";
 import type { Order } from "@/types/order";
 import { toast } from "sonner";
 import { isAuthenticated } from "@/lib/auth";
@@ -55,6 +55,7 @@ export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [cancelingOrderId, setCancelingOrderId] = useState<number | null>(null);
 
   useEffect(() => {
     if (!isAuthenticated()) {
@@ -79,6 +80,27 @@ export default function OrdersPage() {
 
     fetchOrders();
   }, [navigate]);
+
+  const handleCancelOrder = async (orderId: number) => {
+    if (!confirm("Bạn có chắc chắn muốn hủy đơn hàng này?")) {
+      return;
+    }
+
+    try {
+      setCancelingOrderId(orderId);
+      await cancelOrder(orderId);
+      toast.success("Đã hủy đơn hàng thành công");
+      
+      // Refresh danh sách đơn hàng
+      const data = await getMyOrders();
+      setOrders(data);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Không thể hủy đơn hàng";
+      toast.error(errorMessage);
+    } finally {
+      setCancelingOrderId(null);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -201,13 +223,34 @@ export default function OrdersPage() {
                           </p>
                         )}
                       </div>
-                      <Link
-                        to={`/orders/${order.id}`}
-                        className="flex items-center gap-2 rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
-                      >
-                        Xem chi tiết
-                        <ChevronRight className="h-4 w-4" />
-                      </Link>
+                      <div className="flex items-center gap-2">
+                        {order.status === "pending" && (
+                          <button
+                            onClick={() => handleCancelOrder(order.id)}
+                            disabled={cancelingOrderId === order.id}
+                            className="flex items-center gap-2 rounded-md border border-red-300 bg-red-50 px-4 py-2 text-sm font-medium text-red-700 transition hover:bg-red-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {cancelingOrderId === order.id ? (
+                              <>
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                                Đang hủy...
+                              </>
+                            ) : (
+                              <>
+                                <X className="h-4 w-4" />
+                                Hủy đơn hàng
+                              </>
+                            )}
+                          </button>
+                        )}
+                        <Link
+                          to={`/orders/${order.id}`}
+                          className="flex items-center gap-2 rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+                        >
+                          Xem chi tiết
+                          <ChevronRight className="h-4 w-4" />
+                        </Link>
+                      </div>
                     </div>
                   </div>
                 </div>

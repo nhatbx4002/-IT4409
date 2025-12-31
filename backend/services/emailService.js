@@ -148,3 +148,96 @@ Shop Quần Áo`;
         console.error("❌ Lỗi gửi email:", error);
     }
 };
+
+/**
+ * Gửi email xác thực đăng ký tài khoản
+ */
+export const sendVerificationEmail = async (to, token, userName = "Bạn") => {
+    if (!to) return;
+
+    const verificationUrl = `${env.FRONTEND_URL || 'http://localhost:5173'}/verify-email?token=${token}`;
+
+    const subject = "Xác thực email đăng ký tài khoản";
+    
+    // HTML email template
+    const html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <style>
+                body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+                .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+                .verification-box { background: white; padding: 30px; border-radius: 5px; margin: 20px 0; text-align: center; }
+                .btn { display: inline-block; padding: 15px 40px; background: #667eea; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; font-weight: bold; }
+                .footer { text-align: center; margin-top: 30px; color: #777; font-size: 14px; }
+                .warning { background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; border-radius: 4px; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>🛍️ Shop Quần Áo</h1>
+                </div>
+                <div class="content">
+                    <h2>Xác thực email đăng ký</h2>
+                    <p>Xin chào <strong>${userName}</strong>,</p>
+                    <p>Cảm ơn bạn đã đăng ký tài khoản tại Shop Quần Áo!</p>
+                    
+                    <div class="verification-box">
+                        <p>Vui lòng click vào nút bên dưới để xác thực email của bạn:</p>
+                        <a href="${verificationUrl}" class="btn">Xác thực email</a>
+                    </div>
+
+                    <div class="warning">
+                        <p><strong>⚠️ Lưu ý:</strong></p>
+                        <p>Link xác thực sẽ hết hạn sau 48 giờ. Nếu bạn không click vào link, bạn sẽ không thể đăng nhập vào tài khoản.</p>
+                    </div>
+
+                    <p>Nếu nút không hoạt động, bạn có thể copy và paste link sau vào trình duyệt:</p>
+                    <p style="word-break: break-all; color: #667eea;">${verificationUrl}</p>
+
+                    <div class="footer">
+                        <p>Nếu bạn không đăng ký tài khoản này, vui lòng bỏ qua email này.</p>
+                        <p>Cần hỗ trợ? Liên hệ với chúng tôi</p>
+                        <p>Email: ${env.EMAIL_USER}</p>
+                        <p>© ${new Date().getFullYear()} Shop Quần Áo. Tất cả quyền được bảo lưu.</p>
+                    </div>
+                </div>
+            </div>
+        </body>
+        </html>
+    `;
+
+    // Plain text version
+    const text = `Xin chào ${userName},
+
+Cảm ơn bạn đã đăng ký tài khoản tại Shop Quần Áo!
+
+Vui lòng click vào link sau để xác thực email của bạn:
+${verificationUrl}
+
+Link xác thực sẽ hết hạn sau 48 giờ.
+
+Nếu bạn không đăng ký tài khoản này, vui lòng bỏ qua email này.
+
+Trân trọng,
+Shop Quần Áo`;
+
+    try {
+        await transporter.sendMail({
+            from: EMAIL_SENDER,
+            to,
+            subject,
+            text,
+            html,
+        });
+        console.log(`✅ Verification email sent to ${to}`);
+    } catch (error) {
+        console.error("❌ Lỗi gửi email xác thực:", error);
+        throw error;
+    }
+};

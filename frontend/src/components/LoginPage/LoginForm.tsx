@@ -5,7 +5,7 @@ import * as z from "zod";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import { Eye, EyeOff, Mail, Lock, AlertCircle } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
-import { signIn, signInWithGoogle, signInWithFacebook } from "@/lib/api";
+import { signIn, signInWithGoogle, signInWithFacebook, resendVerificationEmail } from "@/lib/api";
 import { setAuthSession } from "@/lib/auth";
 
 const loginSchema = z.object({
@@ -20,8 +20,13 @@ export function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isResending, setIsResending] = useState(false);
+  const [resendMessage, setResendMessage] = useState<string | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
+  
+  const signUpMessage = location.state?.message;
+  const signUpEmail = location.state?.email;
 
   const {
     register,
@@ -101,6 +106,71 @@ export function LoginForm() {
           Nhập email và mật khẩu của bạn để tiếp tục
         </p>
         </div>
+
+      {/* Sign Up Success Message */}
+      {signUpMessage && (
+        <div
+          className="mb-4 p-4 rounded-lg"
+          style={{
+            background: "rgba(59, 130, 246, 0.1)",
+            border: "1px solid rgba(59, 130, 246, 0.3)",
+          }}
+        >
+          <p
+            style={{
+              fontFamily: "Poppins",
+              fontSize: "14px",
+              color: "#1E40AF",
+              marginBottom: signUpEmail ? "12px" : "0",
+            }}
+          >
+            {signUpMessage}
+          </p>
+          {signUpEmail && (
+            <div>
+              <button
+                type="button"
+                onClick={async () => {
+                  setIsResending(true);
+                  setResendMessage(null);
+                  try {
+                    await resendVerificationEmail(signUpEmail);
+                    setResendMessage("Email xác thực đã được gửi lại. Vui lòng kiểm tra hộp thư của bạn.");
+                  } catch (err) {
+                    setResendMessage(
+                      err instanceof Error ? err.message : "Không thể gửi email. Vui lòng thử lại sau."
+                    );
+                  } finally {
+                    setIsResending(false);
+                  }
+                }}
+                disabled={isResending}
+                className="text-sm text-[#667eea] hover:underline disabled:opacity-50"
+                style={{
+                  fontFamily: "Poppins",
+                  fontSize: "14px",
+                  fontWeight: 500,
+                }}
+              >
+                {isResending ? 'Đang gửi...' : 'Gửi lại email xác thực'}
+              </button>
+              {resendMessage && (
+                <p
+                  className={`text-sm mt-2 ${
+                    resendMessage.includes('thành công') ? 'text-green-600' : 'text-red-600'
+                  }`}
+                  style={{
+                    fontFamily: "Poppins",
+                    fontSize: "13px",
+                  }}
+                >
+                  {resendMessage}
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Error Message */}
       {error && (

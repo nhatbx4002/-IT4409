@@ -1,7 +1,7 @@
 import express from "express";
 import multer from "multer";
 
-import { createProductController, createVariantController, deleteProductController, updateProductController, getAllProductsController, searchProductsController, getBrandsController } from "../../controllers/admin/productController.js";
+import { createProductController, createVariantController, deleteVariantController, deleteProductController, updateProductController, getAllProductsController, searchProductsController, getBrandsController } from "../../controllers/admin/productController.js";
 
 const router = express.Router();
 const upload = multer({ dest: "tmp/"})
@@ -197,6 +197,31 @@ router.post("/create-product", upload.array("images", 10), createProductControll
  *         description: Lỗi tạo biến thể
  */
 router.post("/:productId/variants", upload.array("variantImages", 10), createVariantController);
+
+/**
+ * @swagger
+ * /admin/product-management/{productId}/variants/{variantId}:
+ *   delete:
+ *     summary: Xóa biến thể sản phẩm (Admin)
+ *     tags: [Admin, Products]
+ *     parameters:
+ *       - in: path
+ *         name: productId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *       - in: path
+ *         name: variantId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Xóa biến thể thành công
+ *       404:
+ *         description: Không tìm thấy biến thể
+ */
+router.delete("/:productId/variants/:variantId", deleteVariantController);
 
 /**
  * @swagger

@@ -251,6 +251,16 @@ export interface ResetPasswordResponse {
   message: string;
 }
 
+export interface VerifyEmailResponse {
+  success: boolean;
+  message: string;
+}
+
+export interface ResendVerificationResponse {
+  success: boolean;
+  message: string;
+}
+
 export async function signUp(data: SignUpData): Promise<SignUpResponse> {
   const response = await apiClient.post<ApiResponse<SignUpResponse>>('/auth/signUp', data);
   return unwrapResponse(response.data);
@@ -281,6 +291,21 @@ export async function resetPassword(token: string, newPassword: string): Promise
     token,
     newPassword,
   });
+  return unwrapResponse(response.data);
+}
+
+export async function verifyEmail(token: string): Promise<VerifyEmailResponse> {
+  const response = await apiClient.get<ApiResponse<VerifyEmailResponse>>(
+    `/auth/verify-email?token=${encodeURIComponent(token)}`
+  );
+  return unwrapResponse(response.data);
+}
+
+export async function resendVerificationEmail(email: string): Promise<ResendVerificationResponse> {
+  const response = await apiClient.post<ApiResponse<ResendVerificationResponse>>(
+    '/auth/resend-verification',
+    { email }
+  );
   return unwrapResponse(response.data);
 }
 
@@ -429,10 +454,59 @@ export async function createReview(payload: {
   productId: number;
   rating: number;
   comment?: string;
-  images?: string[];
+  images?: File[];
 }): Promise<ReviewItem> {
-  const response = await apiClient.post<ApiResponse<ReviewItem>>('/reviews', payload);
+  const formData = new FormData();
+  formData.append('productId', payload.productId.toString());
+  formData.append('rating', payload.rating.toString());
+  if (payload.comment) {
+    formData.append('comment', payload.comment);
+  }
+  if (payload.images && payload.images.length > 0) {
+    payload.images.forEach((file) => {
+      formData.append('images', file);
+    });
+  }
+
+  const response = await apiClient.post<ApiResponse<ReviewItem>>('/reviews', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
   return unwrapResponse(response.data);
+}
+
+export async function updateReview(
+  reviewId: number,
+  payload: {
+    rating?: number;
+    comment?: string;
+    images?: File[];
+    existingImages?: string[];
+  }
+): Promise<ReviewItem> {
+  const formData = new FormData();
+  if (payload.rating !== undefined) {
+    formData.append('rating', payload.rating.toString());
+  }
+  if (payload.comment !== undefined) {
+    formData.append('comment', payload.comment);
+  }
+  if (payload.existingImages !== undefined) {
+    formData.append('existingImages', JSON.stringify(payload.existingImages));
+  }
+  if (payload.images && payload.images.length > 0) {
+    payload.images.forEach((file) => {
+      formData.append('images', file);
+    });
+  }
+
+  const response = await apiClient.patch<ApiResponse<ReviewItem>>(`/reviews/${reviewId}`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return unwrapResponse(response.data);
+}
+
+export async function deleteReview(reviewId: number): Promise<void> {
+  await apiClient.delete(`/reviews/${reviewId}`);
 }
 
 // ==============================
@@ -719,6 +793,18 @@ export async function getPaymentStatus(orderId: number): Promise<PaymentStatusRe
 
 export async function getMyOrders(): Promise<Order[]> {
   const response = await apiClient.get<ApiResponse<Order[]>>('/orders');
+  return unwrapResponse(response.data);
+}
+
+export interface CancelOrderResponse {
+  orderId: number;
+  status: string;
+}
+
+export async function cancelOrder(orderId: number): Promise<CancelOrderResponse> {
+  const response = await apiClient.put<ApiResponse<CancelOrderResponse>>(
+    `/orders/${orderId}/cancel`
+  );
   return unwrapResponse(response.data);
 }
 

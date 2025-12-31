@@ -18,6 +18,8 @@ export const User = sequelize.define("users", {
   provider_id: DataTypes.STRING(100),
   refresh_token: DataTypes.TEXT,
   token_version: { type: DataTypes.INTEGER, defaultValue: 0 },
+  email_verified: { type: DataTypes.BOOLEAN, defaultValue: false },
+  email_verification_token: { type: DataTypes.STRING(255), allowNull: true, defaultValue: null },
   created_at: { type: DataTypes.DATE, defaultValue: DataTypes.NOW },
   updated_at: { type: DataTypes.DATE, defaultValue: DataTypes.NOW },
 });

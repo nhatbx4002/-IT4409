@@ -80,6 +80,26 @@ export const createVariantService = async (productId, variants, files) => {
   }
 };
 
+export const deleteVariantService = async (productId, variantId) => {
+  const productIdNum = parseInt(productId, 10);
+  const variantIdNum = parseInt(variantId, 10);
+  
+  if (!productIdNum) throw new Error("Product ID is required");
+  if (!variantIdNum) throw new Error("Variant ID is required");
+
+  const transaction = await sequelize.transaction();
+
+  try {
+    const { deleteVariantRecord } = await import("./product/variantService.js");
+    const deletedVariant = await deleteVariantRecord(productIdNum, variantIdNum, transaction);
+    await transaction.commit();
+    return deletedVariant;
+  } catch (error) {
+    await transaction.rollback();
+    throw error;
+  }
+};
+
 export const deleteProductService = async (productId) => {
   const id = parseInt(productId, 10);
   if (!id) {

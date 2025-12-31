@@ -5,6 +5,7 @@ import jwt from "jsonwebtoken";
 import nodemailer from "nodemailer";
 import { loadEnv } from "../config/env.js";
 import { DOCIFY_SUPPORT_SENDER } from "../config/constants.js";
+import { sendVerificationEmail } from "./emailService.js";
 
 const env = loadEnv();
 const isProduction = env.NODE_ENV === "production";
@@ -89,6 +90,15 @@ export const registerUser = async (data) => {
     throw new Error("Missing required fields");
 
   const hashedPassword = await bcrypt.hash(password, 10);
+  
+  // Tạo verification token (JWT với expiry 48h)
+  const verificationToken = jwt.sign(
+    { email, type: 'email_verification' },
+    env.JWT_SECRET,
+    { expiresIn: '48h' }
+  );
+
+  // Tạo user với email_verified = false
   const newUser = await User.create({
     email,
     name,
@@ -97,7 +107,19 @@ export const registerUser = async (data) => {
     role: role || "customer",
     provider: provider || "local",
     token_version: 0,
+    email_verified: false,
+    email_verification_token: verificationToken,
   });
+
+  // Gửi email xác thực
+  try {
+    await sendVerificationEmail(email, verificationToken, name);
+  } catch (emailError) {
+    console.error("Lỗi gửi email xác thực:", emailError);
+    // Xóa user nếu không gửi được email
+    await newUser.destroy();
+    throw new Error("Không thể gửi email xác thực. Vui lòng thử lại sau.");
+  }
 
   // Return user without sensitive fields
   return await User.scope('withoutSecrets').findByPk(newUser.id);
@@ -124,6 +146,11 @@ export const loginUser = async (email, password) => {
   const isValidPassword = await bcrypt.compare(password, hashedPassword);
   if (!isValidPassword) {
     throw new Error("Invalid email or password");
+  }
+
+  // Kiểm tra email đã được xác thực chưa (chỉ cho local accounts)
+  if (userWithPassword.provider === "local" && !userWithPassword.email_verified) {
+    throw new Error("EMAIL_NOT_VERIFIED");
   }
 
   const tokens = await issueTokens(userWithPassword);
@@ -204,6 +231,88 @@ export const resetPasswordService = async (token, newPassword) => {
     return { message: "Đặt lại mật khẩu thành công" };
   } catch (err) {
     throw new Error("Token không hợp lệ hoặc đã hết hạn");
+  }
+};
+
+// Xác thực email
+export const verifyEmailService = async (token) => {
+  try {
+    // Verify token
+    const decoded = jwt.verify(token, env.JWT_SECRET);
+    
+    if (decoded.type !== 'email_verification') {
+      throw new Error("Invalid token type");
+    }
+
+    // Tìm user theo email và token
+    const user = await User.findOne({ 
+      where: { 
+        email: decoded.email,
+        email_verification_token: token 
+      } 
+    });
+
+    if (!user) {
+      throw new Error("Invalid or expired verification token");
+    }
+
+    // Nếu đã xác thực rồi
+    if (user.email_verified) {
+      return { message: "Email đã được xác thực trước đó" };
+    }
+
+    // Xác thực email
+    user.email_verified = true;
+    user.email_verification_token = null; // Xóa token sau khi dùng
+    await user.save();
+
+    return { 
+      message: "Email đã được xác thực thành công. Bạn có thể đăng nhập ngay bây giờ."
+    };
+  } catch (err) {
+    if (err.name === 'TokenExpiredError' || err.name === 'JsonWebTokenError') {
+      throw new Error("Link xác thực không hợp lệ hoặc đã hết hạn. Vui lòng yêu cầu gửi lại email.");
+    }
+    throw err;
+  }
+};
+
+// Gửi lại email xác thực
+export const resendVerificationEmailService = async (email) => {
+  const user = await User.findOne({ where: { email } });
+  
+  if (!user) {
+    throw new Error("Không tìm thấy tài khoản với email này");
+  }
+
+  // Chỉ cho phép gửi lại nếu chưa xác thực
+  if (user.email_verified) {
+    throw new Error("Email này đã được xác thực rồi. Bạn có thể đăng nhập ngay.");
+  }
+
+  // Chỉ cho local accounts
+  if (user.provider !== "local") {
+    throw new Error("Tài khoản này không cần xác thực email");
+  }
+
+  // Tạo token mới
+  const verificationToken = jwt.sign(
+    { email: user.email, type: 'email_verification' },
+    env.JWT_SECRET,
+    { expiresIn: '48h' }
+  );
+
+  // Lưu token mới
+  user.email_verification_token = verificationToken;
+  await user.save();
+
+  // Gửi email
+  try {
+    await sendVerificationEmail(email, verificationToken, user.name || "Bạn");
+    return { message: "Email xác thực đã được gửi lại" };
+  } catch (emailError) {
+    console.error("Lỗi gửi email xác thực:", emailError);
+    throw new Error("Không thể gửi email. Vui lòng thử lại sau.");
   }
 };
 
