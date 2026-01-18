@@ -5,7 +5,6 @@ export const products: Product[] = [
     id: "1",
     name: "Premium Oxford Dress Shirt",
     brand: "ARISTINO",
-    collection: "men",
     category: "Shirts",
     price: 189,
     images: [
@@ -27,7 +26,6 @@ export const products: Product[] = [
     id: "2",
     name: "Classic Fit Formal Shirt",
     brand: "ARISTINO",
-    collection: "men",
     category: "Shirts",
     price: 165,
     images: [
@@ -48,7 +46,6 @@ export const products: Product[] = [
     id: "3",
     name: "Casual Linen Shirt",
     brand: "ARISTINO",
-    collection: "men",
     category: "Shirts",
     price: 145,
     salePrice: 109,
@@ -71,7 +68,6 @@ export const products: Product[] = [
     id: "4",
     name: "Slim Fit Oxford Shirt",
     brand: "ARISTINO",
-    collection: "men",
     category: "Shirts",
     price: 175,
     images: [
@@ -93,7 +89,6 @@ export const products: Product[] = [
     id: "5",
     name: "Premium Linen Blend Shirt",
     brand: "ARISTINO",
-    collection: "men",
     category: "Shirts",
     price: 195,
     images: [
@@ -114,7 +109,6 @@ export const products: Product[] = [
     id: "6",
     name: "Luxury Polo Shirt",
     brand: "ARISTINO",
-    collection: "men",
     category: "Shirts",
     price: 135,
     salePrice: 95,
@@ -138,7 +132,6 @@ export const products: Product[] = [
     id: "7",
     name: "Striped Dress Shirt",
     brand: "ARISTINO",
-    collection: "men",
     category: "Shirts",
     price: 159,
     images: [
@@ -159,7 +152,6 @@ export const products: Product[] = [
     id: "8",
     name: "Checkered Casual Shirt",
     brand: "ARISTINO",
-    collection: "men",
     category: "Shirts",
     price: 149,
     images: [

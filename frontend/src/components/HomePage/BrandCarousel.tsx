@@ -27,7 +27,7 @@ export function BrandCarousel() {
             className="mb-4"
             style={{ fontSize: '36px', fontFamily: "'Playfair Display', serif", fontWeight: 600 }}
           >
-            Our Premium Brands
+            Thương hiệu cao cấp của chúng tôi
           </h2>
           <div className="w-24 h-0.5 mx-auto" style={{ backgroundColor: '#D4AF37' }}></div>
         </div>

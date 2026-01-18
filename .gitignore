@@ -1,0 +1,16 @@
+.cursor/
+AGENTS.md
+node_modules/
+.vscode/
+.bmad-core/
+.bmad-creative-writing/
+.bmad-infrastructure-devops/
+web-bundles/
+backend/uploads/
+web-bundles/
+figma/
+plan/
+.shared/
+*.md
+.claude/
+AI/

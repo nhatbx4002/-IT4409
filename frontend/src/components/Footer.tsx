@@ -13,19 +13,19 @@ export function Footer() {
               className="text-white mb-4"
               style={{ fontSize: '36px', fontFamily: "'Playfair Display', serif", fontWeight: 600 }}
             >
-              Join Our Exclusive Club
+              Tham gia câu lạc bộ độc quyền của chúng tôi
             </h3>
             <p 
               className="text-white/70 mb-8"
               style={{ fontSize: '18px', lineHeight: 1.6 }}
             >
-              Get 10% off your first order and be the first to know about new collections
+              Nhận 10% cho đơn hàng đầu tiên và là người đầu tiên biết về bộ sưu tập mới
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 max-w-lg mx-auto mb-10">
               <Input
                 type="email"
-                placeholder="Enter your email address"
+                placeholder="Nhập địa chỉ email của bạn"
                 className="bg-white/5 border-white/20 text-white placeholder:text-white/40 focus:border-[#D4AF37] py-6"
               />
               <Button 
@@ -37,7 +37,7 @@ export function Footer() {
                   letterSpacing: '1px'
                 }}
               >
-                Subscribe
+                Đăng ký
               </Button>
             </div>
 
@@ -50,7 +50,7 @@ export function Footer() {
                 >
                   <Truck className="h-6 w-6" style={{ color: '#D4AF37' }} />
                 </div>
-                <p className="text-sm text-white/70">Free Shipping</p>
+                <p className="text-sm text-white/70">Miễn phí vận chuyển</p>
               </div>
               <div className="flex flex-col items-center gap-3">
                 <div 
@@ -59,7 +59,7 @@ export function Footer() {
                 >
                   <Gift className="h-6 w-6" style={{ color: '#D4AF37' }} />
                 </div>
-                <p className="text-sm text-white/70">Exclusive Offers</p>
+                <p className="text-sm text-white/70">Ưu đãi độc quyền</p>
               </div>
               <div className="flex flex-col items-center gap-3">
                 <div 
@@ -68,7 +68,7 @@ export function Footer() {
                 >
                   <Mail className="h-6 w-6" style={{ color: '#D4AF37' }} />
                 </div>
-                <p className="text-sm text-white/70">Style Tips</p>
+                <p className="text-sm text-white/70">Tư vấn phong cách</p>
               </div>
             </div>
           </div>
@@ -87,7 +87,7 @@ export function Footer() {
               ARISTINO
             </h2>
             <p className="text-white/60 text-sm leading-relaxed mb-6">
-              Curating timeless luxury fashion for discerning individuals who appreciate quality and elegance.
+              Mang đến thời trang cao cấp vượt thời gian cho những người yêu thích chất lượng và sự tinh tế.
             </p>
             {/* Social Icons */}
             <div className="flex items-center gap-3">
@@ -120,31 +120,31 @@ export function Footer() {
 
           {/* Customer Service */}
           <div>
-            <h4 className="mb-6 tracking-wider text-sm">CUSTOMER SERVICE</h4>
+            <h4 className="mb-6 tracking-wider text-sm">DỊCH VỤ KHÁCH HÀNG</h4>
             <ul className="space-y-3">
-              <li><a href="#" className="text-white/60 hover:text-[#D4AF37] transition-colors text-sm">Help & Contact</a></li>
-              <li><a href="#" className="text-white/60 hover:text-[#D4AF37] transition-colors text-sm">Returns & Exchanges</a></li>
-              <li><a href="#" className="text-white/60 hover:text-[#D4AF37] transition-colors text-sm">Shipping Information</a></li>
-              <li><a href="#" className="text-white/60 hover:text-[#D4AF37] transition-colors text-sm">Size Guide</a></li>
-              <li><a href="#" className="text-white/60 hover:text-[#D4AF37] transition-colors text-sm">Track Your Order</a></li>
+              <li><a href="#" className="text-white/60 hover:text-[#D4AF37] transition-colors text-sm">Hỗ trợ & Liên hệ</a></li>
+              <li><a href="#" className="text-white/60 hover:text-[#D4AF37] transition-colors text-sm">Đổi trả & Hoàn tiền</a></li>
+              <li><a href="#" className="text-white/60 hover:text-[#D4AF37] transition-colors text-sm">Thông tin giao hàng</a></li>
+              <li><a href="#" className="text-white/60 hover:text-[#D4AF37] transition-colors text-sm">Hướng dẫn chọn size</a></li>
+              <li><a href="#" className="text-white/60 hover:text-[#D4AF37] transition-colors text-sm">Theo dõi đơn hàng</a></li>
             </ul>
           </div>
 
           {/* Quick Links */}
           <div>
-            <h4 className="mb-6 tracking-wider text-sm">QUICK LINKS</h4>
+            <h4 className="mb-6 tracking-wider text-sm">LIÊN KẾT NHANH</h4>
             <ul className="space-y-3">
-              <li><a href="#" className="text-white/60 hover:text-[#D4AF37] transition-colors text-sm">My Account</a></li>
-              <li><a href="#" className="text-white/60 hover:text-[#D4AF37] transition-colors text-sm">Order History</a></li>
-              <li><a href="#" className="text-white/60 hover:text-[#D4AF37] transition-colors text-sm">Wishlist</a></li>
-              <li><a href="#" className="text-white/60 hover:text-[#D4AF37] transition-colors text-sm">Contact Us</a></li>
-              <li><a href="#" className="text-white/60 hover:text-[#D4AF37] transition-colors text-sm">Store Locator</a></li>
+              <li><a href="#" className="text-white/60 hover:text-[#D4AF37] transition-colors text-sm">Tài khoản của tôi</a></li>
+              <li><a href="#" className="text-white/60 hover:text-[#D4AF37] transition-colors text-sm">Lịch sử đơn hàng</a></li>
+              <li><a href="#" className="text-white/60 hover:text-[#D4AF37] transition-colors text-sm">Danh sách yêu thích</a></li>
+              <li><a href="#" className="text-white/60 hover:text-[#D4AF37] transition-colors text-sm">Liên hệ</a></li>
+              <li><a href="#" className="text-white/60 hover:text-[#D4AF37] transition-colors text-sm">Tìm cửa hàng</a></li>
             </ul>
           </div>
 
           {/* Payment & Security */}
           <div>
-            <h4 className="mb-6 tracking-wider text-sm">PAYMENT METHODS</h4>
+            <h4 className="mb-6 tracking-wider text-sm">PHƯƠNG THỨC THANH TOÁN</h4>
             <div className="grid grid-cols-4 gap-3 mb-6">
               <div className="bg-white/10 rounded p-2 flex items-center justify-center text-xs text-white/60">
                 VISA
@@ -161,7 +161,7 @@ export function Footer() {
             </div>
             <div className="flex items-center gap-2 text-white/60 text-xs">
               <Shield className="h-4 w-4" style={{ color: '#D4AF37' }} />
-              <span>Secure Payment Guaranteed</span>
+              <span>Bảo mật thanh toán tuyệt đối</span>
             </div>
           </div>
         </div>
@@ -169,17 +169,17 @@ export function Footer() {
         {/* Bottom Bar */}
         <div className="border-t border-white/10 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-white/40 text-sm">
-            © 2025 ARISTINO. All rights reserved.
+            © 2025 ARISTINO. Đã đăng ký bản quyền.
           </p>
           <div className="flex items-center gap-6">
             <a href="#" className="text-white/40 hover:text-white text-sm transition-colors">
-              Terms of Service
+              Điều khoản dịch vụ
             </a>
             <a href="#" className="text-white/40 hover:text-white text-sm transition-colors">
-              Privacy Policy
+              Chính sách bảo mật
             </a>
             <a href="#" className="text-white/40 hover:text-white text-sm transition-colors">
-              Cookies
+              Cookie
             </a>
           </div>
         </div>

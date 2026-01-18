@@ -1,21 +1,31 @@
 import { ImageWithFallback } from "../figma/ImageWithFallback";
 
+interface FeaturedCategory {
+  title: string;
+  subtitle: string;
+  image: string;
+  productCount: number;
+}
+
 export function FeaturedCollections() {
-  const collections = [
+  const categories: FeaturedCategory[] = [
     {
       title: "Tailored Suits",
       subtitle: "Refined Elegance",
-      image: "https://images.unsplash.com/photo-1557039834-2f2208c6973c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtZW5zJTIwbHV4dXJ5JTIwZmFzaGlvbiUyMHN1aXR8ZW58MXx8fHwxNzYxNDEwOTEzfDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral"
+      image: "https://images.unsplash.com/photo-1557039834-2f2208c6973c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtZW5zJTIwbHV4dXJ5JTIwZmFzaGlvbiUyMHN1aXR8ZW58MXx8fHwxNzYxNDEwOTEzfDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
+      productCount: 156,
     },
     {
       title: "Designer Shirts",
       subtitle: "Timeless Classics",
-      image: "https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtZW5zJTIwZHJlc3MlMjBzaGlydCUyMGx1eHVyeXxlbnwxfHx8fDE3NjE0MTA5MTN8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral"
+      image: "https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHhtZW5zJTIwZHJlc3MlMjBzaGlydCUyMGx1eHVyeXxlbnwxfHx8fDE3NjE0MTA5MTN8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
+      productCount: 243,
     },
     {
       title: "Premium Accessories",
       subtitle: "Complete Your Look",
-      image: "https://images.unsplash.com/photo-1554301840-913d3250f757?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxsdXh1cnklMjBhY2Nlc3NvcmllcyUyMHdhdGNoJTIwamV3ZWxyeXxlbnwxfHx8fDE3NjE0MTA5MTN8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral"
+      image: "https://images.unsplash.com/photo-1554301840-913d3250f757?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxsdXh1cnklMjBhY2Nlc3NvcmllcyUyMHdhdGNoJTIwamV3ZWxyeXxlbnwxfHx8fDE3NjE0MTA5MTN8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
+      productCount: 89,
     }
   ];
 
@@ -28,13 +38,13 @@ export function FeaturedCollections() {
             className="mb-4"
             style={{ fontSize: '42px', fontFamily: "'Playfair Display', serif", fontWeight: 600 }}
           >
-            Featured Collections
+            Bộ Sưu Tập Nổi Bật
           </h2>
           <div className="w-24 h-0.5 mx-auto" style={{ backgroundColor: '#D4AF37' }}></div>
         </div>
 
         <div className="grid md:grid-cols-3 gap-8">
-          {collections.map((collection, index) => (
+          {categories.map((collection, index) => (
             <div 
               key={index} 
               className="group cursor-pointer relative overflow-hidden aspect-3/4"
@@ -68,6 +78,11 @@ export function FeaturedCollections() {
                 >
                   {collection.title}
                 </h3>
+                {collection.productCount !== undefined && (
+                  <p className="text-xs text-gray-300 mt-2">
+                    {collection.productCount} sản phẩm
+                  </p>
+                )}
               </div>
             </div>
           ))}

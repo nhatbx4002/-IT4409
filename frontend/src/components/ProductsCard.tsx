@@ -1,21 +1,22 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Heart, Eye, ShoppingBag, Star } from "lucide-react";
-import type { Product, SortOption } from "@/types/products";
+import type { ProductSummary } from "@/types/products";
 import { ImageWithFallback } from "@/components/figma/ImageWithFallback";
+import { formatVnd } from "@/lib/formatCurrency";
 
 interface ProductCardProps {
-  product: Product;
-  onQuickView: (product: Product) => void;
-  onAddToWishlist: (productId: string) => void;
-  onAddToCart: (productId: string) => void;
+  product: ProductSummary;
+  onAddToWishlist: (productId: number) => void;
+  onAddToCart: (product: ProductSummary) => void;
 }
 
 export function ProductCard({
   product,
-  onQuickView,
   onAddToWishlist,
   onAddToCart,
 }: ProductCardProps) {
+  const navigate = useNavigate();
   const [isHovered, setIsHovered] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [selectedColorIndex, setSelectedColorIndex] = useState(0);
@@ -23,38 +24,27 @@ export function ProductCard({
   const displayPrice = product.salePrice || product.price;
   const hasDiscount = !!product.salePrice;
 
+  const setImageByIndex = (idx: number) => {
+    const safeIndex = Math.min(Math.max(idx, 0), product.images.length - 1);
+    setCurrentImageIndex(safeIndex);
+  };
+
   return (
     <div
-      className="group relative bg-white transition-all duration-500 flex flex-col"
-      style={{
-        borderRadius: "8px",
-        boxShadow: isHovered
-          ? "0 8px 24px rgba(0, 0, 0, 0.15)"
-          : "0 4px 6px rgba(0, 0, 0, 0.1)",
-        maxHeight: "700px",
-        height: "100%",
-      }}
+      className={`group relative flex h-full flex-col transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${isHovered ? "translate-y-[-2px]" : ""}`}
       onMouseEnter={() => {
         setIsHovered(true);
         if (product.images.length > 1) {
-          setCurrentImageIndex(1);
+          setImageByIndex(1);
         }
       }}
       onMouseLeave={() => {
         setIsHovered(false);
-        setCurrentImageIndex(0);
+        setImageByIndex(0);
       }}
     >
-      {/* Image Container - 320x400px aspect ratio */}
-      <div
-        className="relative overflow-hidden bg-[#F8F8F8] flex-shrink-0"
-        style={{
-          width: "100%",
-          aspectRatio: "320/400",
-          borderRadius: "8px 8px 0 0",
-          maxHeight: "400px",
-        }}
-      >
+      {/* Image Container - responsive aspect ratio */}
+      <div className="relative aspect-4/5 w-full overflow-hidden rounded-t-2xl bg-white/80 backdrop-blur-sm">
         {/* Product Images */}
         <div className="relative w-full h-full">
           {product.images.map((image, idx) => (
@@ -62,129 +52,63 @@ export function ProductCard({
               key={idx}
               src={image}
               alt={product.name}
-              className={`absolute inset-0 w-full h-full object-cover transition-all duration-700 ${
+              className={`absolute inset-0 h-full w-full object-cover transition-all duration-700 ${
                 idx === currentImageIndex
                   ? "opacity-100 scale-100"
-                  : "opacity-0 scale-105"
+                  : "pointer-events-none opacity-0 scale-105"
               }`}
-              style={{
-                transform:
-                  isHovered && idx === currentImageIndex
-                    ? "scale(1.08)"
-                    : "scale(1)",
-              }}
             />
           ))}
         </div>
 
         {/* NEW Badge - Top Left */}
         {product.isNew && (
-          <div
-            className="absolute top-0 left-0 z-10 bg-black text-white uppercase tracking-wider"
-            style={{
-              fontSize: "11px",
-              fontWeight: 600,
-              padding: "6px 12px",
-              fontFamily: "'Poppins', sans-serif",
-              letterSpacing: "1px",
-              borderRadius: "8px 0 8px 0",
-            }}
-          >
-            NEW
+          <div className="absolute left-3 top-3 z-10 rounded-full bg-black/80 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-white shadow-sm">
+            MỚI
           </div>
         )}
 
         {/* SALE Badge */}
         {hasDiscount && (
           <div
-            className="absolute top-0 left-0 z-10 text-black uppercase tracking-wider"
-            style={{
-              backgroundColor: "#D4AF37",
-              fontSize: "11px",
-              fontWeight: 600,
-              padding: "6px 12px",
-              fontFamily: "'Poppins', sans-serif",
-              letterSpacing: "1px",
-              borderRadius: "8px 0 8px 0",
-              marginTop: product.isNew ? "36px" : "0",
-            }}
+            className={`absolute left-3 z-10 rounded-full bg-[#D4AF37] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-black shadow-sm ${product.isNew ? "top-8" : "top-3"}`}
           >
-            SALE
+            GIẢM GIÁ
           </div>
         )}
 
-        {/* Circular Action Buttons - Centered Horizontally */}
-        <div
-          className="absolute left-50 top-35 -translate-x-1/2 -translate-y-1/2 z-10 flex gap-3 transition-all duration-500"
-          style={{
-            opacity: isHovered ? 1 : 0,
-            transform: isHovered
-              ? "translate(-50%, -50%) scale(1)"
-              : "translate(-50%, -50%) scale(0.8)",
-          }}
+        {/* Wishlist top-right */}
+        <button
+          onClick={() => onAddToWishlist(product.id)}
+          className="absolute right-3 top-3 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white/95 text-black shadow-[0_8px_20px_rgba(15,23,42,0.25)] transition-colors duration-200 hover:bg-[#D4AF37] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D4AF37] focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+          aria-label="Thêm vào Yêu thích"
         >
-          {/* Quick View Button */}
-          <button
-            onClick={() => onQuickView(product)}
-            className="flex items-center justify-center bg-white transition-all duration-300 hover:scale-110 group/btn"
-            style={{
-              width: "40px",
-              height: "40px",
-              borderRadius: "50%",
-              boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = "#D4AF37";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = "#FFF";
-            }}
-            aria-label="Quick View"
-          >
-            <Eye className="w-4 h-4 text-black" />
-          </button>
+          <Heart className="w-4 h-4 text-black" />
+        </button>
 
-          {/* Wishlist Button */}
-          <button
-            onClick={() => onAddToWishlist(product.id)}
-            className="flex items-center justify-center bg-white transition-all duration-300 hover:scale-110 group/btn"
-            style={{
-              width: "40px",
-              height: "40px",
-              borderRadius: "50%",
-              boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = "#D4AF37";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = "#FFF";
-            }}
-            aria-label="Add to Wishlist"
-          >
-            <Heart className="w-4 h-4 text-black" />
-          </button>
-
-          {/* Add to Cart Button */}
-          <button
-            onClick={() => onAddToCart(product.id)}
-            className="flex items-center justify-center bg-white transition-all duration-300 hover:scale-110 group/btn"
-            style={{
-              width: "40px",
-              height: "40px",
-              borderRadius: "50%",
-              boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = "#D4AF37";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = "#FFF";
-            }}
-            aria-label="Add to Cart"
-          >
-            <ShoppingBag className="w-4 h-4 text-black" />
-          </button>
+        {/* Hover actions slide-up */}
+        <div
+          className={`absolute inset-x-3 bottom-3 z-20 transform-gpu rounded-2xl bg-white/90 px-3 py-2 shadow-[0_12px_30px_rgba(0,0,0,0.18)] backdrop-blur transition-all duration-300 ${
+            isHovered ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0 pointer-events-none"
+          }`}
+        >
+          <div className="flex items-center justify-between gap-2 text-sm text-[#111827]">
+            <button
+              onClick={() => navigate(`/products/${product.slug || product.id}`)}
+              className="flex items-center gap-2 rounded-full px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#111827] transition hover:text-[#D4AF37]"
+            >
+              <Eye className="h-4 w-4" />
+              Chi tiết
+            </button>
+            <button
+              onClick={() => onAddToCart(product)}
+              className="inline-flex items-center gap-2 rounded-full bg-[#111827] px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-white transition hover:bg-black"
+              disabled={!product.inStock}
+            >
+              <ShoppingBag className="h-4 w-4 text-[#D4AF37]" />
+              {product.inStock ? "Thêm vào" : "Hết hàng"}
+            </button>
+          </div>
         </div>
 
         {/* Out of Stock Overlay */}
@@ -198,39 +122,23 @@ export function ProductCard({
                 fontWeight: 600,
               }}
             >
-              Out of Stock
+              Hết hàng
             </span>
           </div>
         )}
       </div>
 
       {/* Content Area - 20px padding */}
-      <div className="p-5 flex-1 flex flex-col overflow-hidden">
+      <div className="flex flex-1 flex-col overflow-hidden p-5 bg-transparent">
         <div className="space-y-3 flex-1">
           {/* Brand Name - Gold, Uppercase, Letter-spacing */}
-          <div
-            className="uppercase tracking-wider"
-            style={{
-              color: "#D4AF37",
-              fontSize: "12px",
-              fontWeight: 600,
-              fontFamily: "'Poppins', sans-serif",
-              letterSpacing: "1.5px",
-            }}
-          >
+          <div className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#D4AF37]">
             {product.brand}
           </div>
 
-          {/* Product Name - Playfair Display, 20px, Bold */}
+          {/* Product Name - Playfair Display, responsive size */}
           <h3
-            className="text-black line-clamp-1 overflow-hidden text-ellipsis"
-            style={{
-              fontFamily: "'Playfair Display', serif",
-              fontSize: "20px",
-              fontWeight: 600,
-              lineHeight: "1.4",
-              minHeight: "28px",
-            }}
+            className="min-h-[28px] overflow-hidden text-ellipsis font-['Playfair_Display'] text-base font-semibold leading-snug text-[#111827] line-clamp-2 sm:text-lg"
             title={product.name}
           >
             {product.name}
@@ -255,116 +163,60 @@ export function ProductCard({
                 />
               ))}
             </div>
-            <span
-              className="text-[#999999]"
-              style={{
-                fontSize: "13px",
-                fontFamily: "'Poppins', sans-serif",
-              }}
-            >
+            <span className="text-[11px] text-[#9CA3AF]">
               ({product.reviewCount})
             </span>
           </div>
 
-          {/* Price - 24px Bold Black */}
+          {/* Price - responsive size */}
           <div className="flex items-center gap-3 pt-1">
             {hasDiscount && (
-              <span
-                className="text-[#999999] line-through"
-                style={{
-                  fontSize: "18px",
-                  fontFamily: "'Poppins', sans-serif",
-                }}
-              >
-                ${product.price}
+              <span className="text-xs text-[#9CA3AF] line-through sm:text-sm">
+                {formatVnd(product.price)}
               </span>
             )}
-            <span
-              className="text-black"
-              style={{
-                fontFamily: "'Poppins', sans-serif",
-                fontSize: "24px",
-                fontWeight: 700,
-              }}
-            >
-              ${displayPrice}
+            <span className="font-['Poppins'] text-base font-semibold text-[#111827] sm:text-lg">
+              {formatVnd(displayPrice)}
             </span>
           </div>
 
           {/* Color Selector - "Colors:" label + 3 circular swatches (24px) */}
-          <div className="flex items-center gap-3 pt-2">
-            <span
-              className="text-black"
-              style={{
-                fontSize: "13px",
-                fontFamily: "'Poppins', sans-serif",
-                fontWeight: 500,
-              }}
-            >
-              Colors:
-            </span>
-            <div className="flex items-center gap-2">
-              {product.colors.slice(0, 3).map((color, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => setSelectedColorIndex(idx)}
-                  className="transition-all duration-300 hover:scale-110"
-                  style={{
-                    width: "24px",
-                    height: "24px",
-                    borderRadius: "50%",
-                    backgroundColor: color.hex,
-                    border:
-                      selectedColorIndex === idx
-                        ? "2px solid #D4AF37"
-                        : "2px solid #E0E0E0",
-                    boxShadow:
-                      selectedColorIndex === idx
-                        ? "0 0 0 2px rgba(212, 175, 55, 0.2)"
-                        : "none",
-                  }}
-                  title={color.name}
-                  aria-label={color.name}
-                />
-              ))}
-              {product.colors.length > 3 && (
-                <span
-                  className="text-[#999999]"
-                  style={{
-                    fontSize: "12px",
-                    fontFamily: "'Poppins', sans-serif",
-                  }}
-                >
-                  +{product.colors.length - 3}
-                </span>
-              )}
+          {product.colors.length > 0 && (
+            <div className="flex items-center gap-3 pt-2">
+              <span className="text-[11px] font-medium text-[#111827]">
+                Màu:
+              </span>
+              <div className="flex items-center gap-2">
+                {product.colors.slice(0, 3).map((color, idx) => (
+                  <button
+                    key={idx}
+                    onMouseEnter={() => {
+                      setSelectedColorIndex(idx);
+                      setImageByIndex(Math.min(idx + 1, product.images.length - 1));
+                    }}
+                    onClick={() => setSelectedColorIndex(idx)}
+                    className={`h-6 w-6 rounded-full border-2 transition-all duration-200 hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D4AF37] focus-visible:ring-offset-2 focus-visible:ring-offset-white`}
+                    style={{
+                      backgroundColor: color,
+                      borderColor:
+                        selectedColorIndex === idx ? "#D4AF37" : "#E5E7EB",
+                      boxShadow:
+                        selectedColorIndex === idx
+                          ? "0 0 0 2px rgba(212,175,55,0.35)"
+                          : "none",
+                    }}
+                    title={color}
+                    aria-label={color}
+                  />
+                ))}
+                {product.colors.length > 3 && (
+                  <span className="text-[11px] text-[#9CA3AF]">
+                    +{product.colors.length - 3}
+                  </span>
+                )}
+              </div>
             </div>
-          </div>
-        </div>
-
-        {/* Hidden "Add to Cart" Button - Full-width, appears on hover */}
-        <div
-          className="transition-all duration-500 overflow-hidden"
-          style={{
-            maxHeight: isHovered ? "60px" : "0",
-            opacity: isHovered ? 1 : 0,
-            marginTop: isHovered ? "16px" : "0",
-          }}
-        >
-          <button
-            onClick={() => onAddToCart(product.id)}
-            className="w-full bg-black text-white uppercase tracking-widest transition-all duration-300 hover:bg-[#D4AF37] hover:text-black"
-            style={{
-              padding: "14px 0",
-              fontSize: "14px",
-              fontWeight: 600,
-              fontFamily: "'Poppins', sans-serif",
-              letterSpacing: "1.5px",
-              borderRadius: "4px",
-            }}
-          >
-            ADD TO CART
-          </button>
+          )}
         </div>
       </div>
     </div>

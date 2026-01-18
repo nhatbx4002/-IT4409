@@ -1,14 +1,17 @@
 import { useState, useEffect } from "react";
-import { ChevronDown, X } from "lucide-react";
+import { ChevronDown, X, Search } from "lucide-react";
 import { Checkbox } from "./ui/checkbox";
 import { Slider } from "./ui/slider";
 import { Label } from "./ui/label";
 import { Separator } from "./ui/separator";
-import type { FilterState } from "@/types/products";
+import { Input } from "./ui/input";
+import type { ProductFiltersState } from "@/types/products";
+import { CATEGORY_OPTIONS, BRAND_OPTIONS, COLOR_OPTIONS, PRICE_RANGE, PRICE_STEP } from "@/data/filter-options";
+import { FONT_SANS } from "@/theme/constants";
 
 interface FilterSidebarProps {
-  filters: FilterState;
-  onFilterChange: (filters: FilterState) => void;
+  filters: ProductFiltersState;
+  onFilterChange: (filters: ProductFiltersState) => void;
   onClearFilters: () => void;
   isMobileOpen?: boolean;
   onMobileClose?: () => void;
@@ -17,21 +20,30 @@ interface FilterSidebarProps {
 export function FilterSidebar({ 
   filters, 
   onFilterChange, 
-  onClearFilters,
+  onClearFilters: _onClearFilters,
   isMobileOpen = false,
   onMobileClose
 }: FilterSidebarProps) {
-  // Pending filters for "Apply" mode
-  const [pendingFilters, setPendingFilters] = useState<FilterState>(filters);
+  const isMobile = typeof onMobileClose === "function";
+  // Pending filters for "Apply" mode (mobile only)
+  const [pendingFilters, setPendingFilters] = useState<ProductFiltersState>(filters);
+  const activeFilters = isMobile ? pendingFilters : filters;
   
   const [expandedSections, setExpandedSections] = useState<string[]>([
-    'category', 'size', 'color', 'price', 'brand'
+    'category', 'size', 'color', 'brand'
   ]);
+
+  // Search states for expandable categories
+  const [brandSearch, setBrandSearch] = useState('');
+  const [showMoreBrands, setShowMoreBrands] = useState(false);
+  const [showMoreCategories, setShowMoreCategories] = useState(false);
 
   // Update pending filters when actual filters change from outside
   useEffect(() => {
-    setPendingFilters(filters);
-  }, [filters]);
+    if (isMobile) {
+      setPendingFilters(filters);
+    }
+  }, [filters, isMobile]);
 
   const toggleSection = (section: string) => {
     setExpandedSections(prev => 
@@ -41,47 +53,35 @@ export function FilterSidebar({
     );
   };
 
-  const categories = ['Shirts', 'Trousers', 'Suits', 'Outerwear'];
-  const sizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
-  const colors = [
-    { name: 'White', hex: '#FFFFFF' },
-    { name: 'Black', hex: '#000000' },
-    { name: 'Navy', hex: '#000080' },
-    { name: 'Light Blue', hex: '#ADD8E6' },
-    { name: 'Gray', hex: '#808080' },
-    { name: 'Beige', hex: '#F5F5DC' },
-    { name: 'Pink', hex: '#FFB6C1' },
-    { name: 'Olive', hex: '#808000' }
-  ];
-  const brands = ['ARISTINO', 'Premium Line', 'Classic Collection'];
+  const formatCurrency = (value: number) =>
+    new Intl.NumberFormat('vi-VN').format(value) + '₫';
 
   const handleApplyFilters = () => {
+    if (!isMobile) return;
     onFilterChange(pendingFilters);
-    if (onMobileClose) {
-      onMobileClose();
-    }
+    onMobileClose?.();
   };
 
   const handleCancel = () => {
+    if (!isMobile) return;
     setPendingFilters(filters);
-    if (onMobileClose) {
-      onMobileClose();
-    }
+    onMobileClose?.();
   };
 
-  // Get active count for each section using pending filters
+  // Get active count for each section using active filters
   const getFilterCount = (id: string) => {
     switch (id) {
       case 'category':
-        return pendingFilters.categories.length;
+        return activeFilters.categories.length;
       case 'size':
-        return pendingFilters.sizes.length;
+        return activeFilters.sizes.length;
       case 'color':
-        return pendingFilters.colors.length;
+        return activeFilters.colors.length;
       case 'brand':
-        return pendingFilters.brands.length;
+        return activeFilters.brands.length;
       case 'price':
-        return (pendingFilters.priceRange[0] !== 0 || pendingFilters.priceRange[1] !== 500) ? 1 : 0;
+        return (activeFilters.priceRange[0] !== PRICE_RANGE[0] ||
+          activeFilters.priceRange[1] !== PRICE_RANGE[1]) ? 1 : 0;
       default:
         return 0;
     }
@@ -100,49 +100,51 @@ export function FilterSidebar({
     const activeCount = getFilterCount(id);
     
     return (
-      <div className="border-b border-black/10 last:border-0">
+      <div className="border-b border-black/8 last:border-0">
         <button
           onClick={() => toggleSection(id)}
-          className="w-full py-4 flex items-center justify-between text-left transition-colors duration-300 hover:text-[#D4AF37]"
+          className="w-full py-4 flex items-center justify-between text-left transition-colors duration-200 hover:text-black"
         >
           <div className="flex items-center gap-2">
-            <span 
-              className="text-black"
-              style={{ 
-                fontFamily: "'Poppins', sans-serif",
-                fontWeight: 500
+            <span
+              className="text-black font-semibold"
+              style={{
+                fontFamily: FONT_SANS,
+                fontSize: '15px'
               }}
             >
               {title}
             </span>
             {activeCount > 0 && (
-              <span 
-                className="px-2 py-0.5 rounded-full text-xs text-black"
-                style={{ 
+              <span
+                className="px-2.5 py-1 rounded-full text-xs text-black font-bold"
+                style={{
                   backgroundColor: '#D4AF37',
-                  fontFamily: "'Poppins', sans-serif"
+                  fontFamily: FONT_SANS
                 }}
               >
                 {activeCount}
               </span>
             )}
           </div>
-          <ChevronDown 
-            className={`w-5 h-5 transition-transform duration-300 ${
+          <ChevronDown
+            className={`w-5 h-5 text-black/70 transition-transform duration-300 ease-out ${
               isExpanded ? 'rotate-180' : ''
             }`}
           />
         </button>
-        
-        <div 
-          className="overflow-hidden transition-all duration-500"
+
+        <div
+          className="grid transition-[grid-template-rows] duration-400 ease-out"
           style={{
-            maxHeight: isExpanded ? '500px' : '0',
-            opacity: isExpanded ? 1 : 0
+            gridTemplateRows: isExpanded ? '1fr' : '0fr',
+            transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)'
           }}
         >
-          <div className="pb-4">
-            {children}
+          <div className="overflow-hidden">
+            <div className="pb-4">
+              {children}
+            </div>
           </div>
         </div>
       </div>
@@ -152,58 +154,82 @@ export function FilterSidebar({
   const filterContent = (
     <>
       {/* Category Filter */}
-      <FilterSection title="Category" id="category">
+      <FilterSection title="Sản phẩm" id="category">
         <div className="space-y-3">
-          {categories.map((category) => (
-            <div key={category} className="flex items-center space-x-2">
+          {CATEGORY_OPTIONS.slice(0, showMoreCategories ? undefined : 5).map((category) => (
+            <div key={category.slug} className="flex items-center space-x-2">
               <Checkbox
-                id={`category-${category}`}
-                checked={pendingFilters.categories.includes(category)}
+                id={`category-${category.slug}`}
+                checked={activeFilters.categories.includes(category.slug)}
                 onCheckedChange={(checked) => {
-                  setPendingFilters({
-                    ...pendingFilters,
+                  const nextFilters = {
+                    ...activeFilters,
                     categories: checked
-                      ? [...pendingFilters.categories, category]
-                      : pendingFilters.categories.filter(c => c !== category)
-                  });
+                      ? [...activeFilters.categories, category.slug]
+                      : activeFilters.categories.filter(c => c !== category.slug)
+                  };
+                  if (isMobile) {
+                    setPendingFilters(nextFilters);
+                  } else {
+                    onFilterChange(nextFilters);
+                  }
                 }}
-                className="border-2 border-black/20 data-[state=checked]:bg-[#D4AF37] data-[state=checked]:border-[#D4AF37]"
+                className="border-2 border-black/20 data-[state=checked]:bg-black data-[state=checked]:border-black w-5 h-5"
               />
               <Label
-                htmlFor={`category-${category}`}
-                className="cursor-pointer text-sm text-[#666666] hover:text-black transition-colors duration-300"
+                htmlFor={`category-${category.slug}`}
+                className="cursor-pointer text-sm text-[#333333] hover:text-black transition-colors duration-200 ease-out font-medium"
               >
-                {category}
+                {category.label}
               </Label>
             </div>
           ))}
         </div>
+        
+        {CATEGORY_OPTIONS.length > 5 && (
+          <button
+            onClick={() => setShowMoreCategories(!showMoreCategories)}
+            className="mt-3 text-xs font-semibold text-[#D4AF37] hover:text-[#C99D2B] transition-colors duration-200 ease-out hover:scale-105 active:scale-95 underline inline-block"
+          >
+            {showMoreCategories ? 'Thu gọn' : 'Xem thêm'}
+          </button>
+        )}
       </FilterSection>
 
       <Separator className="my-0" />
 
       {/* Size Filter */}
-      <FilterSection title="Size" id="size">
+      <FilterSection title="Kích cỡ" id="size">
         <div className="grid grid-cols-3 gap-2">
-          {sizes.map((size) => (
-            <button
-              key={size}
-              onClick={() => {
-                setPendingFilters({
-                  ...pendingFilters,
-                  sizes: pendingFilters.sizes.includes(size)
-                    ? pendingFilters.sizes.filter(s => s !== size)
-                    : [...pendingFilters.sizes, size]
-                });
+          {[
+            '29', '30', '31', '32', '33', '34', '35', '36', '38', '39',
+            '40', '41', '42', '43', '44', 'XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL'
+          ].map((size) => (
+              <button
+                key={size}
+                onClick={() => {
+                const nextFilters = {
+                  ...activeFilters,
+                  sizes: activeFilters.sizes.includes(size)
+                    ? activeFilters.sizes.filter(s => s !== size)
+                    : [...activeFilters.sizes, size]
+                };
+                if (isMobile) {
+                  setPendingFilters(nextFilters);
+                } else {
+                  onFilterChange(nextFilters);
+                }
               }}
               className={`
-                py-2 border-2 transition-all duration-300
-                ${pendingFilters.sizes.includes(size)
-                  ? 'border-[#D4AF37] bg-[#D4AF37] text-black'
-                  : 'border-black/20 text-[#666666] hover:border-[#D4AF37]'
+                py-2.5 px-1 rounded-lg border-2 font-semibold text-sm
+                transition-all duration-200 ease-out
+                hover:scale-105 active:scale-95
+                ${activeFilters.sizes.includes(size)
+                  ? 'border-black bg-black text-white shadow-md scale-105'
+                  : 'border-black/15 text-black/70 hover:border-black/30 active:border-black'
                 }
               `}
-              style={{ fontFamily: "'Poppins', sans-serif" }}
+              style={{ fontFamily: FONT_SANS }}
             >
               {size}
             </button>
@@ -214,55 +240,166 @@ export function FilterSidebar({
       <Separator className="my-0" />
 
       {/* Color Filter */}
-      <FilterSection title="Color" id="color">
-        <div className="flex gap-3 flex-wrap">
-          {colors.map((color) => (
-            <button
-              key={color.name}
-              onClick={() => {
-                setPendingFilters({
-                  ...pendingFilters,
-                  colors: pendingFilters.colors.includes(color.name)
-                    ? pendingFilters.colors.filter(c => c !== color.name)
-                    : [...pendingFilters.colors, color.name]
-                });
-              }}
-              className={`
-                relative w-10 h-10 rounded-full border-2 transition-all duration-300
-                ${pendingFilters.colors.includes(color.name)
-                  ? 'border-[#D4AF37] ring-2 ring-[#D4AF37] ring-offset-2'
-                  : 'border-gray-300 hover:border-[#D4AF37]'
-                }
-              `}
-              style={{ backgroundColor: color.hex }}
-              title={color.name}
-              aria-label={color.name}
-            />
-          ))}
+      <FilterSection title="Màu sắc" id="color">
+        <div className="flex gap-5 flex-wrap p-3 overflow-visible">
+          {COLOR_OPTIONS.map((color) => {
+            const isSelected = activeFilters.colors.includes(color.name);
+            return (
+              <div key={color.name} className="flex flex-col items-center gap-2">
+                <button
+                  onClick={() => {
+                    const nextFilters = {
+                      ...activeFilters,
+                      colors: isSelected
+                        ? activeFilters.colors.filter(c => c !== color.name)
+                        : [...activeFilters.colors, color.name]
+                    };
+                    if (isMobile) {
+                      setPendingFilters(nextFilters);
+                    } else {
+                      onFilterChange(nextFilters);
+                    }
+                  }}
+                  className={`
+                    relative w-11 h-11 rounded-full
+                    hover:scale-110 active:scale-90
+                    transition-transform duration-200
+                    ${isSelected ? 'scale-110' : 'scale-100'}
+                  `}
+                  style={{
+                    backgroundColor: color.hex,
+                    boxShadow: ['#FFFFFF', '#F5F5DC'].includes(color.hex)
+                      ? 'inset 0 0 0 1px rgba(0,0,0,0.1), 0 2px 8px rgba(0,0,0,0.1)'
+                      : isSelected
+                        ? '0 4px 12px rgba(0,0,0,0.15), 0 2px 4px rgba(0,0,0,0.1)'
+                        : '0 2px 6px rgba(0,0,0,0.08)',
+                    }}
+                  >
+                    {/* Expanding selection ring - spring animation */}
+                    <span
+                      className={`
+                        absolute inset-0 rounded-full border-2 border-black
+                        transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]
+                        ${isSelected
+                          ? 'scale-125 opacity-100'
+                          : 'scale-100 opacity-0'
+                        }
+                      `}
+                      style={{
+                        transformOrigin: 'center',
+                      }}
+                    />
+
+                    {/* Inner press feedback ring */}
+                    <span
+                      className={`
+                        absolute inset-0 rounded-full border border-black/20
+                        transition-all duration-150 ease-out
+                        ${isSelected ? 'opacity-100' : 'opacity-0'}
+                      `}
+                      style={{
+                        transform: 'scale(0.7)',
+                      }}
+                    />
+                  </button>
+                  <span className={`
+                    text-xs font-medium text-center w-12 truncate transition-colors duration-200
+                    ${isSelected ? 'text-black font-semibold' : 'text-black/60'}
+                  `}>
+                    {color.name}
+                  </span>
+              </div>
+            );
+          })}
         </div>
       </FilterSection>
 
       <Separator className="my-0" />
 
       {/* Price Range Filter */}
-      <FilterSection title="Price Range" id="price">
+      <FilterSection title="Giá" id="price">
         <div className="space-y-4">
-          <Slider
-            value={pendingFilters.priceRange}
-            onValueChange={(value) => {
-              setPendingFilters({
-                ...pendingFilters,
-                priceRange: value as [number, number]
-              });
-            }}
-            min={0}
-            max={500}
-            step={10}
-            className="[&_[role=slider]]:bg-[#D4AF37] [&_[role=slider]]:border-[#D4AF37]"
-          />
-          <div className="flex items-center justify-between text-sm text-[#666666]">
-            <span>${pendingFilters.priceRange[0]}</span>
-            <span>${pendingFilters.priceRange[1]}+</span>
+          {/* Price Display Labels */}
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex-1">
+              <span className="text-xs text-black/50 uppercase tracking-wider font-semibold">Min</span>
+              <div className="text-lg font-bold text-black">{formatCurrency(activeFilters.priceRange[0])}</div>
+            </div>
+            <div className="w-px h-8 bg-black/10" />
+            <div className="flex-1 text-right">
+              <span className="text-xs text-black/50 uppercase tracking-wider font-semibold">Max</span>
+              <div className="text-lg font-bold text-black">{formatCurrency(activeFilters.priceRange[1])}</div>
+            </div>
+          </div>
+
+          {/* Slider - Improved thickness and styling */}
+          <div className="py-2">
+            <Slider
+              value={activeFilters.priceRange}
+              onValueChange={(value) => {
+                const nextFilters: ProductFiltersState = {
+                  ...activeFilters,
+                  priceRange: value as [number, number]
+                };
+                if (isMobile) {
+                  setPendingFilters(nextFilters);
+                } else {
+                  onFilterChange(nextFilters);
+                }
+              }}
+              min={PRICE_RANGE[0]}
+              max={PRICE_RANGE[1]}
+              step={PRICE_STEP}
+              className="[&_[role=slider]]:bg-black [&_[role=slider]]:border-black [&_[role=slider]]:w-5 [&_[role=slider]]:h-5 [&_[role=slider]]:shadow-md"
+            />
+          </div>
+
+          {/* Price inputs for precise control */}
+          <div className="flex gap-2 mt-3">
+            <div className="flex-1">
+              <Input
+                type="number"
+                min={PRICE_RANGE[0]}
+                max={PRICE_RANGE[1]}
+                value={activeFilters.priceRange[0]}
+                onChange={(e) => {
+                  const val = Math.min(Number(e.target.value), activeFilters.priceRange[1]);
+                  const nextFilters: ProductFiltersState = {
+                    ...activeFilters,
+                    priceRange: [Math.max(val, PRICE_RANGE[0]), activeFilters.priceRange[1]] as [number, number]
+                  };
+                  if (isMobile) {
+                    setPendingFilters(nextFilters);
+                  } else {
+                    onFilterChange(nextFilters);
+                  }
+                }}
+                className="w-full px-3 py-2 border-2 border-black/15 rounded-lg text-sm font-medium focus:border-black focus:outline-none transition-colors"
+                placeholder="Min"
+              />
+            </div>
+            <div className="flex-1">
+              <Input
+                type="number"
+                min={PRICE_RANGE[0]}
+                max={PRICE_RANGE[1]}
+                value={activeFilters.priceRange[1]}
+                onChange={(e) => {
+                  const val = Math.max(Number(e.target.value), activeFilters.priceRange[0]);
+                  const nextFilters: ProductFiltersState = {
+                    ...activeFilters,
+                    priceRange: [activeFilters.priceRange[0], Math.min(val, PRICE_RANGE[1])] as [number, number]
+                  };
+                  if (isMobile) {
+                    setPendingFilters(nextFilters);
+                  } else {
+                    onFilterChange(nextFilters);
+                  }
+                }}
+                className="w-full px-3 py-2 border-2 border-black/15 rounded-lg text-sm font-medium focus:border-black focus:outline-none transition-colors"
+                placeholder="Max"
+              />
+            </div>
           </div>
         </div>
       </FilterSection>
@@ -270,79 +407,115 @@ export function FilterSidebar({
       <Separator className="my-0" />
 
       {/* Brand Filter */}
-      <FilterSection title="Brand" id="brand">
-        <div className="space-y-3">
-          {brands.map((brand) => (
-            <div key={brand} className="flex items-center space-x-2">
-              <Checkbox
-                id={`brand-${brand}`}
-                checked={pendingFilters.brands.includes(brand)}
-                onCheckedChange={(checked) => {
-                  setPendingFilters({
-                    ...pendingFilters,
-                    brands: checked
-                      ? [...pendingFilters.brands, brand]
-                      : pendingFilters.brands.filter(b => b !== brand)
-                  });
-                }}
-                className="border-2 border-black/20 data-[state=checked]:bg-[#D4AF37] data-[state=checked]:border-[#D4AF37]"
-              />
-              <Label
-                htmlFor={`brand-${brand}`}
-                className="cursor-pointer text-sm text-[#666666] hover:text-black transition-colors duration-300"
-              >
-                {brand}
-              </Label>
-            </div>
-          ))}
+      <FilterSection title="Nhãn hàng" id="brand">
+        <div className="space-y-4">
+          {/* Brand Search */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-black/40" />
+            <Input
+              type="text"
+              placeholder="Tìm nhãn hàng..."
+              value={brandSearch}
+              onChange={(e) => setBrandSearch(e.target.value.toLowerCase())}
+              className="w-full pl-10 pr-3 py-2 border-2 border-black/15 rounded-lg text-sm focus:border-black focus:outline-none transition-colors bg-white"
+            />
+          </div>
+
+          {/* Brand List */}
+          <div className="space-y-3 max-h-80 overflow-y-auto pr-2" style={{ scrollbarWidth: 'thin' }}>
+            {BRAND_OPTIONS
+              .filter(brand => brand.toLowerCase().includes(brandSearch))
+              .slice(0, showMoreBrands ? undefined : 5)
+              .map((brand) => (
+                <div key={brand} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={`brand-${brand}`}
+                    checked={activeFilters.brands.includes(brand)}
+                    onCheckedChange={(checked) => {
+                      const nextFilters = {
+                        ...activeFilters,
+                        brands: checked
+                          ? [...activeFilters.brands, brand]
+                          : activeFilters.brands.filter(b => b !== brand)
+                      };
+                      if (isMobile) {
+                        setPendingFilters(nextFilters);
+                      } else {
+                        onFilterChange(nextFilters);
+                      }
+                    }}
+                    className="border-2 border-black/20 data-[state=checked]:bg-black data-[state=checked]:border-black w-5 h-5"
+                  />
+                  <Label
+                    htmlFor={`brand-${brand}`}
+                    className="cursor-pointer text-sm text-[#333333] hover:text-black transition-colors duration-200 ease-out font-medium"
+                  >
+                    {brand}
+                  </Label>
+                </div>
+              ))}
+          </div>
+
+          {/* Show More/Less for Brands */}
+          {BRAND_OPTIONS.filter(b => b.toLowerCase().includes(brandSearch)).length > 5 && (
+            <button
+              onClick={() => setShowMoreBrands(!showMoreBrands)}
+              className="w-full mt-2 text-xs font-semibold text-[#D4AF37] hover:text-[#C99D2B] transition-all duration-200 ease-out hover:scale-105 active:scale-95 underline py-1"
+            >
+              {showMoreBrands ? 'Thu gọn' : 'Xem thêm'}
+            </button>
+          )}
         </div>
       </FilterSection>
 
-      {/* Action Buttons */}
-      <div className="mt-8 pt-6 border-t border-black/10 space-y-3">
-        <button
-          onClick={handleApplyFilters}
-          className="w-full py-3 transition-all duration-300 hover:opacity-90"
-          style={{
-            backgroundColor: '#D4AF37',
-            color: '#000',
-            fontFamily: "'Poppins', sans-serif",
-            fontWeight: 600
-          }}
-        >
-          APPLY FILTERS
-        </button>
-        <button
-          onClick={handleCancel}
-          className="w-full py-3 border-2 border-black/20 transition-all duration-300 hover:border-black hover:bg-black/5"
-          style={{
-            fontFamily: "'Poppins', sans-serif"
-          }}
-        >
-          Cancel
-        </button>
-      </div>
+      {/* Action Buttons - Primary Ghost Style */}
+      {isMobile && (
+        <div className="mt-8 pt-6 border-t border-black/10 flex gap-3 items-center">
+          {/* Primary Button - Apply Filters */}
+          <button
+            onClick={handleApplyFilters}
+            className="flex-1 py-3 bg-black text-white font-semibold text-sm transition-all duration-200 ease-out hover:bg-black/90 hover:scale-[1.02] active:scale-95 active:shadow-inner shadow-md rounded-lg"
+            style={{
+              fontFamily: FONT_SANS
+            }}
+          >
+            LƯU
+          </button>
+
+          {/* Ghost Button - Clear/Cancel */}
+          <button
+            onClick={handleCancel}
+            className="text-xs font-semibold text-black/60 hover:text-black transition-all duration-200 ease-out hover:scale-105 active:scale-95 underline decoration-1 underline-offset-2 py-3 px-4"
+            style={{
+              fontFamily: FONT_SANS
+            }}
+          >
+            HUỶ
+          </button>
+        </div>
+      )}
     </>
   );
 
   // Desktop version (no mobile props passed)
   if (isMobileOpen === undefined || onMobileClose === undefined) {
     return (
-      <div className="bg-white">
+      <div className="bg-white rounded-2xl p-1 flex flex-col max-h-[calc(100vh-2rem)] overflow-y-auto">
         <div className="mb-6">
           <h2 
-            className="mb-2"
+            className="mb-3 text-black"
             style={{ 
               fontFamily: "'Playfair Display', serif",
-              fontSize: '24px',
-              fontWeight: 600
+              fontSize: '28px',
+              fontWeight: 700,
+              letterSpacing: '-0.5px'
             }}
           >
-            Filters
+            Bộ lọc
           </h2>
           <div 
-            className="w-12 h-0.5"
-            style={{ backgroundColor: '#D4AF37' }}
+            className="w-16 h-1 rounded-full"
+            style={{ backgroundColor: '#000000' }}
           />
         </div>
         {filterContent}
@@ -353,46 +526,64 @@ export function FilterSidebar({
   // Mobile drawer version
   return (
     <>
-      {/* Mobile Overlay */}
-      {isMobileOpen && (
-        <div 
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
-          onClick={onMobileClose}
-        />
-      )}
+      {/* Mobile Overlay - Smooth fade with backdrop blur */}
+      <div
+        className={`
+          fixed inset-0 bg-black/50 backdrop-blur-sm z-40
+          transition-opacity duration-300 ease-out
+          ${isMobileOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}
+        `}
+        onClick={onMobileClose}
+        aria-hidden="true"
+      />
 
-      {/* Mobile Sidebar Drawer */}
-      <div 
+      {/* Mobile Sidebar Drawer - Smooth slide with custom easing */}
+      <div
         className={`
           fixed top-0 left-0 h-screen w-80 bg-white z-50
-          overflow-y-auto transition-transform duration-500
-          ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'}
+          overflow-y-auto shadow-2xl
+          will-change-transform
+          ${isMobileOpen
+            ? 'translate-x-0 shadow-black/20'
+            : '-translate-x-full'
+          }
         `}
         style={{
+          transition: 'transform 0.5s cubic-bezier(0.32, 0.72, 0, 1)',
           scrollbarWidth: 'thin',
           scrollbarColor: 'rgba(212, 175, 55, 0.3) rgba(0, 0, 0, 0.03)'
         }}
       >
         {/* Mobile Header */}
-        <div className="sticky top-0 bg-white border-b border-black/10 px-6 py-4 flex items-center justify-between z-10">
-          <h2 
-            style={{ 
+        <div className={`
+          sticky top-0 bg-white border-b border-black/10 px-6 py-4 flex items-center justify-between z-10
+          transition-opacity duration-300 delay-100
+          ${isMobileOpen ? 'opacity-100' : 'opacity-0'}
+        `}>
+          <h2
+            style={{
               fontFamily: "'Playfair Display', serif",
-              fontSize: '24px',
-              fontWeight: 600
+              fontSize: '28px',
+              fontWeight: 700,
+              letterSpacing: '-0.5px'
             }}
           >
-            Filters
+            Bộ lọc
           </h2>
-          <button 
+          <button
             onClick={onMobileClose}
-            className="hover:text-[#D4AF37] transition-colors duration-300"
+            className="hover:text-black hover:bg-black/5 rounded-lg p-2 transition-all duration-200 ease-out hover:scale-110 active:scale-95"
+            aria-label="Close filters"
           >
             <X className="w-6 h-6" />
           </button>
         </div>
 
-        <div className="p-6">
+        <div className={`
+          p-6
+          transition-opacity duration-300 delay-150
+          ${isMobileOpen ? 'opacity-100' : 'opacity-0'}
+        `}>
           {filterContent}
         </div>
       </div>

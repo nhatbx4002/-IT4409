@@ -1,5 +1,6 @@
 import { DataTypes } from "sequelize";
 import { sequelize } from "../config/db.config.js";
+import { setUpdatedAtHook } from "./hooks.js";
 
 export const Payment = sequelize.define("payments", {
   id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
@@ -11,4 +12,8 @@ export const Payment = sequelize.define("payments", {
   status: DataTypes.STRING(20),
   raw_payload: DataTypes.JSONB,
   created_at: { type: DataTypes.DATE, defaultValue: DataTypes.NOW },
+  updated_at: { type: DataTypes.DATE, defaultValue: DataTypes.NOW },
 });
+
+setUpdatedAtHook(Payment);
+

@@ -1,45 +1,39 @@
-import jwt from "jsonwebtoken";
 import { User } from "../models/index.js";
+import { verifyAccessToken } from "../services/authService.js";
 
-// Middleware xác thực JWT token
 export const authenticateToken = async (req, res, next) => {
   try {
-    // Lấy token từ header
     const authHeader = req.headers["authorization"];
-    const token = authHeader && authHeader.split(" ")[1]; // Bearer TOKEN
+    const token = authHeader && authHeader.split(" ")[1];
 
     if (!token) {
       return res.status(401).json({
         success: false,
         error: "Access denied",
-        message: "No token provided"
+        message: "No token provided",
       });
     }
 
-    // Verify token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-    // Tìm user trong database
+    const decoded = verifyAccessToken(token);
     const user = await User.findByPk(decoded.id);
-    
+
     if (!user) {
       return res.status(401).json({
         success: false,
         error: "Invalid token",
-        message: "User not found"
+        message: "User not found",
       });
     }
 
-    // Kiểm tra token có khớp với database không
-    if (user.access_token !== token) {
+    const currentVersion = user.token_version || 0;
+    if (decoded.version !== currentVersion) {
       return res.status(401).json({
         success: false,
         error: "Invalid token",
-        message: "Token does not match"
+        message: "Token has been revoked",
       });
     }
 
-    // Set user vào request object
     req.user = user;
     next();
   } catch (error) {
@@ -47,23 +41,42 @@ export const authenticateToken = async (req, res, next) => {
       return res.status(401).json({
         success: false,
         error: "Invalid token",
-        message: "Token is malformed"
+        message: "Token is malformed",
       });
     }
-    
+
     if (error.name === "TokenExpiredError") {
       return res.status(401).json({
         success: false,
         error: "Token expired",
-        message: "Please login again"
+        message: "Please login again",
       });
     }
 
     return res.status(500).json({
       success: false,
       error: "Authentication failed",
-      message: error.message
+      message: error.message,
     });
   }
 };
 
+// Middleware to check if user has admin privileges
+export const isAdmin = (req, res, next) => {
+  // req.user is set by authenticateToken middleware
+  if (!req.user) {
+    return res.status(401).json({
+      success: false,
+      message: "Authentication required",
+    });
+  }
+
+  if (!['admin', 'super_admin'].includes(req.user.role)) {
+    return res.status(403).json({
+      success: false,
+      message: "Admin access required",
+    });
+  }
+
+  next();
+};

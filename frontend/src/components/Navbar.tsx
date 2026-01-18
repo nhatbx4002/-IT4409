@@ -1,11 +1,29 @@
 import { useEffect, useMemo, useState } from "react";
 import {
-  Search, User, UserPlus, LogIn, LogOut,
-  UserCircle, Package, Heart, Settings, ShoppingBag , X
+  Search,
+  User,
+  UserPlus,
+  LogIn,
+  LogOut,
+  UserCircle,
+  Package,
+  Heart,
+  Settings,
+  ShoppingBag,
+  X,
+  Menu,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ShoppingCart } from "./HomePage/ShoppingCart";
+import { LuxurySearchOverlay } from "./LuxurySearchOverlay";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetClose,
+} from "@/components/ui/sheet";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,41 +31,102 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useNavigate, useLocation } from "react-router-dom";
 
+import { getStoredUser, isAuthenticated, logout } from "@/lib/auth";
+import type { AuthUser } from "@/types/auth";
+import { getCart, getWishlist } from "@/lib/api";
 
-import { getUser, isAuthenticated, loginMock, logout, type AuthUser } from "@/lib/auth";
 
 export function Navbar() {
   const [showTopBar, setShowTopBar] = useState(true);
   const [cartOpen, setCartOpen] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [cartCount, setCartCount] = useState(0);
+  const [wishlistCount, setWishlistCount] = useState(0);
 
-  const [user,setUser] = useState<AuthUser | null>(null);
+  useEffect(() => {
+    const currentUser = isAuthenticated() ? getStoredUser() : null;
+    setUser(currentUser);
+  }, []);
 
-  useEffect(() =>{
-    setUser(isAuthenticated() ? getUser() : null);
-  },[]);
+  useEffect(() => {
+    const fetchCounts = async () => {
+      if (!isAuthenticated()) {
+        setCartCount(0);
+        setWishlistCount(0);
+        return;
+      }
+
+      try {
+        const cart = await getCart();
+        const totalItems = cart.items.reduce((sum, item) => sum + item.quantity, 0);
+        setCartCount(totalItems);
+      } catch {
+        setCartCount(0);
+      }
+
+      try {
+        const currentUser = getStoredUser();
+        if (currentUser?.id) {
+          const wishlist = await getWishlist(currentUser.id);
+          setWishlistCount(wishlist.count || wishlist.data?.length || 0);
+        }
+      } catch {
+        setWishlistCount(0);
+      }
+    };
+
+    fetchCounts();
+    
+    const interval = setInterval(fetchCounts, 5000);
+    return () => clearInterval(interval);
+  }, [user]);
 
   const initials = useMemo(() => {
-    if(!user) return "U";
-    return user.name.split(" ").map(p => p[0]).join("").slice(0,2).toUpperCase();
+    if(!user || !user.name) return "U";
+    const parts = user.name.trim().split(/\s+/);
+    if (parts.length === 0) return "U";
+    const firstInitial = parts[0][0].toUpperCase();
+    const lastInitial = parts.length > 1 ? parts[parts.length - 1][0].toUpperCase() : "";
+    return (firstInitial + lastInitial).slice(0, 2);
   },[user])
+
+  // Keyboard shortcut for search (Cmd+K / Ctrl+K)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setSearchOpen(true);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   const handleLogout = () => {
     logout();
     setUser(null);
+    navigate("/");
   }
 
   const handleDemoLogin = () => {
-    loginMock();
-    setUser(getUser());
-  }
+    navigate("/login");
+  };
 
   return (
     <>
       {/* Top Bar */}
       {showTopBar && (
-        <div className="bg-black text-white py-2 px-6 text-center relative">
-          <p className="text-sm">Premium Men's Fashion | Free Shipping on Orders Over $200</p>
+        <div className="relative bg-black py-2 text-center text-white">
+          <p className="text-xs tracking-[0.24em] uppercase text-slate-200 sm:text-sm">
+            Thời trang nam cao cấp · Sửa đồ miễn phí · Miễn phí vận chuyển cho đơn trên $200
+          </p>
           <button
             onClick={() => setShowTopBar(false)}
             className="absolute right-6 top-1/2 -translate-y-1/2 hover:opacity-70 transition-opacity"
@@ -58,134 +137,88 @@ export function Navbar() {
       )}
 
       {/* Main Navigation */}
-      <nav className="sticky top-0 z-50 bg-white/98 backdrop-blur-sm border-b border-black/10 shadow-sm">
-        <div className="max-w-full mx-auto px-30 py-4">
-          <div className="flex items-center justify-between">
+      <nav className="sticky top-0 z-50 border-b border-black/5 bg-white/95 backdrop-blur-sm">
+        <div className="flex w-full items-center justify-between px-6 py-3 sm:px-8">
             {/* Logo */}
-            <div className="shrink-0">
-              <h1 
-                className="text-3xl tracking-wider" 
-                style={{ color: '#D4AF37', fontFamily: "'Playfair Display', serif" }}
+            <button
+              type="button"
+              onClick={() => navigate("/")}
+              className="shrink-0 text-left"
+            >
+              <h1
+                className="text-2xl tracking-[0.32em] text-[#D4AF37] sm:text-3xl"
+                style={{ fontFamily: "'Playfair Display', serif" }}
               >
                 ARISTINO
               </h1>
-            </div>
+            </button>
 
             {/* Center Navigation */}
-            <div className="hidden lg:flex items-center gap-8">
-              <a href="#" className="text-sm tracking-wide hover:text-[#D4AF37] transition-colors">
-                NEW ARRIVALS
-              </a>
-              <a href="#" className="text-sm tracking-wide hover:text-[#D4AF37] transition-colors">
-                SUITS
-              </a>
-              <a href="#" className="text-sm tracking-wide hover:text-[#D4AF37] transition-colors">
-                SHIRTS
-              </a>
-              <a href="#" className="text-sm tracking-wide hover:text-[#D4AF37] transition-colors">
-                OUTERWEAR
-              </a>
-              <a href="#" className="text-sm tracking-wide hover:text-[#D4AF37] transition-colors">
-                ACCESSORIES
-              </a>
-              <a 
-                href="#" 
-                className="relative text-sm tracking-wide px-4 py-2 overflow-hidden group sale-button"
-                style={{
-                  fontWeight: 600
-                }}
+            <div className="hidden items-center gap-8 lg:flex">
+              <button
+                type="button"
+                onClick={() => navigate("/collections?sort=newest")}
+                className="text-xs font-medium tracking-[0.22em] text-[#4B5563] transition-colors hover:text-[#D4AF37]"
               >
-                {/* Animated gradient background */}
-                <div 
-                  className="absolute inset-0 sale-gradient"
-                  style={{
-                    background: 'linear-gradient(90deg, #D4AF37 0%, #FFD700 25%, #D4AF37 50%, #B8960F 75%, #D4AF37 100%)',
-                    backgroundSize: '200% 100%',
-                    animation: 'shimmer 3s linear infinite'
-                  }}
-                ></div>
-                
-                {/* Pulsing glow effect */}
-                <div 
-                  className="absolute inset-0"
-                  style={{
-                    boxShadow: '0 0 20px rgba(212, 175, 55, 0.6)',
-                    animation: 'pulse-glow 2s ease-in-out infinite'
-                  }}
-                ></div>
-
-                {/* Main text */}
-                <span 
-                  className="relative z-10 inline-block"
-                  style={{ 
-                    color: '#000000',
-                    animation: 'text-pop 1s ease-in-out infinite'
-                  }}
-                >
-                  SALE
-                </span>
-
-                {/* Hover overlay */}
-                <div 
-                  className="absolute inset-0 bg-black transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left z-10"
-                  style={{ transitionDuration: '300ms' }}
-                ></div>
-                <span className="absolute inset-0 flex items-center justify-center text-[#D4AF37] opacity-0 group-hover:opacity-100 transition-opacity z-20">
-                  SALE
-                </span>
-              </a>
-
-              <style>{`
-                @keyframes shimmer {
-                  0% {
-                    background-position: 0% 0%;
-                  }
-                  100% {
-                    background-position: 200% 0%;
-                  }
-                }
-
-                @keyframes pulse-glow {
-                  0%, 100% {
-                    opacity: 0.6;
-                  }
-                  50% {
-                    opacity: 1;
-                  }
-                }
-
-                @keyframes text-pop {
-                  0%, 100% {
-                    transform: scale(1);
-                  }
-                  50% {
-                    transform: scale(1.05);
-                  }
-                }
-              `}</style>
+                HÀNG MỚI
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate("/collections/ao")}
+                className="text-xs font-medium tracking-[0.22em] text-[#4B5563] transition-colors hover:text-[#D4AF37]"
+              >
+                ÁO
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate("/collections/quan")}
+                className="text-xs font-medium tracking-[0.22em] text-[#4B5563] transition-colors hover:text-[#D4AF37]"
+              >
+                QUẦN
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate("/collections/phu-kien")}
+                className="text-xs font-medium tracking-[0.22em] text-[#4B5563] transition-colors hover:text-[#D4AF37]"
+              >
+                PHỤ KIỆN
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate("/collections/nuoc-hoa")}
+                className="text-xs font-medium tracking-[0.22em] text-[#4B5563] transition-colors hover:text-[#D4AF37]"
+              >
+                NƯỚC HOA
+              </button>
             </div>
 
             {/* Right Icons */}
-            <div className="flex items-center gap-3">
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="hover:bg-transparent hover:text-[#D4AF37] transition-colors"
+            <div className="flex items-center gap-2 sm:gap-3">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="hover:bg-transparent hover:text-[#D4AF37] transition-colors relative group"
+                onClick={() => setSearchOpen(true)}
+                aria-label="Search"
               >
                 <Search className="h-5 w-5" />
               </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     className="hover:bg-transparent hover:text-[#D4AF37] transition-colors"
                   >
                     {user ? (
                       user.avatarUrl ? (
-                        <img src={user.avatarUrl} alt={user.name} className="h-8 w-8 rounded-full object-cover"/>
-                      ): (
-                        <div className="h-8 w-8 rounded-full bg-black/80 text-white text-xs flex items-center justify-center">
+                        <img
+                          src={user.avatarUrl}
+                          alt={user.name}
+                          className="h-8 w-8 rounded-full object-cover ring-2 ring-[#D4AF37]/20"
+                        />
+                      ) : (
+                        <div className="h-8 w-8 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#B8941F] text-black text-xs font-bold flex items-center justify-center ring-2 ring-[#D4AF37]/30 shadow-md">
                           {initials}
                         </div>
                       )
@@ -203,71 +236,212 @@ export function Navbar() {
                           onClick={() => handleDemoLogin()}
                         >
                         <LogIn className="h-4 w-4 mr-3 text-[#D4AF37]" />
-                        <span className="text-sm">Login (Demo)</span>
+                        <span className="text-sm">Đăng nhập</span>
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         className="cursor-pointer hover:bg-[#F5F5F5] py-3"
-                        onClick={() => alert("Đi tới /register (frontend-only)")}
+                        onClick={() => navigate("/signup")}
                       >
                         <UserPlus className="h-4 w-4 mr-3 text-[#D4AF37]" />
-                        <span className="text-sm">Register</span>
+                        <span className="text-sm">Đăng ký</span>
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 ) : (
                    <DropdownMenuContent align="end" className="w-72 bg-white border border-black/10 shadow-lg">
-                    <DropdownMenuItem className="cursor-pointer hover:bg-[#F5F5F5] py-3" onClick={() => alert("Go /account")}>
+                    <DropdownMenuItem className="cursor-pointer hover:bg-[#F5F5F5] py-3" onClick={() => navigate("/account")}> 
                       <UserCircle className="h-4 w-4 mr-3 text-[#D4AF37]" />
-                      <span className="text-sm">My Profile</span>
+                      <span className="text-sm">Hồ sơ của tôi</span>
                     </DropdownMenuItem>
-                    <DropdownMenuItem className="cursor-pointer hover:bg-[#F5F5F5] py-3" onClick={() => alert("Go /orders")}>
+                    <DropdownMenuItem className="cursor-pointer hover:bg-[#F5F5F5] py-3" onClick={() => navigate("/orders")}>
                       <Package className="h-4 w-4 mr-3 text-[#D4AF37]" />
-                      <span className="text-sm">My Orders</span>
+                      <span className="text-sm">Đơn hàng của tôi</span>
                     </DropdownMenuItem>
-                    <DropdownMenuItem className="cursor-pointer hover:bg-[#F5F5F5] py-3" onClick={() => alert("Go /wishlist")}>
+                    <DropdownMenuItem className="cursor-pointer hover:bg-[#F5F5F5] py-3" onClick={() => navigate("/wishlist")}>
                       <Heart className="h-4 w-4 mr-3 text-[#D4AF37]" />
-                      <span className="text-sm">Wishlist</span>
+                      <span className="text-sm">Yêu thích</span>
                     </DropdownMenuItem>
-                    <DropdownMenuItem className="cursor-pointer hover:bg-[#F5F5F5] py-3" onClick={() => alert("Go /account/settings")}>
+                    <DropdownMenuItem className="cursor-pointer hover:bg-[#F5F5F5] py-3" onClick={() => navigate("/account")}>
                       <Settings className="h-4 w-4 mr-3 text-[#D4AF37]" />
-                      <span className="text-sm">Settings</span>
+                      <span className="text-sm">Cài đặt</span>
                     </DropdownMenuItem>
 
                     <DropdownMenuSeparator className="bg-[#D4AF37]/20" />
                     <DropdownMenuItem className="cursor-pointer hover:bg-[#FFF4DB] py-3" onClick={handleLogout}>
                       <LogOut className="h-4 w-4 mr-3 text-[#D4AF37]" />
-                      <span className="text-sm">Logout</span>
+                      <span className="text-sm">Đăng xuất</span>
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 )}
               </DropdownMenu>
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="hover:bg-transparent hover:text-[#D4AF37] transition-colors"
+              <Button
+                variant="ghost"
+                size="icon"
+                className="relative hidden sm:inline-flex hover:bg-transparent hover:text-[#D4AF37] transition-colors"
+                onClick={() => navigate("/wishlist")}
               >
                 <Heart className="h-5 w-5" />
+                {wishlistCount > 0 && (
+                  <Badge
+                    className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center p-0 text-[10px]"
+                    style={{ backgroundColor: "#D4AF37", color: "#000" }}
+                  >
+                    {wishlistCount > 99 ? "99+" : wishlistCount}
+                  </Badge>
+                )}
               </Button>
-              <Button 
-                variant="ghost" 
-                size="icon" 
+              <Button
+                variant="ghost"
+                size="icon"
                 className="relative hover:bg-transparent hover:text-[#D4AF37] transition-colors"
-                onClick={() => setCartOpen(true)}
+                onClick={() => {
+                  // Don't open cart sidebar if already on cart page
+                  if (location.pathname === "/cart") {
+                    return;
+                  }
+                  setCartOpen(true);
+                }}
               >
                 <ShoppingBag className="h-5 w-5" />
-                <Badge 
-                  className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
-                  style={{ backgroundColor: '#D4AF37', color: '#000' }}
-                >
-                  3
-                </Badge>
+                {cartCount > 0 && (
+                  <Badge
+                    className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center p-0 text-[10px]"
+                    style={{ backgroundColor: "#D4AF37", color: "#000" }}
+                  >
+                    {cartCount > 99 ? "99+" : cartCount}
+                  </Badge>
+                )}
+              </Button>
+              {/* Mobile nav trigger */}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="inline-flex hover:bg-transparent hover:text-[#D4AF37] transition-colors lg:hidden"
+                onClick={() => setMobileNavOpen(true)}
+              >
+                <Menu className="h-5 w-5" />
               </Button>
             </div>
           </div>
-        </div>
       </nav>
+
+      {/* Mobile Nav Sheet */}
+      <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
+        <SheetContent
+          side="left"
+          className="w-80 border-r border-black/10 bg-white p-0"
+        >
+          <SheetHeader className="border-b border-black/10 px-6 py-4">
+            <div className="flex items-center justify-between">
+              <SheetTitle
+                className="text-lg tracking-[0.28em] text-[#D4AF37]"
+                style={{ fontFamily: "'Playfair Display', serif" }}
+              >
+                ARISTINO
+              </SheetTitle>
+              <SheetClose asChild>
+                <button className="text-[#4B5563] hover:text-[#D4AF37]">
+                  <X className="h-5 w-5" />
+                </button>
+              </SheetClose>
+            </div>
+          </SheetHeader>
+          <div className="space-y-1 px-6 py-4 text-sm">
+            <button
+              className="w-full rounded-lg px-3 py-2 text-left text-[#111827] hover:bg-[#F3F4F6]"
+              onClick={() => {
+                navigate("/collections?sort=newest");
+                setMobileNavOpen(false);
+              }}
+            >
+              Hàng Mới
+            </button>
+            <button
+              className="w-full rounded-lg px-3 py-2 text-left text-[#111827] hover:bg-[#F3F4F6]"
+              onClick={() => {
+                navigate("/collections/ao");
+                setMobileNavOpen(false);
+              }}
+            >
+              Áo
+            </button>
+            <button
+              className="w-full rounded-lg px-3 py-2 text-left text-[#111827] hover:bg-[#F3F4F6]"
+              onClick={() => {
+                navigate("/collections/quan");
+                setMobileNavOpen(false);
+              }}
+            >
+              Quần
+            </button>
+            <button
+              className="w-full rounded-lg px-3 py-2 text-left text-[#111827] hover:bg-[#F3F4F6]"
+              onClick={() => {
+                navigate("/collections/phu-kien");
+                setMobileNavOpen(false);
+              }}
+            >
+              Phụ Kiện
+            </button>
+            <button
+              className="w-full rounded-lg px-3 py-2 text-left text-[#111827] hover:bg-[#F3F4F6]"
+              onClick={() => {
+                navigate("/collections/nuoc-hoa");
+                setMobileNavOpen(false);
+              }}
+            >
+              Nước Hoa
+            </button>
+
+            <div className="mt-4 space-y-1 border-t border-black/10 pt-4">
+              <button
+                className="w-full rounded-lg px-3 py-2 text-left text-[#111827] hover:bg-[#F3F4F6]"
+                onClick={() => {
+                  navigate("/wishlist");
+                  setMobileNavOpen(false);
+                }}
+              >
+                Yêu thích
+              </button>
+              <button
+                className="w-full rounded-lg px-3 py-2 text-left text-[#111827] hover:bg-[#F3F4F6]"
+                onClick={() => {
+                  navigate("/cart");
+                  setMobileNavOpen(false);
+                }}
+              >
+                Giỏ hàng
+              </button>
+              {user ? (
+                <button
+                  className="w-full rounded-lg px-3 py-2 text-left text-red-600 hover:bg-red-50"
+                  onClick={() => {
+                    handleLogout();
+                    setMobileNavOpen(false);
+                  }}
+                >
+                  Đăng xuất
+                </button>
+              ) : (
+                <button
+                  className="mt-2 w-full rounded-full bg-[#111827] px-3 py-2 text-xs font-semibold uppercase tracking-[0.24em] text-white hover:bg-black"
+                  onClick={() => {
+                    handleDemoLogin();
+                    setMobileNavOpen(false);
+                  }}
+                >
+                  Đăng nhập
+                </button>
+              )}
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
 
       {/* Shopping Cart Sidebar */}
       <ShoppingCart open={cartOpen} onOpenChange={setCartOpen} />
+
+      {/* Luxury Search Overlay */}
+      <LuxurySearchOverlay open={searchOpen} onOpenChange={setSearchOpen} />
     </>
   );
 }

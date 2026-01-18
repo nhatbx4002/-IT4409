@@ -1,0 +1,125 @@
+import { adminApiClient, getPaginatedAdminData } from "./api";
+
+export type OrderStatus =
+  | "pending"
+  | "confirmed"
+  | "shipping"
+  | "completed"
+  | "canceled"
+  | "paid"
+  | "refunded";
+
+export type OrderItem = {
+  id: number;
+  order_id?: number;
+  product_id?: number;
+  variant_id?: number;
+  quantity: number;
+  unit_price?: number | string;
+  line_total?: number | string;
+  product_name?: string;
+  variant_name?: string;
+  product?: {
+    id: number;
+    name: string;
+    slug: string;
+  } | null;
+};
+
+export type Order = {
+  id: number;
+  code?: string;
+  status: OrderStatus;
+  customer_id?: number;
+  customer_name?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  address?: string | null;
+  provider?: string | null;
+  total_amount?: number | string;
+  subtotal_amount?: number | string;
+  discount_amount?: number | string;
+  notes?: string | null;
+  created_at?: string;
+  updated_at?: string;
+  items?: OrderItem[];
+  order_items?: OrderItem[];
+  user?: {
+    id: number;
+    name: string;
+    email: string;
+  } | null;
+};
+
+export type Pagination = {
+  page: number;
+  limit: number;
+  total?: number;
+  totalPages?: number;
+};
+
+export type PaginatedResponse<T> = {
+  items: T[];
+  pagination?: Pagination;
+};
+
+export type ListOrderParams = {
+  page?: number;
+  limit?: number;
+  status?: OrderStatus;
+  search?: string;
+  startDate?: string;
+  endDate?: string;
+  sortBy?: string;
+  sortDir?: "ASC" | "DESC";
+};
+
+type ApiEnvelope<T> = {
+  success?: boolean;
+  data?: T;
+  message?: string;
+  pagination?: Pagination;
+};
+
+const unwrap = <T>(payload: ApiEnvelope<T> | T): T => {
+  if ((payload as ApiEnvelope<T>)?.success === false) {
+    throw new Error((payload as ApiEnvelope<T>)?.message || "Request failed");
+  }
+  if (typeof payload === "object" && payload !== null && "data" in (payload as any)) {
+    return (payload as ApiEnvelope<T>).data as T;
+  }
+  return payload as T;
+};
+
+export async function listOrders(params: ListOrderParams = {}): Promise<PaginatedResponse<Order>> {
+  const queryParams: Record<string, any> = {};
+  if (params.page) queryParams.page = params.page;
+  if (params.limit) queryParams.limit = params.limit;
+  if (params.status) queryParams.status = params.status;
+  if (params.search) queryParams.customer = params.search;
+  if (params.startDate) queryParams.startDate = params.startDate;
+  if (params.endDate) queryParams.endDate = params.endDate;
+  if (params.sortBy) queryParams.sortBy = params.sortBy;
+  if (params.sortDir) queryParams.sortDir = params.sortDir;
+
+  return getPaginatedAdminData<Order>("/orders", queryParams);
+}
+
+export async function getOrderById(id: number | string): Promise<Order> {
+  const res = await adminApiClient.get<Order>(`/orders/${id}`);
+  return res.data;
+}
+
+export async function updateOrderStatus(id: number | string, status: OrderStatus): Promise<Order> {
+  const res = await adminApiClient.patch<Order>(`/orders/${id}`, { status });
+  return res.data;
+}
+
+export async function processRefund(
+  id: number | string,
+  payload: { reason: string; amount: number }
+): Promise<Order> {
+  const res = await adminApiClient.post<Order>(`/orders/${id}/refund`, payload);
+  return res.data;
+}
+

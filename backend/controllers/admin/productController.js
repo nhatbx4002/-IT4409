@@ -1,4 +1,4 @@
-import { createProductService, createVariantService, deleteProductService, updateProductService, getAllProductsService, searchProductsService } from "../../services/admin/productService.js";
+import { createProductService, createVariantService, deleteVariantService, deleteProductService, updateProductService, getAllProductsService, searchProductsService, getUniqueBrandsService } from "../../services/admin/productService.js";
 
 export const createProductController = async (req, res) => {
     try{
@@ -22,16 +22,44 @@ export const createVariantController = async (req, res) => {
         const { productId } = req.params;
         const { variants } = req.body;
         
-        if(!productId || !variants) {
+        console.log('Create variant request - productId:', productId);
+        console.log('Create variant request - variants:', variants);
+        console.log('Create variant request - files:', req.files);
+        
+        if(!productId) {
             return res.status(400).json({ 
                 success: false,
-                message: "Missing required fields" 
+                message: "Product ID is required" 
+            });
+        }
+        
+        if(!variants) {
+            return res.status(400).json({ 
+                success: false,
+                message: "Variants are required" 
             });
         }
 
-        const variantsArray = typeof variants === "string" ? JSON.parse(variants) : variants;
+        let variantsArray;
+        try {
+            variantsArray = typeof variants === "string" ? JSON.parse(variants) : variants;
+        } catch (parseError) {
+            console.error('Error parsing variants:', parseError);
+            return res.status(400).json({
+                success: false,
+                message: "Invalid variants format",
+                error: parseError.message
+            });
+        }
+        
+        if(!Array.isArray(variantsArray) || variantsArray.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: "Variants must be a non-empty array"
+            });
+        }
 
-        const createdVariants = await createVariantService(productId, variantsArray, req.files);
+        const createdVariants = await createVariantService(productId, variantsArray, req.files || []);
 
         return res.status(201).json({
             success: true,
@@ -39,11 +67,53 @@ export const createVariantController = async (req, res) => {
             message: "Variants created successfully",
         })
     }catch(error){
+        console.error('Error in createVariantController:', error);
         return res.status(500).json({
             success: false,
             message: "Create variant failed",
             error: error.message
         })
+    }
+}
+
+export const deleteVariantController = async (req, res) => {
+    try {
+        const { productId, variantId } = req.params;
+        
+        if(!productId) {
+            return res.status(400).json({
+                success: false,
+                message: "Product ID is required"
+            });
+        }
+        
+        if(!variantId) {
+            return res.status(400).json({
+                success: false,
+                message: "Variant ID is required"
+            });
+        }
+
+        const deletedVariant = await deleteVariantService(productId, variantId);
+
+        return res.status(200).json({
+            success: true,
+            data: deletedVariant,
+            message: "Variant deleted successfully",
+        });
+    } catch (error) {
+        if (error.message === "Variant not found or does not belong to this product") {
+            return res.status(404).json({
+                success: false,
+                message: error.message
+            });
+        }
+        
+        return res.status(500).json({
+            success: false,
+            message: "Delete variant failed",
+            error: error.message
+        });
     }
 }
 
@@ -163,9 +233,9 @@ export const searchProductsController = async (req, res) => {
     try {
         const { q, search } = req.query; // Hỗ trợ cả 'q' và 'search' parameter
         const searchTerm = q || search || '';
-        
+
         const products = await searchProductsService(searchTerm);
-        
+
         return res.status(200).json({
             success: true,
             data: products,
@@ -175,6 +245,25 @@ export const searchProductsController = async (req, res) => {
         return res.status(500).json({
             success: false,
             message: "Search products failed",
+            error: error.message
+        });
+    }
+}
+
+//Lay danh sach brand
+export const getBrandsController = async (req, res) => {
+    try {
+        const brands = await getUniqueBrandsService();
+
+        return res.status(200).json({
+            success: true,
+            data: brands,
+            message: "Get brands successfully",
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: "Get brands failed",
             error: error.message
         });
     }
