@@ -6,6 +6,8 @@ import nodemailer from "nodemailer";
 import { loadEnv } from "../config/env.js";
 import { DOCIFY_SUPPORT_SENDER } from "../config/constants.js";
 import { sendVerificationEmail } from "./emailService.js";
+import { validatePassword } from "../utils/passwordValidator.js";
+import {Cart} from "../models/index.js"
 
 const env = loadEnv();
 const isProduction = env.NODE_ENV === "production";
@@ -81,21 +83,38 @@ export const issueTokens = async (user) => {
 };
 
 //Dang ky user moi bang local
-export const registerUser = async (data) => {
-  const { email, name, password, phone, role, provider } = data;
-  const checkEmail = await User.findOne({ where: { email } });
-  const checkPhone = await User.findOne({ where: { phone } });
-  if (checkEmail || checkPhone) throw new Error("User already exists");
-  if (!email || !name || !password || !phone)
-    throw new Error("Missing required fields");
+export const registerUser = async (user) => {
+  const {email , name , password , phone , role , provider} = user;
 
+  //== VALIDATION ===
+  if(!email || !name || !password || !phone ){
+    throw new Error("Missing required fields");
+  }
+
+  //validate password strength
+  const passwordValidation = validatePassword(password);
+  if(!passwordValidation.isValid){
+    throw new Error(passwordValidation.errors.join("."));
+  }
+
+  const checkEmail = await User.findOne({ email: email });
+  if(checkEmail){
+    throw new Error("Email already exists");
+  }
+
+  const checkPhone = await User.findOne({ where: { phone } });
+  if (checkPhone) {
+    throw new Error("Số điện thoại đã được sử dụng");
+  }
+
+  // === CREATE USER ===
   const hashedPassword = await bcrypt.hash(password, 10);
-  
+
   // Tạo verification token (JWT với expiry 48h)
   const verificationToken = jwt.sign(
-    { email, type: 'email_verification' },
-    env.JWT_SECRET,
-    { expiresIn: '48h' }
+      { email, type: "email_verification" },
+      env.JWT_SECRET,
+      { expiresIn: "48h" }
   );
 
   // Tạo user với email_verified = false
@@ -111,57 +130,77 @@ export const registerUser = async (data) => {
     email_verification_token: verificationToken,
   });
 
-  // Gửi email xác thực
+  // === TẠO CART CHO USER MỚI ===
+  try {
+    await Cart.create({ user_id: newUser.id });
+  } catch (cartError) {
+    console.error("Lỗi tạo cart:", cartError);
+    // Không throw error, cart có thể tạo sau
+  }
+
+  // === GỬI EMAIL XÁC THỰC ===
   try {
     await sendVerificationEmail(email, verificationToken, name);
   } catch (emailError) {
     console.error("Lỗi gửi email xác thực:", emailError);
-    // Xóa user nếu không gửi được email
-    await newUser.destroy();
-    throw new Error("Không thể gửi email xác thực. Vui lòng thử lại sau.");
+    // KHÔNG xóa user nữa, vẫn cho đăng ký thành công
+    // User có thể yêu cầu gửi lại email sau
   }
 
-  // Return user without sensitive fields
-  return await User.scope('withoutSecrets').findByPk(newUser.id);
-};
+  const { accessToken, refreshToken } = await issueTokens(newUser);
 
+  const userWithoutSecrets = await User.scope("withoutSecrets").findByPk(newUser.id);
+  return {
+    user: userWithoutSecrets,
+    accessToken,
+    refreshToken,
+    emailVerificationRequired: true,
+    message: "Đăng ký thành công! Vui lòng kiểm tra email để xác thực tài khoản."
+  };
+}
 //Dang nhap user bang local
 export const loginUser = async (email, password) => {
   if (!email || !password) {
     throw new Error("Email and password are required");
   }
 
-  const user = await User.scope('withoutSecrets').findOne({ where: { email } });
-  if (!user) {
-    throw new Error("Invalid email or password");
+  // Find user
+  const userWithPassword = await User.findOne({ where: { email } });
+  if (!userWithPassword) {
+    throw new Error("Email hoặc mật khẩu không đúng");
   }
 
-  // Get full user with password for verification
-  const userWithPassword = await User.findOne({ where: { email } });
+  // Verify password
   const hashedPassword = userWithPassword.password;
   if (!hashedPassword) {
-    throw new Error("Invalid email or password");
+    throw new Error("Email hoặc mật khẩu không đúng");
   }
 
   const isValidPassword = await bcrypt.compare(password, hashedPassword);
   if (!isValidPassword) {
-    throw new Error("Invalid email or password");
+    throw new Error("Email hoặc mật khẩu không đúng");
   }
 
-  // Kiểm tra email đã được xác thực chưa (chỉ cho local accounts)
-  if (userWithPassword.provider === "local" && !userWithPassword.email_verified) {
-    throw new Error("EMAIL_NOT_VERIFIED");
-  }
+  // Update last_login_at
+  userWithPassword.last_login_at = new Date();
+  await userWithPassword.save();
 
+  // Issue tokens
   const tokens = await issueTokens(userWithPassword);
 
+  // Get user without secrets
+  const user = await User.scope("withoutSecrets").findOne({ where: { email } });
+
   return {
-    user,
+    user: {
+      ...user.toJSON(),
+      email_verified: userWithPassword.email_verified
+    },
     ...tokens,
   };
 };
 
-//Dang xua tai khoan local
+//Dang xuat tai khoan local
 export const logoutUser = async (email) => {
   const user = await User.findOne({ where: { email } });
   if (!user) throw new Error("User not found");
@@ -169,7 +208,6 @@ export const logoutUser = async (email) => {
 };
 
 //Api quen mat khau
-
 export const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
@@ -189,48 +227,103 @@ export const sendEmail = async (to, subject, text) => {
   await transporter.sendMail(mailOptions);
 };
 
-let otpStore = {}; //Luu OTP tam thoi
 
 export const sendOtpService = async (email) => {
   const user = await User.findOne({ where: { email } });
-  if (!user) throw new Error("User not found");
+  if (!user) {
+    throw new Error("Không tìm thấy tài khoản với email này");
+  }
 
+  // Generate 6-digit OTP
   const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
-  otpStore[email] = otp;
-  setTimeout(() => delete otpStore[email], 5 * 60 * 1000);
+  // Set expiration time (5 minutes)
+  const otpExpires = new Date(Date.now() + 5 * 60 * 1000);
 
-  await sendEmail(email, "Mã xác thực quên mật khẩu", `Mã OTP của bạn là: ${otp}`);
+  user.reset_otp = otp;
+  user.reset_otp_expires = otpExpires;
+  await user.save();
 
-  return { message: "OTP sent to email" };
+  // Send email
+  await sendEmail(
+      email,
+      "Mã xác thực quên mật khẩu - Docify",
+      `Mã OTP của bạn là: ${otp}\n\nMã này sẽ hết hạn sau 5 phút.\n\nNếu bạn không yêu cầu đặt lại mật khẩu, vui lòng bỏ qua email này.`
+  );
+
+  return { message: "OTP đã được gửi đến email của bạn" };
 };
-
 export const verifyOtpService = async (email, otp) => {
-  if (otpStore[email] !== otp) throw new Error("Invalid or expired OTP");
+  const user = await User.findOne({ where: { email } });
 
+  if (!user) {
+    throw new Error("Không tìm thấy tài khoản");
+  }
+
+  // Check if OTP exists
+  if (!user.reset_otp || !user.reset_otp_expires) {
+    throw new Error("Chưa có yêu cầu đặt lại mật khẩu hoặc OTP đã hết hạn");
+  }
+
+  // Check if OTP expired
+  if (new Date() > new Date(user.reset_otp_expires)) {
+    // Clear expired OTP
+    user.reset_otp = null;
+    user.reset_otp_expires = null;
+    await user.save();
+    throw new Error("OTP đã hết hạn. Vui lòng yêu cầu gửi lại");
+  }
+
+  // Verify OTP
+  if (user.reset_otp !== otp) {
+    throw new Error("Mã OTP không đúng");
+  }
+
+  // === CLEAR OTP sau khi verify thành công ===
+  user.reset_otp = null;
+  user.reset_otp_expires = null;
+  await user.save();
+
+  // Generate reset token
   const token = jwt.sign({ email }, env.JWT_RESET_SECRET, {
     expiresIn: "10m",
   });
 
-  delete otpStore[email];
-
-  return { message: "Xac thuc OTP thanh cong", token };
+  return { message: "Xác thực OTP thành công", token };
 };
 
 export const resetPasswordService = async (token, newPassword) => {
+  // === VALIDATE PASSWORD STRENGTH ===
+  const passwordValidation = validatePassword(newPassword);
+  if (!passwordValidation.isValid) {
+    throw new Error(passwordValidation.errors.join(". "));
+  }
+
   try {
+    // Verify reset token
     const decoded = jwt.verify(token, env.JWT_RESET_SECRET);
     const user = await User.findOne({ where: { email: decoded.email } });
 
-    if (!user) throw new Error("Không tìm thấy người dùng");
+    if (!user) {
+      throw new Error("Không tìm thấy người dùng");
+    }
 
+    // Hash new password
     const hashed = await bcrypt.hash(newPassword, 10);
     user.password = hashed;
+
+    // Invalidate all existing tokens (force re-login)
     await invalidateUserTokens(user);
 
-    return { message: "Đặt lại mật khẩu thành công" };
+    return { message: "Đặt lại mật khẩu thành công. Vui lòng đăng nhập lại." };
   } catch (err) {
-    throw new Error("Token không hợp lệ hoặc đã hết hạn");
+    if (err.name === "TokenExpiredError") {
+      throw new Error("Link đặt lại mật khẩu đã hết hạn. Vui lòng yêu cầu gửi lại OTP.");
+    }
+    if (err.name === "JsonWebTokenError") {
+      throw new Error("Link đặt lại mật khẩu không hợp lệ");
+    }
+    throw err;
   }
 };
 

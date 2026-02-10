@@ -18,7 +18,7 @@ const PORT = APP_CONSTANTS.port;
     app.listen(PORT, () => {
       console.log(`🚀 Server started on port ${PORT}`);
       console.log(`📍 http://localhost:${PORT}`);
-      console.log(`📍 API: http://localhost:${PORT}/api`);
+      console.log(`📍 API: http://localhost:${PORT}/api-docs`);
     });
   } catch (error) {
     console.error("❌ Failed to start server:", error);

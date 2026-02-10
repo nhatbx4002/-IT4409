@@ -27,17 +27,23 @@ export const getCurrentUser = async (req, res) => {
 };
 
 // dang ky bang tai khoa local
-export const signUp = async (req,res) => {
-    try{
-        const newUser = await registerUser(req.body);
-        sendSuccess(res, {
-            message: "User registered successfully",
-            data: { user: newUser }
-        });
-    }catch(error){
-        sendError(res, error);
-    }
-}
+export const signUp = async (req, res) => {
+  try {
+    const result = await registerUser(req.body);
+
+    sendSuccess(res, {
+      message: result.message || "Đăng ký thành công",
+      data: {
+        user: result.user,
+        accessToken: result.accessToken,
+        refreshToken: result.refreshToken,
+        emailVerificationRequired: result.emailVerificationRequired
+      }
+    });
+  } catch (error) {
+    sendError(res, error);
+  }
+};
 
 //Refresh access token
 export const refreshAccessToken = async (req, res) => {
@@ -90,40 +96,39 @@ export const refreshAccessToken = async (req, res) => {
 };
 
 // dang nhap tai khoan bang local
-export const signIn = async (req,res) => {
-    try{
-       const { email, password, isAdminLogin = false } = req.body;
-       const result = await loginUser(email,password);
+export const signIn = async (req, res) => {
+  try {
+    const { email, password, isAdminLogin = false } = req.body;
+    const result = await loginUser(email, password);
 
-       // If this is admin login, verify user has admin privileges
-       if (isAdminLogin && !['admin', 'super_admin'].includes(result.user.role)) {
-         return res.status(403).json({
-           success: false,
-           message: "Access denied. Admin privileges required."
-         });
-       }
-
-       sendSuccess(res, {
-        message: "User logged in successfully",
-        data: {
-            accessToken: result.accessToken,
-            refreshToken: result.refreshToken,
-            user: result.user
-        }
-       });
-    }catch(error){
-        sendError(res, error);
+    // If this is admin login, verify user has admin privileges
+    if (isAdminLogin && !["admin", "super_admin"].includes(result.user.role)) {
+      return res.status(403).json({
+        success: false,
+        message: "Access denied. Admin privileges required."
+      });
     }
-}
 
+    sendSuccess(res, {
+      message: "Đăng nhập thành công",
+      data: {
+        accessToken: result.accessToken,
+        refreshToken: result.refreshToken,
+        user: result.user,
+        // Thông báo nếu cần verify email
+        emailVerificationRequired: result.user.provider === "local" && !result.user.email_verified
+      }
+    });
+  } catch (error) {
+    sendError(res, error);
+  }
+};
 //dang xuat tai khoan
 export const signOut = async (req,res) => {
     try{
         const email = req.user.email;
         const result = await logoutUser(email);
 
-        // res.clearCookie("accessToken");
-        // res.clearCookie("refreshToken");
         res.status(200).json({
             success: true,
             message: "User logged out successfully",

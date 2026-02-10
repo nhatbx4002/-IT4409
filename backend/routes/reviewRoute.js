@@ -7,6 +7,7 @@ import {
   updateReviewController,
   deleteReviewController,
 } from "../controllers/user/reviewController.js";
+import { requireEmailVerified } from '../middlewares/requireEmailVerified.js';
 
 const router = express.Router();
 const upload = multer({ dest: "tmp/" });

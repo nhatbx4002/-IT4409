@@ -7,9 +7,18 @@ export const Payment = sequelize.define("payments", {
   order_id: DataTypes.INTEGER,
   provider: DataTypes.STRING(50),
   provider_txn_id: DataTypes.STRING(100),
-  amount: DataTypes.DECIMAL(12,2),
+  amount: DataTypes.DECIMAL(12, 2),
   currency: { type: DataTypes.STRING(10), defaultValue: "VND" },
-  status: DataTypes.STRING(20),
+  status: {
+    type: DataTypes.ENUM('pending', 'processing', 'completed', 'failed', 'refunded'),
+    defaultValue: 'pending',
+    allowNull: false
+  },
+  paid_at: {
+    type: DataTypes.DATE,
+    allowNull: true,
+    comment: "Thời điểm thanh toán thành công"
+  },
   raw_payload: DataTypes.JSONB,
   created_at: { type: DataTypes.DATE, defaultValue: DataTypes.NOW },
   updated_at: { type: DataTypes.DATE, defaultValue: DataTypes.NOW },

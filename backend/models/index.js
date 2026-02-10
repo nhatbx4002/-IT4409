@@ -16,7 +16,11 @@ import { Review } from "./reviewModel.js";
 // Dựa trên code cũ của bạn là 'export default Wishlist', nên import thế này là đúng:
 import Wishlist from "./wishlistModel.js";
 import { Collection } from "./collectionModel.js";
-import { ProductCollection } from "./productCollectionModel.js"; 
+import { ProductCollection } from "./productCollectionModel.js";
+import { DiscountUsage } from "./discountUsageModels.js";
+import { Notification } from "./notificationModels.js";
+import { ProductView } from "./productViewModel.js";
+import { OrderStatusHistory } from "./orderStatusHistoryModel.js";
 
 // ============================================================
 // 🔹 Thiết lập các mối quan hệ (Associations)
@@ -29,21 +33,21 @@ Cart.hasMany(CartItem, { foreignKey: 'cart_id' });
 CartItem.belongsTo(Cart, { foreignKey: 'cart_id' });
 
 // Association between CartItem and ProductVariant
-CartItem.belongsTo(ProductVariant, { 
+CartItem.belongsTo(ProductVariant, {
   foreignKey: 'product_variant_id',
   as: 'product_variant'
 });
-ProductVariant.hasMany(CartItem, { 
+ProductVariant.hasMany(CartItem, {
   foreignKey: 'product_variant_id'
 });
 
 Product.belongsTo(Category, {
   foreignKey: "category_id",
-  as: "category",         
+  as: "category",
 });
 Category.hasMany(Product, {
   foreignKey: "category_id",
-  as: "products",          
+  as: "products",
 })
 
 // Quan hệ Wishlist (Bắt buộc phải có để tính năng Wishlist chạy)
@@ -51,7 +55,7 @@ Wishlist.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 Wishlist.belongsTo(Product, { foreignKey: 'product_id', as: 'product' });
 // ------------------------------------
 
-ProductVariant.belongsTo(Product, { 
+ProductVariant.belongsTo(Product, {
   foreignKey: 'product_id',
   as: 'product',
   onDelete: 'CASCADE',
@@ -140,6 +144,42 @@ ProductCollection.belongsTo(Product, {
   as: 'product'
 });
 
+DiscountUsage.belongsTo(Discount, { foreignKey: 'discount_id', as: 'discount' });
+DiscountUsage.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+DiscountUsage.belongsTo(Order, { foreignKey: 'order_id', as: 'order' });
+
+Discount.hasMany(DiscountUsage, { foreignKey: 'discount_id', as: 'usages' });
+User.hasMany(DiscountUsage, { foreignKey: 'user_id', as: 'discount_usages' });
+Order.hasOne(DiscountUsage, { foreignKey: 'order_id', as: 'discount_usage' });
+
+Notification.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+User.hasMany(Notification, { foreignKey: 'user_id', as: 'notifications' });
+
+ProductView.belongsTo(Product, { foreignKey: 'product_id', as: 'product' });
+ProductView.belongsTo(User, { foreignKey: 'user_id', as: 'user', allowNull: true });
+Product.hasMany(ProductView, { foreignKey: 'product_id', as: 'views' });
+User.hasMany(ProductView, { foreignKey: 'user_id', as: 'product_views' });
+
+OrderStatusHistory.belongsTo(Order, { foreignKey: 'order_id', as: 'order' });
+OrderStatusHistory.belongsTo(User, {
+  foreignKey: 'changed_by',
+  as: 'changer',
+  allowNull: true
+});
+Order.hasMany(OrderStatusHistory, {
+  foreignKey: 'order_id',
+  as: 'status_history'
+});
+
+Review.belongsTo(OrderItem, {
+  foreignKey: 'order_item_id',
+  as: 'order_item',
+  allowNull: true
+});
+OrderItem.hasMany(Review, {
+  foreignKey: 'order_item_id',
+  as: 'reviews'
+});
 export {
   sequelize,
   User,
@@ -152,9 +192,13 @@ export {
   Order,
   OrderItem,
   Payment,
-  Discount, // Unified Discount model
+  Discount,
   Review,
   Wishlist,
   Collection,
-  ProductCollection
+  ProductCollection,
+  DiscountUsage,
+  Notification,
+  ProductView,
+  OrderStatusHistory
 };

@@ -9,6 +9,7 @@ import {
     vnPayCallback,
     checkPaymentStatus
 } from '../controllers/orderController.js';
+import { requireEmailVerified } from '../middlewares/requireEmailVerified.js';
 
 const router = express.Router();
 
@@ -115,7 +116,7 @@ router.post('/shipping-fee', getShippingFee);
  *       400:
  *         description: Lỗi tạo đơn hàng
  */
-router.post('/checkout', createOrder);
+router.post('/checkout', requireEmailVerified, createOrder);
 
 /**
  * @swagger
