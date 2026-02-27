@@ -1,5 +1,5 @@
 import { fn, col } from "sequelize";
-import { Product, Review, User } from "../../models/index.js";
+import { Product, Review, User, Order, OrderItem } from "../../models/index.js";
 import { buildPagination } from "./product/queryBuilder.js";
 
 const buildUserName = (user) => {
@@ -88,6 +88,7 @@ export const createReview = async ({
   rating,
   comment,
   images = [],
+  orderItemId,
 }) => {
   const product = await Product.findByPk(productId, { attributes: ["id"] });
   if (!product) {
@@ -98,6 +99,11 @@ export const createReview = async ({
     throw new Error("Rating must be an integer between 1 and 5");
   }
 
+  // Nếu có truyền orderItemId => enforce các rule:
+  // - Order thuộc về user
+  // - Order đã delivered
+  // - order_item.product_id khớp với productId
+  // - Chưa có review nào trước đó cho order_item này từ cùng user
   const payload = {
     user_id: userId,
     product_id: productId,
@@ -105,6 +111,44 @@ export const createReview = async ({
     comment: comment || null,
     images: Array.isArray(images) ? images : [],
   };
+
+  if (orderItemId) {
+    const numericOrderItemId = Number(orderItemId);
+    if (!numericOrderItemId || Number.isNaN(numericOrderItemId)) {
+      throw new Error("Order item ID không hợp lệ");
+    }
+
+    const orderItem = await OrderItem.findByPk(numericOrderItemId);
+    if (!orderItem) {
+      throw new Error("Không tìm thấy sản phẩm trong đơn hàng");
+    }
+
+    if (orderItem.product_id !== productId) {
+      throw new Error("Sản phẩm không khớp với item trong đơn hàng");
+    }
+
+    const order = await Order.findByPk(orderItem.order_id);
+    if (!order || order.user_id !== userId) {
+      throw new Error("Bạn không có quyền đánh giá sản phẩm trong đơn hàng này");
+    }
+
+    if (order.status !== "delivered") {
+      throw new Error("Chỉ có thể đánh giá sản phẩm khi đơn hàng đã được giao thành công");
+    }
+
+    const existing = await Review.findOne({
+      where: {
+        user_id: userId,
+        order_item_id: numericOrderItemId,
+      },
+    });
+    if (existing) {
+      throw new Error("Bạn đã đánh giá sản phẩm này trong đơn hàng này rồi");
+    }
+
+    payload.order_item_id = numericOrderItemId;
+    payload.is_verified_purchase = true;
+  }
 
   const review = await Review.create(payload);
   return review.toJSON ? review.toJSON() : review;

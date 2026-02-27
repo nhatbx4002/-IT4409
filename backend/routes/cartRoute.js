@@ -1,5 +1,6 @@
 import express from 'express';
 import { getCart, addItem, updateItem, removeItem } from '../controllers/cartController.js';
+import discountController from '../controllers/discountController.js';
 import { authenticateToken } from '../middlewares/auth.js';
 
 const router = express.Router();
@@ -109,5 +110,47 @@ router.put('/:cartItemId', updateItem);
  *         description: Không tìm thấy sản phẩm trong giỏ
  */
 router.delete('/:cartItemId', removeItem);
+
+/**
+ * Discount endpoints scoped dưới /cart để khớp với spec
+ *
+ * POST /api/cart/discount/validate
+ * Body: { code: string, cart_items?: [...] }
+ *
+ * POST /api/cart/discount/apply
+ * Body: { code?: string, orderDraft: { subtotal, shipping_fee, cart_items } }
+ *
+ * DELETE /api/cart/discount
+ * Chỉ dùng cho FE xoá mã giảm giá khỏi cart (không thay đổi DB)
+ */
+
+// Validate discount code cho cart hiện tại
+router.post('/discount/validate', (req, res) => {
+  const { code, cart_items } = req.body || {};
+  if (!code) {
+    return res.status(400).json({
+      success: false,
+      message: 'Vui lòng nhập mã giảm giá',
+    });
+  }
+
+  // Gắn code vào params để tái sử dụng discountController.validateCode
+  req.params.code = code;
+  req.body.cart_items = cart_items || [];
+  return discountController.validateCode(req, res);
+});
+
+// Áp dụng mã giảm giá cho order draft
+router.post('/discount/apply', (req, res) => {
+  return discountController.apply(req, res);
+});
+
+// Xoá mã giảm giá khỏi cart (FE chỉ cần response OK để reset UI)
+router.delete('/discount', (req, res) => {
+  return res.json({
+    success: true,
+    message: 'Đã xoá mã giảm giá khỏi giỏ hàng',
+  });
+});
 
 export default router;

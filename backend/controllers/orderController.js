@@ -89,6 +89,21 @@ export const getOrderDetails = async (req, res) => {
         sendError(res, error);
     }
 };
+
+/**
+ * Danh sách sản phẩm trong đơn hàng được phép đánh giá
+ */
+export const getReviewableItems = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { id } = req.params;
+
+        const items = await orderService.getReviewableItemsForOrder(userId, id);
+        sendSuccess(res, { data: items });
+    } catch (error) {
+        sendError(res, error);
+    }
+};
 /**
  * Hủy đơn hàng
  */
@@ -105,6 +120,24 @@ export const cancelMyOrder = async (req, res) => {
                 orderId: result.id,
                 status: result.status
             }
+        });
+    } catch (error) {
+        sendError(res, error);
+    }
+};
+
+/**
+ * Reorder: thêm lại các sản phẩm của một đơn hàng vào giỏ hiện tại
+ */
+export const reorderMyOrder = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const orderId = req.params.id;
+
+        const result = await orderService.reorderOrder(userId, orderId);
+        sendSuccess(res, {
+            message: "Đã thêm lại sản phẩm từ đơn hàng vào giỏ",
+            data: result,
         });
     } catch (error) {
         sendError(res, error);

@@ -6,49 +6,15 @@ import {
     getOrderDetails,
     getShippingFee,
     cancelMyOrder,
-    vnPayCallback,
-    checkPaymentStatus
+    checkPaymentStatus,
+    reorderMyOrder,
+    getReviewableItems
 } from '../controllers/orderController.js';
 import { requireEmailVerified } from '../middlewares/requireEmailVerified.js';
 
 const router = express.Router();
 
-// === PUBLIC ROUTES (Không cần authenticate) ===
-/**
- * @swagger
- * /payment/vnpay/callback:
- *   get:
- *     summary: Callback từ VNPay sau khi thanh toán
- *     tags: [Orders]
- *     parameters:
- *       - in: query
- *         name: vnp_Amount
- *         schema:
- *           type: string
- *       - in: query
- *         name: vnp_BankCode
- *         schema:
- *           type: string
- *       - in: query
- *         name: vnp_ResponseCode
- *         schema:
- *           type: string
- *       - in: query
- *         name: vnp_TransactionStatus
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Callback xử lý thành công
- *       400:
- *         description: Lỗi xử lý callback
- */
-router.get('/payment/vnpay/callback', vnPayCallback);
-
-// Alias route for backward compatibility with existing orders
-router.get('/vnpay_return', vnPayCallback);
-
-// Middleware xác thực cho các route còn lại
+// Middleware xác thực cho các route
 router.use(authenticateToken);
 
 /**
@@ -180,6 +146,30 @@ router.get('/:id', getOrderDetails);
 
 /**
  * @swagger
+ * /{id}/reviewable-items:
+ *   get:
+ *     summary: Danh sách sản phẩm trong đơn hàng mà user được phép đánh giá
+ *     tags: [Orders]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Danh sách sản phẩm có thể đánh giá
+ *       400:
+ *         description: Đơn hàng chưa được giao hoặc không hợp lệ
+ *       404:
+         *         description: Không tìm thấy đơn hàng
+ */
+router.get('/:id/reviewable-items', getReviewableItems);
+
+/**
+ * @swagger
  * /{id}/cancel:
  *   put:
  *     summary: Hủy đơn hàng
@@ -201,5 +191,27 @@ router.get('/:id', getOrderDetails);
  *         description: Không tìm thấy đơn hàng
  */
 router.put('/:id/cancel', cancelMyOrder);
+
+/**
+ * @swagger
+ * /{id}/reorder:
+ *   post:
+ *     summary: Đặt lại đơn hàng (thêm lại các sản phẩm vào giỏ)
+ *     tags: [Orders]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Đã thêm lại sản phẩm vào giỏ hàng
+ *       404:
+ *         description: Không tìm thấy đơn hàng
+ */
+router.post('/:id/reorder', reorderMyOrder);
 
 export default router;

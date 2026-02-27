@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import MainLayout from "@/layout/MainLayout";
-import { getCart, createAddress, checkout, getMyAddresses } from "@/lib/api";
+import { getCart, createAddress, checkout, createOnlinePayment, getMyAddresses } from "@/lib/api";
 import type { CartResponse } from "@/types/cart";
 import {
   CheckoutStepper,
@@ -209,27 +209,33 @@ export default function CheckoutPage() {
         shippingAddressId = address.id;
       }
 
-      // Then, create the order
+      // Thanh toán online qua VNPay sử dụng /payment/create
+      if (paymentMethod === "VNPAY") {
+        const result = await createOnlinePayment({
+          shippingAddressId: shippingAddressId!,
+          paymentMethod,
+          promotionCode: promoCode || undefined,
+        });
+
+        if (result.paymentUrl) {
+          window.location.href = result.paymentUrl;
+          return;
+        }
+
+        toast.success("Đặt hàng thành công!");
+        navigate(`/orders/${result.orderId}?payment=success`);
+        return;
+      }
+
+      // COD: dùng API checkout cũ
       const result = await checkout({
         shippingAddressId: shippingAddressId!,
         paymentMethod,
         promotionCode: promoCode || undefined,
       });
 
-      if (paymentMethod === "VNPAY" && result.paymentUrl) {
-        window.location.href = result.paymentUrl;
-        return;
-      }
-
-      // Với COD, đặt hàng thành công ngay lập tức
-      if (paymentMethod === "COD") {
-        toast.success("Đặt hàng thành công! Bạn sẽ thanh toán khi nhận hàng.");
-        navigate(`/orders/${result.orderId}?cod=success`);
-        return;
-      }
-
-      toast.success("Đặt hàng thành công!");
-      navigate(`/orders/${result.orderId}/status`);
+      toast.success("Đặt hàng thành công! Bạn sẽ thanh toán khi nhận hàng.");
+      navigate(`/orders/${result.orderId}?cod=success`);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Failed to place order";
       toast.error(errorMessage);

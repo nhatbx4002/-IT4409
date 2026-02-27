@@ -15,7 +15,8 @@ export const getCurrentUser = async (req, res) => {
     }
     
     // req.user is set by authenticateToken middleware
-    const { password, access_token, refresh_token, ...userResponse } = req.user;
+    const user = req.user.toJSON ? req.user.toJSON() : req.user;
+    const { password, access_token, refresh_token, email_verification_token, reset_otp, reset_otp_expires, ...userResponse } = user;
     
     sendSuccess(res, {
       message: "User retrieved successfully",
@@ -177,16 +178,19 @@ export const verifyEmail = async (req, res) => {
     const { token } = req.query;
     
     if (!token) {
-      return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/verify-email?error=missing_token`);
+      const frontendUrl = process.env.FRONTEND_URL || APP_CONSTANTS.frontendUrl || 'http://localhost:5173';
+      return res.redirect(`${frontendUrl}/verify-email?error=missing_token`);
     }
 
     const result = await verifyEmailService(token);
     
+    const frontendUrl = process.env.FRONTEND_URL || APP_CONSTANTS.frontendUrl || 'http://localhost:5173';
     // Redirect về frontend với success message
-    return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/verify-email?success=true`);
+    return res.redirect(`${frontendUrl}/verify-email?success=true`);
   } catch (err) {
     console.error("Lỗi xác thực email:", err);
-    return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/verify-email?error=${encodeURIComponent(err.message)}`);
+    const frontendUrl = process.env.FRONTEND_URL || APP_CONSTANTS.frontendUrl || 'http://localhost:5173';
+    return res.redirect(`${frontendUrl}/verify-email?error=${encodeURIComponent(err.message)}`);
   }
 };
 

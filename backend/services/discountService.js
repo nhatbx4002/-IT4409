@@ -144,6 +144,9 @@ function calculateDiscountAmount(discount, subtotal = 0, shippingFee = 0, matchi
     amount = shippingFee || 0;
   }
 
+  // Không cho phép giảm vượt quá baseAmount (subtotal hoặc matchingAmount)
+  amount = Math.min(amount, baseAmount);
+
   return Math.max(0, parseFloat(amount.toFixed(2)));
 }
 
@@ -261,6 +264,18 @@ export async function applyDiscount(orderDraft, code) {
         reason: res.reason,
         message: res.message || getErrorMessage(res.reason)
       };
+    }
+
+    // Kiểm tra min_order_value cho mã nhập tay (code)
+    if (res.discount.min_order_value) {
+      const minOrder = parseFloat(res.discount.min_order_value);
+      if (subtotal < minOrder) {
+        return {
+          applied: false,
+          reason: "min_order_value",
+          message: `Đơn hàng tối thiểu ${minOrder.toLocaleString("vi-VN")}đ`
+        };
+      }
     }
 
     // Use matchingAmount from eligibility if available

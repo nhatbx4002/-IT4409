@@ -21,7 +21,7 @@ import {
     updatePaymentStatus
 } from "../repositories/orderRepository.js";
 import { withTransaction } from "../utils/transactions.js";
-import { Order, User } from "../models/index.js";
+import { Order, User, OrderStatusHistory, OrderItem, Review } from "../models/index.js";
 
 const env = loadEnv();
 
@@ -358,13 +358,17 @@ export const cancelOrder = async (userId, orderId) => {
         throw new Error("Đơn hàng không tồn tại");
     }
 
-    if (order.status !== 'pending') {
+    // Chỉ cho phép hủy khi đơn đang pending hoặc confirmed
+    if (order.status !== 'pending' && order.status !== 'confirmed') {
         throw new Error("Không thể hủy đơn hàng này (Đã được xác nhận hoặc đang giao).");
     }
 
     await withTransaction(async (transaction) => {
-        // 1. Đổi trạng thái
-        order.status = 'canceled';
+        const oldStatus = order.status;
+
+        // 1. Đổi trạng thái + ghi thời gian hủy
+        order.status = 'cancelled';
+        order.cancelled_at = new Date();
         await order.save({ transaction });
 
         // 2. Hoàn lại tồn kho (Back stock)
@@ -379,6 +383,30 @@ export const cancelOrder = async (userId, orderId) => {
                 }
             }
         }
+
+        // 3. Nếu đã thanh toán thành công, chuyển Payment sang 'refunded'
+        if (order.Payment || order.payment) {
+            const payment = order.Payment || order.payment;
+            if (payment.status === 'completed') {
+                await updatePaymentStatus(
+                    payment.id,
+                    { status: 'refunded' },
+                    transaction
+                );
+            }
+        }
+
+        // 4. Ghi lại lịch sử trạng thái
+        await OrderStatusHistory.create(
+            {
+                order_id: order.id,
+                from_status: oldStatus,
+                to_status: 'cancelled',
+                changed_by: userId,
+                notes: 'User canceled order',
+            },
+            { transaction }
+        );
     });
 
     return order;
@@ -389,7 +417,102 @@ export const getUserOrders = async (userId) => findOrdersForUser(userId);
 export const getOrderById = async (userId, orderId) => {
     const order = await findOrderForUser(userId, orderId);
     if (!order) throw new Error("Đơn hàng không tìm thấy");
+    // Optionally, có thể include OrderStatusHistory ở đây bằng một query riêng nếu FE cần timeline
     return order;
+};
+
+/**
+ * 6. Danh sách sản phẩm trong đơn hàng được phép đánh giá
+ * - Chỉ cho phép nếu đơn ở trạng thái "delivered"
+ * - Mỗi order_item chỉ được review một lần
+ */
+export const getReviewableItemsForOrder = async (userId, orderId) => {
+    const numericOrderId = Number(orderId);
+    if (!numericOrderId || Number.isNaN(numericOrderId)) {
+        throw new Error("ID đơn hàng không hợp lệ");
+    }
+
+    const order = await findOrderForUser(userId, numericOrderId);
+    if (!order) {
+        throw new Error("Đơn hàng không tồn tại");
+    }
+
+    if (order.status !== "delivered") {
+        throw new Error("Chỉ có thể đánh giá sản phẩm khi đơn hàng đã được giao thành công");
+    }
+
+    // Lấy toàn bộ item + product của đơn
+    const items = await OrderItem.findAll({
+        where: { order_id: numericOrderId },
+        include: [
+            {
+                model: Product,
+                as: "product",
+                attributes: ["id", "name", "slug", "thumbnail"],
+            },
+            {
+                model: Review,
+                as: "reviews",
+                required: false,
+                where: {
+                    user_id: userId,
+                },
+                attributes: ["id"],
+            },
+        ],
+    });
+
+    const reviewable = items
+        .filter((item) => {
+            const data = item.toJSON ? item.toJSON() : item;
+            // Nếu đã tồn tại review cho user + order_item này thì bỏ qua
+            return !data.reviews || data.reviews.length === 0;
+        })
+        .map((item) => {
+            const data = item.toJSON ? item.toJSON() : item;
+            return {
+                order_item_id: data.id,
+                product_id: data.product_id,
+                product_name: data.product?.name || data.name_snapshot,
+                product_slug: data.product?.slug || null,
+                color: data.color_snapshot || null,
+                size: data.size_snapshot || null,
+                quantity: data.quantity,
+                // Ưu tiên thumbnail từ product, fallback sang snapshot (nếu có)
+                thumbnail: data.product?.thumbnail || (Array.isArray(data.images_snapshot) ? data.images_snapshot[0] : null),
+            };
+        });
+
+    return reviewable;
+};
+
+/**
+ * 7. Reorder: thêm lại các sản phẩm của một đơn hàng vào giỏ hiện tại
+ */
+export const reorderOrder = async (userId, orderId) => {
+    const { findOrderForUser } = await import("../repositories/orderRepository.js");
+    const { addProductToCart } = await import("./cartService.js");
+
+    const order = await findOrderForUser(userId, orderId);
+    if (!order) {
+        throw new Error("Đơn hàng không tồn tại");
+    }
+
+    if (!order.order_items || !order.order_items.length) {
+        throw new Error("Đơn hàng không có sản phẩm để đặt lại");
+    }
+
+    // Thêm từng item vào giỏ hàng (dựa trên product_variant_id và quantity)
+    for (const item of order.order_items) {
+        await addProductToCart(
+            userId,
+            item.product_variant_id,
+            item.quantity,
+            item.product_id
+        );
+    }
+
+    return { success: true };
 };
 
 /**

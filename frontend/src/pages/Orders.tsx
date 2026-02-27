@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import MainLayout from "@/layout/MainLayout";
-import { Package, Clock, Loader2, ChevronRight, X } from "lucide-react";
-import { getMyOrders, cancelOrder } from "@/lib/api";
+import { Package, Clock, Loader2, ChevronRight, X, Star } from "lucide-react";
+import { getMyOrders, cancelOrder, reorderOrder, getOrderReviewableItems, createReview } from "@/lib/api";
 import type { Order } from "@/types/order";
 import { toast } from "sonner";
 import { isAuthenticated } from "@/lib/auth";
@@ -56,6 +56,21 @@ export default function OrdersPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [cancelingOrderId, setCancelingOrderId] = useState<number | null>(null);
+  const [reviewOrderId, setReviewOrderId] = useState<number | null>(null);
+  const [reviewItems, setReviewItems] = useState<
+    {
+      order_item_id: number;
+      product_id: number;
+      product_name: string;
+      color?: string | null;
+      size?: string | null;
+      quantity: number;
+    }[]
+  >([]);
+  const [selectedReviewItemId, setSelectedReviewItemId] = useState<number | null>(null);
+  const [reviewRating, setReviewRating] = useState<number>(5);
+  const [reviewComment, setReviewComment] = useState<string>("");
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
 
   useEffect(() => {
     if (!isAuthenticated()) {
@@ -99,6 +114,76 @@ export default function OrdersPage() {
       toast.error(errorMessage);
     } finally {
       setCancelingOrderId(null);
+    }
+  };
+
+  const handleReorder = async (orderId: number) => {
+    try {
+      await reorderOrder(orderId);
+      toast.success("Đã thêm lại sản phẩm vào giỏ hàng");
+      navigate("/cart");
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Không thể đặt lại đơn hàng";
+      toast.error(errorMessage);
+    }
+  };
+
+  const openReviewModal = async (orderId: number) => {
+    try {
+      setReviewOrderId(orderId);
+      setReviewItems([]);
+      setSelectedReviewItemId(null);
+      setReviewRating(5);
+      setReviewComment("");
+
+      const items = await getOrderReviewableItems(orderId);
+      if (!items || items.length === 0) {
+        toast.info("Tất cả sản phẩm trong đơn này đã được bạn đánh giá.");
+        setReviewOrderId(null);
+        return;
+      }
+
+      setReviewItems(items);
+      setSelectedReviewItemId(items[0].order_item_id);
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : "Không thể tải danh sách sản phẩm để đánh giá";
+      toast.error(errorMessage);
+      setReviewOrderId(null);
+    }
+  };
+
+  const closeReviewModal = () => {
+    setReviewOrderId(null);
+    setReviewItems([]);
+    setSelectedReviewItemId(null);
+    setReviewRating(5);
+    setReviewComment("");
+    setIsSubmittingReview(false);
+  };
+
+  const handleSubmitReview = async () => {
+    if (!reviewOrderId || !selectedReviewItemId) return;
+
+    const item = reviewItems.find((x) => x.order_item_id === selectedReviewItemId);
+    if (!item) return;
+
+    try {
+      setIsSubmittingReview(true);
+      await createReview({
+        productId: item.product_id,
+        rating: reviewRating,
+        comment: reviewComment,
+        orderItemId: item.order_item_id,
+      });
+
+      toast.success("Đã gửi đánh giá của bạn");
+      closeReviewModal();
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : "Không thể gửi đánh giá, vui lòng thử lại";
+      toast.error(errorMessage);
+      setIsSubmittingReview(false);
     }
   };
 
@@ -243,6 +328,23 @@ export default function OrdersPage() {
                             )}
                           </button>
                         )}
+                        {order.status === "delivered" && (
+                          <>
+                            <button
+                              onClick={() => openReviewModal(order.id)}
+                              className="flex items-center gap-2 rounded-md border border-yellow-400 bg-yellow-50 px-4 py-2 text-sm font-medium text-yellow-800 transition hover:bg-yellow-100"
+                            >
+                              <Star className="h-4 w-4" />
+                              Đánh giá sản phẩm
+                            </button>
+                            <button
+                              onClick={() => handleReorder(order.id)}
+                              className="flex items-center gap-2 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+                            >
+                              Đặt lại
+                            </button>
+                          </>
+                        )}
                         <Link
                           to={`/orders/${order.id}`}
                           className="flex items-center gap-2 rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
@@ -259,6 +361,103 @@ export default function OrdersPage() {
           </div>
         )}
       </div>
+
+      {reviewOrderId && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 px-4">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-black">Đánh giá sản phẩm</h2>
+              <button
+                onClick={closeReviewModal}
+                className="rounded-full p-1 text-gray-500 hover:bg-gray-100"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {reviewItems.length === 0 ? (
+              <p className="text-sm text-gray-600">
+                Đang tải danh sách sản phẩm có thể đánh giá...
+              </p>
+            ) : (
+              <div className="space-y-4">
+                <div>
+                  <label className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                    Sản phẩm
+                  </label>
+                  <select
+                    value={selectedReviewItemId ?? ""}
+                    onChange={(e) => setSelectedReviewItemId(Number(e.target.value))}
+                    className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-black focus:outline-none focus:ring-1 focus:ring-black"
+                  >
+                    {reviewItems.map((item) => (
+                      <option key={item.order_item_id} value={item.order_item_id}>
+                        {item.product_name}
+                        {item.color && ` - ${item.color}`}
+                        {item.size && ` / ${item.size}`}
+                        {` x${item.quantity}`}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                    Đánh giá
+                  </label>
+                  <div className="mt-1 flex gap-1">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        type="button"
+                        onClick={() => setReviewRating(star)}
+                        className={`rounded-full p-1 ${
+                          star <= reviewRating ? "text-yellow-500" : "text-gray-300"
+                        }`}
+                      >
+                        <Star className="h-5 w-5 fill-current" />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                    Nhận xét (tuỳ chọn)
+                  </label>
+                  <textarea
+                    value={reviewComment}
+                    onChange={(e) => setReviewComment(e.target.value)}
+                    rows={3}
+                    className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-black focus:outline-none focus:ring-1 focus:ring-black"
+                    placeholder="Hãy chia sẻ cảm nhận của bạn về sản phẩm..."
+                  />
+                </div>
+
+                <div className="mt-4 flex justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={closeReviewModal}
+                    className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                    disabled={isSubmittingReview}
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSubmitReview}
+                    disabled={isSubmittingReview || !selectedReviewItemId}
+                    className="flex items-center gap-2 rounded-md bg-black px-4 py-2 text-sm font-semibold text-white hover:bg-gray-900 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {isSubmittingReview && <Loader2 className="h-4 w-4 animate-spin" />}
+                    Gửi đánh giá
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </MainLayout>
   );
 }

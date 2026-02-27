@@ -8,11 +8,11 @@
  */
 
 export const validatePassword = (password) => {
-    const errors = {};
+    const errors = [];
 
     if(!password) {
         errors.push("Password is required");
-        return {isValid: true , errors: errors};
+        return {isValid: false , errors: errors};
     }
 
     if(password.length < 8) {
@@ -28,7 +28,7 @@ export const validatePassword = (password) => {
     }
 
     return {
-        isValid: errors.length == 0,
+        isValid: errors.length === 0,
         errors: errors,
     }
 }

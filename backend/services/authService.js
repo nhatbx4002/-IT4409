@@ -97,7 +97,7 @@ export const registerUser = async (user) => {
     throw new Error(passwordValidation.errors.join("."));
   }
 
-  const checkEmail = await User.findOne({ email: email });
+  const checkEmail = await User.findOne({ where: { email } });
   if(checkEmail){
     throw new Error("Email already exists");
   }

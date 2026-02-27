@@ -455,12 +455,16 @@ export async function createReview(payload: {
   rating: number;
   comment?: string;
   images?: File[];
+  orderItemId?: number;
 }): Promise<ReviewItem> {
   const formData = new FormData();
   formData.append('productId', payload.productId.toString());
   formData.append('rating', payload.rating.toString());
   if (payload.comment) {
     formData.append('comment', payload.comment);
+  }
+   if (payload.orderItemId) {
+    formData.append('orderItemId', payload.orderItemId.toString());
   }
   if (payload.images && payload.images.length > 0) {
     payload.images.forEach((file) => {
@@ -507,6 +511,26 @@ export async function updateReview(
 
 export async function deleteReview(reviewId: number): Promise<void> {
   await apiClient.delete(`/reviews/${reviewId}`);
+}
+
+// ==============================
+// ORDER REVIEWABLE ITEMS API
+// ==============================
+
+export interface OrderReviewableItem {
+  order_item_id: number;
+  product_id: number;
+  product_name: string;
+  product_slug?: string | null;
+  color?: string | null;
+  size?: string | null;
+  quantity: number;
+  thumbnail?: string | null;
+}
+
+export async function getOrderReviewableItems(orderId: number): Promise<OrderReviewableItem[]> {
+  const res = await apiClient.get<ApiResponse<OrderReviewableItem[]>>(`/orders/${orderId}/reviewable-items`);
+  return unwrapResponse(res.data);
 }
 
 // ==============================
@@ -695,8 +719,11 @@ export async function getActiveDiscounts(): Promise<DiscountDTO[]> {
 
 export async function validateDiscountCode(code: string, cartItems?: CartItemForDiscount[]): Promise<ValidateCodeResponse> {
   const res = await apiClient.post<ApiResponse<ValidateCodeResponse>>(
-    `/discounts/validate/${encodeURIComponent(code)}`,
-    { cart_items: cartItems || [] }
+    '/cart/discount/validate',
+    {
+      code,
+      cart_items: cartItems || [],
+    }
   );
   return unwrapResponse(res.data);
 }
@@ -719,7 +746,7 @@ export async function getCartItemsForDiscount(): Promise<CartItemForDiscount[]> 
 }
 
 export async function applyDiscount(payload: ApplyDiscountRequest): Promise<ApplyDiscountResponse> {
-  const res = await apiClient.post<ApiResponse<ApplyDiscountResponse>>('/discounts/apply', payload);
+  const res = await apiClient.post<ApiResponse<ApplyDiscountResponse>>('/cart/discount/apply', payload);
   return unwrapResponse(res.data);
 }
 
@@ -734,7 +761,7 @@ export async function applyDiscountWithCart(code: string): Promise<ApplyDiscount
   return applyDiscount({
     code,
     orderDraft: {
-      subtotal: cart.subtotal_amount || cart.subtotal || 0,
+      subtotal: cart.subtotal_amount || 0,
       shipping_fee: 0, // Will be calculated later based on address
       cart_items: cartItems,
     },
@@ -786,6 +813,12 @@ export async function checkout(data: CheckoutRequest): Promise<CheckoutResponse>
   return unwrapResponse(response.data);
 }
 
+// Khởi tạo thanh toán online (VNPay, sau này có thể mở rộng)
+export async function createOnlinePayment(data: CheckoutRequest): Promise<CheckoutResponse> {
+  const response = await apiClient.post<ApiResponse<CheckoutResponse>>('/payment/create', data);
+  return unwrapResponse(response.data);
+}
+
 export async function getPaymentStatus(orderId: number): Promise<PaymentStatusResponse> {
   const response = await apiClient.get<ApiResponse<PaymentStatusResponse>>(`/orders/${orderId}/payment/status`);
   return unwrapResponse(response.data);
@@ -806,6 +839,15 @@ export async function cancelOrder(orderId: number): Promise<CancelOrderResponse>
     `/orders/${orderId}/cancel`
   );
   return unwrapResponse(response.data);
+}
+
+export async function reorderOrder(orderId: number): Promise<void> {
+  const response = await apiClient.post<ApiResponse<{ success: boolean }>>(
+    `/orders/${orderId}/reorder`
+  );
+  if (!response.data.success) {
+    throw new Error(response.data.message || "Failed to reorder");
+  }
 }
 
 // ==============================

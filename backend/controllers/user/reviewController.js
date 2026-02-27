@@ -30,7 +30,7 @@ export const listProductReviewsController = async (req, res) => {
 
 export const createReviewController = async (req, res) => {
   const userId = req.user?.id;
-  const { productId, rating, comment } = req.body;
+  const { productId, rating, comment, orderItemId } = req.body;
   const files = req.files || [];
 
   if (!userId) {
@@ -72,6 +72,7 @@ export const createReviewController = async (req, res) => {
       rating: numericRating,
       comment: comment || null,
       images: imageUrls,
+      orderItemId,
     });
     return sendSuccess(res, 201, data, "Review created successfully");
   } catch (error) {

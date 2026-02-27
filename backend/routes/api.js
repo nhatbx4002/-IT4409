@@ -12,6 +12,7 @@ import checkoutRoutes from "./checkoutRoute.js";
 import reviewRoutes from "./reviewRoute.js";
 import collectionRoutes from "./collections.js";
 import adminCollectionRoutes from "./admin/collections.js";
+import paymentRoutes from "./paymentRoute.js";
 
 const api = express.Router();
 
@@ -29,5 +30,6 @@ api.use("/checkout", checkoutRoutes);
 api.use("/reviews", reviewRoutes);
 api.use("/collections", collectionRoutes);
 api.use("/admin/collections", adminCollectionRoutes);
+api.use("/payment", paymentRoutes);
 
 export default api;
