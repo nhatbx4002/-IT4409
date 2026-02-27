@@ -1,5 +1,12 @@
 import { sendSuccess, sendError, sendValidationError } from "../../utils/response.js";
-import { getProductsByCategoryService, getProductDetailService, getProductDetailBySlugOrIdService, searchProductsService } from "../../services/user/productService.js";
+import {
+    getProductsByCategoryService,
+    getProductDetailService,
+    getProductDetailBySlugOrIdService,
+    getSimilarProductsService,
+    searchProductsService,
+    trackProductViewService,
+} from "../../services/user/productService.js";
 
 export const getProductsByCategoryController = async (req, res) => {
     const { categoryId } = req.query;
@@ -230,6 +237,40 @@ export const searchProductsController = async (req, res) => {
         return sendError(res, {
             message: "Failed to search products",
             error
+        });
+    }
+};
+
+export const trackProductViewController = async (req, res) => {
+    const { slugOrId } = req.params;
+    const sessionId = req.body?.session_id || null;
+
+    try {
+        const product = await getProductDetailBySlugOrIdService(slugOrId);
+        await trackProductViewService(product.id, req.user?.id, sessionId);
+        return res.status(204).send();
+    } catch (error) {
+        const statusCode = error.message === "Product not found" ? 404 : 400;
+        return sendError(res, {
+            status: statusCode,
+            message: error.message || "Failed to track product view",
+        });
+    }
+};
+
+export const getSimilarProductsController = async (req, res) => {
+    const { slugOrId } = req.params;
+    const limit = req.query.limit ? parseInt(req.query.limit, 10) : undefined;
+
+    try {
+        const product = await getProductDetailBySlugOrIdService(slugOrId);
+        const data = await getSimilarProductsService(product.id, limit);
+        return sendSuccess(res, 200, data, "Similar products fetched successfully");
+    } catch (error) {
+        const statusCode = error.message === "Product not found" ? 404 : 400;
+        return sendError(res, {
+            status: statusCode,
+            message: error.message || "Failed to fetch similar products",
         });
     }
 };

@@ -17,7 +17,7 @@ export const listProductReviews = async ({ productId, page = 1, pageSize = 6 }) 
     buildPagination(page, pageSize);
 
   const { rows, count } = await Review.findAndCountAll({
-    where: { product_id: productId },
+    where: { product_id: productId, is_approved: true },
     include: [
       {
         model: User,
@@ -31,14 +31,14 @@ export const listProductReviews = async ({ productId, page = 1, pageSize = 6 }) 
 
   const ratingRows = await Review.findAll({
     attributes: ["rating", [fn("COUNT", col("rating")), "count"]],
-    where: { product_id: productId },
+    where: { product_id: productId, is_approved: true },
     group: ["rating"],
     raw: true,
   });
 
   const avgRow = await Review.findAll({
     attributes: [[fn("AVG", col("rating")), "avg_rating"]],
-    where: { product_id: productId },
+    where: { product_id: productId, is_approved: true },
     raw: true,
   });
 

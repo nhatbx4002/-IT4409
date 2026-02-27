@@ -14,7 +14,7 @@ export const User = sequelize.define("users", {
       }
     }
   },
-  password: DataTypes.STRING(255), // Hashed password
+  password: DataTypes.STRING(255),
   name: {
     type: DataTypes.STRING(100),
     allowNull: true,

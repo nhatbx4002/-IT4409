@@ -16,7 +16,7 @@ const router = express.Router();
 // === PUBLIC ROUTES (Không cần authenticate) ===
 /**
  * @swagger
- * /payment/vnpay/callback:
+ * /orders/payment/vnpay/callback:
  *   get:
  *     summary: Callback từ VNPay sau khi thanh toán
  *     tags: [Orders]
@@ -53,7 +53,7 @@ router.use(authenticateToken);
 
 /**
  * @swagger
- * /shipping-fee:
+ * /orders/shipping-fee:
  *   post:
  *     summary: Tính phí ship (Preview)
  *     tags: [Orders]
@@ -85,7 +85,7 @@ router.post('/shipping-fee', getShippingFee);
 
 /**
  * @swagger
- * /checkout:
+ * /orders/checkout:
  *   post:
  *     summary: Tạo đơn hàng (Checkout)
  *     tags: [Orders]
@@ -106,6 +106,9 @@ router.post('/shipping-fee', getShippingFee);
  *               paymentMethod:
  *                 type: string
  *                 enum: [COD, VNPAY]
+ *               shippingMethod:
+ *                 type: string
+ *                 enum: [standard, express]
  *               notes:
  *                 type: string
  *               promotionCode:
@@ -120,7 +123,7 @@ router.post('/checkout', requireEmailVerified, createOrder);
 
 /**
  * @swagger
- * /:
+ * /orders:
  *   get:
  *     summary: Xem danh sách đơn hàng của user
  *     tags: [Orders]
@@ -136,7 +139,7 @@ router.get('/', getMyOrders);
 
 /**
  * @swagger
- * /{orderId}/payment/status:
+ * /orders/{orderId}/payment/status:
  *   get:
  *     summary: Kiểm tra trạng thái thanh toán
  *     tags: [Orders]
@@ -158,7 +161,7 @@ router.get('/:orderId/payment/status', checkPaymentStatus);
 
 /**
  * @swagger
- * /{id}:
+ * /orders/{id}:
  *   get:
  *     summary: Xem chi tiết đơn hàng
  *     tags: [Orders]
@@ -180,7 +183,7 @@ router.get('/:id', getOrderDetails);
 
 /**
  * @swagger
- * /{id}/cancel:
+ * /orders/{id}/cancel:
  *   put:
  *     summary: Hủy đơn hàng
  *     tags: [Orders]

@@ -39,6 +39,7 @@
     "seed:collections": "node ./scripts/seedCollections.js",
     "insert:products": "node ./scripts/insertProducts.js",
     "reset:db": "node ./scripts/resetDatabase.js",
-    "reset:db:force": "node ./scripts/resetDatabase.js --force"
+    "reset:db:force": "node ./scripts/resetDatabase.js --force",
+    "seed:full": "node ./scripts/seedData.js"
   }
 }

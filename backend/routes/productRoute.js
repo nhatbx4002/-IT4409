@@ -1,9 +1,10 @@
 import express from "express";
 import {
   listProductsController,
-  getProductsByCategoryController,
   searchProductsController,
   getProductDetailBySlugOrIdController,
+  getSimilarProductsController,
+  trackProductViewController,
 } from "../controllers/user/productController.js";
 
 const router = express.Router();
@@ -127,17 +128,17 @@ router.get("/", listProductsController);
  *         name: q
  *         schema:
  *           type: string
- *         description: Free text search across product fields
+ *         description: Free text search across product fields (name, brand, description, tags)
  *       - in: query
  *         name: name
  *         schema:
  *           type: string
- *         description: Filter by product name
+ *         description: Filter by product name (or description/tags due to shared search logic)
  *       - in: query
  *         name: brand
  *         schema:
  *           type: string
- *         description: Filter by brand
+ *         description: Filter by brand (or description/tags due to shared search logic)
  *       - in: query
  *         name: page
  *         schema:
@@ -232,40 +233,73 @@ router.get("/search", searchProductsController);
 
 /**
  * @swagger
- * /products/category/{slug}:
- *   get:
- *     summary: Lấy sản phẩm theo danh mục
+ * /products/{slugOrId}/views:
+ *   post:
+ *     summary: Track a product view
  *     tags: [Products]
  *     parameters:
  *       - in: path
- *         name: slug
+ *         name: slugOrId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               session_id:
+ *                 type: string
+ *                 description: Optional session id for anonymous tracking
+ *     responses:
+ *       204:
+ *         description: View tracked
+ *       404:
+ *         description: Product not found
+ */
+router.post("/:slugOrId/views", trackProductViewController);
+
+/**
+ * @swagger
+ * /products/{slugOrId}/similar:
+ *   get:
+ *     summary: Get similar products
+ *     tags: [Products]
+ *     parameters:
+ *       - in: path
+ *         name: slugOrId
  *         required: true
  *         schema:
  *           type: string
  *       - in: query
- *         name: page
+ *         name: limit
  *         schema:
  *           type: integer
  *           minimum: 1
- *       - in: query
- *         name: pageSize
- *         schema:
- *           type: integer
- *           minimum: 1
- *           maximum: 100
- *       - in: query
- *         name: sort
- *         schema:
- *           type: string
- *           enum: [featured, newest, price-low, price-high, popular]
- *         description: Tiêu chí sắp xếp
+ *           default: 4
  *     responses:
  *       200:
- *         description: Danh sách sản phẩm theo danh mục
+ *         description: Similar products list
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                 message:
+ *                   type: string
  *       404:
- *         description: Không tìm thấy danh mục
+ *         description: Product not found
  */
-router.get("/category/:slug", getProductsByCategoryController);
+router.get("/:slugOrId/similar", getSimilarProductsController);
 
 /**
  * @swagger

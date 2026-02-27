@@ -7,6 +7,9 @@ import {
     sequelize, // Dùng cho transactions (đảm bảo an toàn dữ liệu)
 } from "../models/index.js";
 import { Op, col } from "sequelize";
+import discountService from "./discountService.js";
+
+const MAX_CART_ITEM_QTY = 10;
 
 /**
  * Hàm nội bộ: Tìm giỏ hàng của user, nếu chưa có thì tạo mới
@@ -75,11 +78,13 @@ export const addProductToCart = async (
     productId
 ) => {
     const addQuantity = parseInt(quantity, 10);
+    if (isNaN(addQuantity) || addQuantity <= 0) {
+        throw new Error("Số lượng phải là một số dương");
+    }
     // --- Xử lý logic (trong 1 transaction) ---
     const result = await sequelize.transaction(async (t) => {
         const variant = await resolveVariant({ productVariantId, productId, transaction: t });
         const resolvedVariantId = variant.id;
-        const quantityToAdd = clampQuantityToStock(addQuantity, variant.stock_quantity);
 
         // --- Tìm giỏ hàng & sản phẩm ---
         const cart = await getOrCreateCart(userId);
@@ -96,11 +101,11 @@ export const addProductToCart = async (
         let newQuantity;
         if (cartItem) {
             // Đã có -> Cập nhật số lượng
-            newQuantity = cartItem.quantity + quantityToAdd;
+            newQuantity = cartItem.quantity + addQuantity;
             cartItem.quantity = newQuantity;
         } else {
             // Chưa có -> Tạo mới
-            newQuantity = quantityToAdd;
+            newQuantity = addQuantity;
             cartItem = await CartItem.create(
                 {
                     cart_id: cart.id,
@@ -109,6 +114,10 @@ export const addProductToCart = async (
                 },
                 { transaction: t }
             );
+        }
+
+        if (newQuantity > MAX_CART_ITEM_QTY) {
+            throw new Error("Số lượng tối đa mỗi sản phẩm là 10");
         }
 
         // Kiểm tra tồn kho
@@ -183,6 +192,9 @@ export const updateCartItem = async (userId, cartItemId, payload) => {
         }
 
         const desiredQuantity = hasQuantity ? newQuantity : cartItem.quantity;
+        if (desiredQuantity > MAX_CART_ITEM_QTY) {
+            throw new Error("Số lượng tối đa mỗi sản phẩm là 10");
+        }
         const clampedQuantity = clampQuantityToStock(
             desiredQuantity,
             targetVariant.stock_quantity
@@ -199,8 +211,12 @@ export const updateCartItem = async (userId, cartItemId, payload) => {
             });
 
             if (existingItem && existingItem.id !== cartItem.id) {
+                const mergedDesiredQuantity = existingItem.quantity + clampedQuantity;
+                if (mergedDesiredQuantity > MAX_CART_ITEM_QTY) {
+                    throw new Error("Số lượng tối đa mỗi sản phẩm là 10");
+                }
                 const mergedQuantity = clampQuantityToStock(
-                    existingItem.quantity + clampedQuantity,
+                    mergedDesiredQuantity,
                     targetVariant.stock_quantity
                 );
                 existingItem.quantity = mergedQuantity;
@@ -241,7 +257,7 @@ export const removeItemFromCart = async (userId, cartItemId) => {
 /**
  * 4. Lấy chi tiết giỏ hàng và tính tổng tiền
  */
-export const getCartDetails = async (userId) => {
+export const getCartDetails = async (userId, promotionCode = null) => {
     try {
         const cart = await getOrCreateCart(userId);
 
@@ -323,8 +339,20 @@ export const getCartDetails = async (userId) => {
     }
 
     // === 4. TÍNH TỔNG GIÁ TẠM TÍNH ===
-    const discount_amount = 0; // Tạm thời không có discount
-    const total_amount = subtotal_amount; // Tổng = subtotal (chưa có discount)
+    const discountResult = await discountService.applyDiscount(
+        {
+            subtotal: subtotal_amount,
+            shipping_fee: 0,
+            cart_items: items,
+        },
+        promotionCode
+    );
+
+    const discount_amount = discountResult.applied ? discountResult.amount : 0;
+    const total_amount = Math.max(0, subtotal_amount - discount_amount);
+    const applied_promotion_code = discountResult.applied
+        ? discountResult.discount?.code || promotionCode || null
+        : null;
 
         return {
             id: cart.id,
@@ -333,7 +361,7 @@ export const getCartDetails = async (userId) => {
             subtotal_amount: parseFloat(subtotal_amount.toFixed(2)),
             discount_amount: parseFloat(discount_amount.toFixed(2)),
             total_amount: parseFloat(total_amount.toFixed(2)),
-            applied_promotion_code: null, // Tạm thời không có promotion
+            applied_promotion_code,
         };
     } catch (error) {
         console.error("Error in getCartDetails:", error);
