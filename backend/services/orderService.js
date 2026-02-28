@@ -1,4 +1,4 @@
-import { Product, ProductVariant, ShippingAddress } from "../models/index.js";
+import { Product, ProductVariant, ShippingAddress, OrderStatusHistory } from "../models/index.js";
 import discountService from "./discountService.js";
 import { sendOrderStatusEmail } from "./emailService.js";
 import { Op } from "sequelize";
@@ -203,14 +203,16 @@ export const previewShippingFee = async (userId, locationData, promotionCode) =>
 };
 
 // 2. Tạo đơn hàng (Checkout)
-export const createOrder = async (userId, shippingAddressId, paymentMethod, notes, promotionCode) => {
-    const validMethods = ['COD', 'VNPAY'];
-    if (!validMethods.includes(paymentMethod.toUpperCase())) {
-        throw new Error("Phương thức thanh toán không hợp lệ");
+export const createOrder = async (userId, shippingAddressId, shippingMethod, paymentMethod, notes, promotionCode) => {
+    const normalizedPaymentMethod = paymentMethod ? paymentMethod.toLowerCase() : null;
+    const normalizedShippingMethod = shippingMethod ? shippingMethod.toLowerCase() : 'standard';
+    const supportedShippingMethods = ['standard', 'express'];
+    if (!supportedShippingMethods.includes(normalizedShippingMethod)) {
+        throw new Error("Phương thức vận chuyển không hợp lệ");
     }
 
-    if (!userId) {
-        throw new Error("Cần đăng nhập để tạo đơn hàng");
+    if (!normalizedPaymentMethod) {
+        throw new Error("Thiếu phương thức thanh toán");
     }
 
     const cart = await findCartWithItems(userId);
@@ -304,8 +306,17 @@ export const createOrder = async (userId, shippingAddressId, paymentMethod, note
             total_amount: totalAmount,
             final_total: null,
             status: 'pending',
+            payment_method: normalizedPaymentMethod,
+            shipping_method: normalizedShippingMethod,
             notes: finalNotes,
         }, transaction);
+
+        await OrderStatusHistory.create({
+            order_id: newOrder.id,
+            from_status: null,
+            to_status: 'pending',
+            notes: 'Đơn hàng được tạo'
+        }, { transaction });
 
         const itemsWithOrderId = orderItemsData.map(item => ({ ...item, order_id: newOrder.id }));
         await bulkCreateOrderItems(itemsWithOrderId, transaction);
@@ -313,14 +324,14 @@ export const createOrder = async (userId, shippingAddressId, paymentMethod, note
         // Thanh toán
         let paymentUrl = null;
         let paymentStatus = 'pending';
-        if (paymentMethod.toUpperCase() === 'VNPAY') {
+        if (normalizedPaymentMethod === 'vnpay') {
             paymentStatus = 'waiting_gateway';
             paymentUrl = createVnPayUrl(newOrder.id, totalAmount);
         }
 
         await createPaymentRecord({
             order_id: newOrder.id,
-            provider: paymentMethod.toUpperCase(),
+            provider: normalizedPaymentMethod,
             amount: totalAmount,
             currency: 'VND',
             status: paymentStatus,
@@ -340,6 +351,13 @@ export const createOrder = async (userId, shippingAddressId, paymentMethod, note
     // Send order confirmation email (outside transaction)
     if (result.user && result.user.email) {
         sendOrderStatusEmail(result.user.email, result.order.id, 'pending', {
+            total_amount: result.order.total_amount,
+            notes: result.order.notes
+        });
+    }
+
+    if (env.ADMIN_EMAIL) {
+        sendOrderStatusEmail(env.ADMIN_EMAIL, result.order.id, 'pending', {
             total_amount: result.order.total_amount,
             notes: result.order.notes
         });

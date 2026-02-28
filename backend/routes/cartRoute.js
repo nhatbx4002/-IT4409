@@ -16,6 +16,13 @@ router.use(authenticateToken);
  *     tags: [Cart]
  *     security:
  *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: promotionCode
+ *         required: false
+ *         schema:
+ *           type: string
+ *         description: Mã khuyến mãi cần áp dụng cho giỏ hàng
  *     responses:
  *       200:
  *         description: Chi tiết giỏ hàng

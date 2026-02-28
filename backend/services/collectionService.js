@@ -291,6 +291,12 @@ export class CollectionService {
       }))
       .filter(p => p && p.status === 'active');
 
+    const total = products.length;
+    const page = Number(options.page) > 0 ? Number(options.page) : 1;
+    const pageSize = Number(options.pageSize) > 0 ? Number(options.pageSize) : total;
+    const startIndex = (page - 1) * pageSize;
+    const paginatedProducts = products.slice(startIndex, startIndex + pageSize);
+
     return {
       collection: {
         id: collection.id,
@@ -299,8 +305,8 @@ export class CollectionService {
         description: collection.description,
         banner_image: collection.banner_image
       },
-      products,
-      total: products.length
+      products: paginatedProducts,
+      total
     };
   }
 }

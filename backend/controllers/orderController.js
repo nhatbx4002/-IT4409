@@ -35,11 +35,12 @@ export const createOrder = async (req, res) => {
         }
 
         // Frontend gửi: ID địa chỉ đã lưu, Phương thức thanh toán, Ghi chú, Mã giảm giá
-        const { shippingAddressId, paymentMethod, notes, promotionCode } = req.body;
+        const { shippingAddressId, shippingMethod, paymentMethod, notes, promotionCode } = req.body;
 
         const result = await orderService.createOrder(
             userId,
             shippingAddressId,
+            shippingMethod,
             paymentMethod,
             notes,
             promotionCode

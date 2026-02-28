@@ -14,12 +14,47 @@ import { requireEmailVerified } from '../middlewares/requireEmailVerified.js';
 
 const router = express.Router();
 
-// Middleware xác thực cho các route
+// === PUBLIC ROUTES (Không cần authenticate) ===
+/**
+ * @swagger
+ * /orders/payment/vnpay/callback:
+ *   get:
+ *     summary: Callback từ VNPay sau khi thanh toán
+ *     tags: [Orders]
+ *     parameters:
+ *       - in: query
+ *         name: vnp_Amount
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: vnp_BankCode
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: vnp_ResponseCode
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: vnp_TransactionStatus
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Callback xử lý thành công
+ *       400:
+ *         description: Lỗi xử lý callback
+ */
+router.get('/payment/vnpay/callback', vnPayCallback);
+
+// Alias route for backward compatibility with existing orders
+router.get('/vnpay_return', vnPayCallback);
+
+// Middleware xác thực cho các route còn lại
 router.use(authenticateToken);
 
 /**
  * @swagger
- * /shipping-fee:
+ * /orders/shipping-fee:
  *   post:
  *     summary: Tính phí ship (Preview)
  *     tags: [Orders]
@@ -51,7 +86,7 @@ router.post('/shipping-fee', getShippingFee);
 
 /**
  * @swagger
- * /checkout:
+ * /orders/checkout:
  *   post:
  *     summary: Tạo đơn hàng (Checkout)
  *     tags: [Orders]
@@ -72,6 +107,9 @@ router.post('/shipping-fee', getShippingFee);
  *               paymentMethod:
  *                 type: string
  *                 enum: [COD, VNPAY]
+ *               shippingMethod:
+ *                 type: string
+ *                 enum: [standard, express]
  *               notes:
  *                 type: string
  *               promotionCode:
@@ -86,7 +124,7 @@ router.post('/checkout', requireEmailVerified, createOrder);
 
 /**
  * @swagger
- * /:
+ * /orders:
  *   get:
  *     summary: Xem danh sách đơn hàng của user
  *     tags: [Orders]
@@ -102,7 +140,7 @@ router.get('/', getMyOrders);
 
 /**
  * @swagger
- * /{orderId}/payment/status:
+ * /orders/{orderId}/payment/status:
  *   get:
  *     summary: Kiểm tra trạng thái thanh toán
  *     tags: [Orders]
@@ -124,7 +162,7 @@ router.get('/:orderId/payment/status', checkPaymentStatus);
 
 /**
  * @swagger
- * /{id}:
+ * /orders/{id}:
  *   get:
  *     summary: Xem chi tiết đơn hàng
  *     tags: [Orders]
@@ -170,7 +208,31 @@ router.get('/:id/reviewable-items', getReviewableItems);
 
 /**
  * @swagger
- * /{id}/cancel:
+ * /{id}/reviewable-items:
+ *   get:
+ *     summary: Danh sách sản phẩm trong đơn hàng mà user được phép đánh giá
+ *     tags: [Orders]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Danh sách sản phẩm có thể đánh giá
+ *       400:
+ *         description: Đơn hàng chưa được giao hoặc không hợp lệ
+ *       404:
+         *         description: Không tìm thấy đơn hàng
+ */
+router.get('/:id/reviewable-items', getReviewableItems);
+
+/**
+ * @swagger
+ * /orders/{id}/cancel:
  *   put:
  *     summary: Hủy đơn hàng
  *     tags: [Orders]

@@ -1,4 +1,5 @@
 import { Op } from "sequelize";
+import { ProductView } from "../../models/index.js";
 import {
   collectDescendantCategoryIds,
   findCategoryBySlug,
@@ -63,14 +64,14 @@ const summarizeProduct = (product) => {
 
   const category = data.category
     ? {
-        id: data.category.id,
-        name: data.category.name,
-        slug: data.category.slug,
-      }
+      id: data.category.id,
+      name: data.category.name,
+      slug: data.category.slug,
+    }
     : null;
 
-  const rating = 0;
-  const reviewCount = 0;
+  const rating = data.avg_rating ? Number(data.avg_rating) : 0;
+  const reviewCount = data.review_count ? Number(data.review_count) : 0;
 
   return {
     id: data.id,
@@ -104,8 +105,8 @@ const buildProductDetailData = (product) => {
   const rawVariants = Array.isArray(data.variants)
     ? data.variants
     : Array.isArray(data.ProductVariants)
-    ? data.ProductVariants
-    : [];
+      ? data.ProductVariants
+      : [];
 
   const variants = rawVariants.map(transformVariantDetail);
   const variantsWithStock = variants.filter((v) => (v.stockQuantity || 0) > 0);
@@ -243,7 +244,7 @@ export const getProductDetailBySlugOrIdService = async (slugOrId) => {
   if (!isNaN(possibleId)) {
     product = await findProductWithRelations(possibleId);
   }
-  
+
   // If not found by ID or not a valid ID, try to find by slug
   if (!product) {
     product = await findProductBySlugWithRelations(slugOrId);
@@ -286,6 +287,16 @@ export const searchProductsService = async ({
       {
         brand: {
           [Op.iLike]: `%${searchTerm}%`,
+        },
+      },
+      {
+        description: {
+          [Op.iLike]: `%${searchTerm}%`,
+        },
+      },
+      {
+        tags: {
+          [Op.contains]: [searchTerm],
         },
       },
     ];
@@ -352,5 +363,50 @@ export const searchProductsService = async ({
     pageSize: safePageSize,
     totalPages,
   };
+};
+
+export const getSimilarProductsService = async (productId, limit = 4) => {
+  if (!productId) {
+    throw new Error("Product ID is required");
+  }
+
+  const safeLimit = Math.max(1, parseInt(limit, 10)) || 4;
+
+  const currentProduct = await findProductWithRelations(productId);
+  if (!currentProduct) {
+    throw new Error("Product not found");
+  }
+
+  const categoryId = currentProduct.category_id;
+  if (!categoryId) {
+    return [];
+  }
+
+  const whereClause = {
+    category_id: categoryId,
+    id: {
+      [Op.ne]: currentProduct.id,
+    }
+  };
+
+  const products = await listProductsWithRelations({
+    where: whereClause,
+    limit: safeLimit,
+    order: [["created_at", "DESC"]],
+  });
+
+  return products.map(summarizeProduct);
+};
+
+export const trackProductViewService = async (productId, userId, sessionId) => {
+  if (!productId) {
+    throw new Error("Product ID is required");
+  }
+
+  await ProductView.create({
+    product_id: productId,
+    user_id: userId ?? null,
+    session_id: sessionId ?? null,
+  });
 };
 

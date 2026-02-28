@@ -10,7 +10,8 @@ export const getCart = async (req, res) => {
         if (!userId) {
             throw new Error("Vui lòng đăng nhập để xem giỏ hàng");
         }
-        const cart = await cartService.getCartDetails(userId);
+        const { promotionCode } = req.query || {};
+        const cart = await cartService.getCartDetails(userId, promotionCode);
 
         sendSuccess(res, {
             message: "Lấy giỏ hàng thành công",

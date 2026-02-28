@@ -19,6 +19,7 @@ const envSchema = z.object({
   SESSION_SECRET: z.string().min(1, "SESSION_SECRET is required"),
   EMAIL_USER: z.string().email("EMAIL_USER must be a valid email"),
   EMAIL_PASS: z.string().min(1, "EMAIL_PASS is required"),
+  ADMIN_EMAIL: z.string().email("ADMIN_EMAIL must be a valid email").optional(),
   CLOUDINARY_CLOUD_NAME: z.string().min(1),
   CLOUDINARY_API_KEY: z.string().min(1),
   CLOUDINARY_API_SECRET: z.string().min(1),
