@@ -1,13 +1,16 @@
 import express from "express";
+import { authenticateToken } from "../../middlewares/auth.js";
 import * as wishlistController from "../../controllers/user/wishlistController.js";
 
 const router = express.Router();
 
+router.use(authenticateToken);
+
 /**
  * @swagger
- * /wishlist/add:
+ * /wishlist/toggle:
  *   post:
- *     summary: Thêm sản phẩm vào wishlist
+ *     summary: Thêm/xóa sản phẩm trong wishlist
  *     tags: [Wishlist]
  *     security:
  *       - bearerAuth: []
@@ -24,39 +27,53 @@ const router = express.Router();
  *                 type: integer
  *     responses:
  *       200:
- *         description: Thêm vào wishlist thành công
+ *         description: Toggle wishlist thành công
  *       400:
- *         description: Lỗi thêm vào wishlist
+ *         description: Lỗi thao tác wishlist
  */
-router.post("/add", wishlistController.addToWishlist);
+router.post("/toggle", wishlistController.toggleWishlistItem);
 
 /**
  * @swagger
- * /wishlist/{userId}:
+ * /wishlist:
  *   get:
  *     summary: Lấy danh sách wishlist của user
  *     tags: [Wishlist]
  *     security:
  *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: userId
- *         required: true
- *         schema:
- *           type: integer
  *     responses:
  *       200:
  *         description: Danh sách wishlist
  *       401:
  *         description: Unauthorized
  */
-router.get("/:userId", wishlistController.getWishlistByUser);
+router.get("/", wishlistController.getWishlistByUser);
+
+/**
+ * @swagger
+ * /wishlist/check/{productId}:
+ *   get:
+ *     summary: Kiểm tra sản phẩm có trong wishlist
+ *     tags: [Wishlist]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: productId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Trạng thái wishlist
+ */
+router.get("/check/:productId", wishlistController.checkProductInWishlist);
 
 /**
  * @swagger
  * /wishlist/remove:
  *   delete:
- *     summary: Xóa sản phẩm khỏi wishlist
+ *     summary: Xóa sản phẩm khỏi wishlist (legacy)
  *     tags: [Wishlist]
  *     security:
  *       - bearerAuth: []

@@ -5,7 +5,7 @@ import wishlistRoutes from "./wishlistRoutes.js";
 
 const userRouter = Router();
 
-userRouter.use("/wishlist", wishlistRoutes);
+userRouter.use("/wishlist", authenticateToken, wishlistRoutes);
 
 /**
  * @swagger

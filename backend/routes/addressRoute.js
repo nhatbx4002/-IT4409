@@ -1,6 +1,12 @@
 import express from 'express';
 import { authenticateToken } from '../middlewares/auth.js';
-import { addAddress, getMyAddresses, deleteAddress } from '../controllers/addressController.js';
+import {
+  addAddress,
+  getMyAddresses,
+  deleteAddress,
+  editAddress,
+  setDefault,
+} from '../controllers/addressController.js';
 
 const router = express.Router();
 
@@ -66,6 +72,71 @@ router.get('/', getMyAddresses);
  *         description: Lỗi thêm địa chỉ
  */
 router.post('/', addAddress);
+
+/**
+ * @swagger
+ * /shipping-addresses/{id}:
+ *   put:
+ *     summary: Cập nhật địa chỉ
+ *     tags: [Addresses]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               phone:
+ *                 type: string
+ *               city:
+ *                 type: string
+ *               district:
+ *                 type: string
+ *               ward:
+ *                 type: string
+ *               address:
+ *                 type: string
+ *               is_default:
+ *                 type: boolean
+ *     responses:
+ *       200:
+ *         description: Cập nhật địa chỉ thành công
+ *       404:
+ *         description: Không tìm thấy địa chỉ
+ */
+router.put('/:id', editAddress);
+
+/**
+ * @swagger
+ * /shipping-addresses/{id}/default:
+ *   patch:
+ *     summary: Cập nhật địa chỉ mặc định
+ *     tags: [Addresses]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Cập nhật địa chỉ mặc định
+ *       404:
+ *         description: Không tìm thấy địa chỉ
+ */
+router.patch('/:id/default', setDefault);
 
 /**
  * @swagger

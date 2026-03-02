@@ -3,6 +3,8 @@ import {
   createAddress,
   listUserAddresses,
   removeAddress,
+  setDefaultAddress,
+  updateAddress,
 } from "../services/addressService.js";
 import { sendError, sendSuccess, validateRequest } from "./controllerUtils.js";
 
@@ -16,41 +18,68 @@ const addressPayloadSchema = z.object({
   is_default: z.boolean().optional(),
 });
 
-export const addAddress = async (req, res) => {
-    try {
-        const userId = req.user.id;
-        const payload = validateRequest(addressPayloadSchema, req.body);
-        const newAddress = await createAddress(userId, payload);
+const partialAddressSchema = addressPayloadSchema.partial();
 
-        sendSuccess(res, {
-            status: 201,
-            message: "Thêm địa chỉ thành công",
-            data: newAddress,
-        });
-    } catch (error) {
-        sendError(res, error);
-    }
+export const addAddress = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const payload = validateRequest(addressPayloadSchema, req.body);
+    const newAddress = await createAddress(userId, payload);
+
+    sendSuccess(res, {
+      status: 201,
+      message: "Thêm địa chỉ thành công",
+      data: newAddress,
+    });
+  } catch (error) {
+    sendError(res, error);
+  }
 };
 
 export const getMyAddresses = async (req, res) => {
-    try {
-        const userId = req.user.id;
-        const addresses = await listUserAddresses(userId);
+  try {
+    const userId = req.user.id;
+    const addresses = await listUserAddresses(userId);
 
-        sendSuccess(res, { data: addresses });
-    } catch (error) {
-        sendError(res, error);
-    }
+    sendSuccess(res, { data: addresses });
+  } catch (error) {
+    sendError(res, error);
+  }
 };
 
 export const deleteAddress = async (req, res) => {
-    try {
-        const userId = req.user.id;
-        const { id } = req.params;
+  try {
+    const userId = req.user.id;
+    const { id } = req.params;
 
-        await removeAddress(userId, id);
-        sendSuccess(res, { message: "Đã xóa địa chỉ" });
-    } catch (error) {
-        sendError(res, error);
-    }
+    await removeAddress(userId, id);
+    sendSuccess(res, { message: "Đã xóa địa chỉ" });
+  } catch (error) {
+    sendError(res, error);
+  }
+};
+
+export const editAddress = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { id } = req.params;
+    const payload = validateRequest(partialAddressSchema, req.body);
+    const updatedAddress = await updateAddress(userId, id, payload);
+
+    sendSuccess(res, { message: "Cập nhật địa chỉ thành công", data: updatedAddress });
+  } catch (error) {
+    sendError(res, error);
+  }
+};
+
+export const setDefault = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { id } = req.params;
+    const address = await setDefaultAddress(userId, id);
+
+    sendSuccess(res, { message: "Đã cập nhật địa chỉ mặc định", data: address });
+  } catch (error) {
+    sendError(res, error);
+  }
 };

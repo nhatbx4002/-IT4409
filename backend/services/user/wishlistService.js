@@ -1,5 +1,4 @@
 import { Wishlist, Product, ProductVariant } from "../../models/index.js";
-import { sequelize } from "../../config/db.config.js"; 
 
 // Thêm mới
 export const addWishlist = async (userId, productId) => {
@@ -26,6 +25,7 @@ export const getWishlist = async (userId) => {
         model: Product,
         as: 'product',
         attributes: ['id', 'name', 'brand', 'base_price', 'sale_price', 'description', 'images', 'tags', 'is_new'],
+        where: { status: 'active' },
         include: [
           {
             model: ProductVariant,
@@ -50,4 +50,30 @@ export const removeWishlist = async (userId, productId) => {
     }
   });
   return deletedCount;
+};
+
+export const toggleWishlist = async (userId, productId) => {
+  const existingItem = await Wishlist.findOne({
+    where: { user_id: userId, product_id: productId }
+  });
+
+  if (existingItem) {
+    await existingItem.destroy();
+    return { action: 'removed' };
+  }
+
+  const newItem = await Wishlist.create({
+    user_id: userId,
+    product_id: productId
+  });
+
+  return { action: 'added', data: newItem };
+};
+
+export const checkWishlistStatus = async (userId, productId) => {
+  const existingItem = await Wishlist.findOne({
+    where: { user_id: userId, product_id: productId }
+  });
+
+  return { inWishlist: Boolean(existingItem) };
 };
