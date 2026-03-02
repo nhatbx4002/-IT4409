@@ -1,4 +1,4 @@
-import { Product, ProductVariant, ShippingAddress, OrderStatusHistory } from "../models/index.js";
+import { Product, ProductVariant, ShippingAddress, Order, User, OrderStatusHistory, OrderItem, Review } from "../models/index.js";
 import discountService from "./discountService.js";
 import { sendOrderStatusEmail } from "./emailService.js";
 import { Op } from "sequelize";
@@ -21,7 +21,6 @@ import {
     updatePaymentStatus
 } from "../repositories/orderRepository.js";
 import { withTransaction } from "../utils/transactions.js";
-import { Order, User, OrderStatusHistory, OrderItem, Review } from "../models/index.js";
 
 const env = loadEnv();
 
@@ -667,7 +666,7 @@ export const updateOrderStatusAdmin = async (orderId, newStatus) => {
  */
 export const handleVnPayCallback = async (vnpParams) => {
     const secretKey = (env.VNP_HASH_SECRET || "").trim();
-    
+
     if (!secretKey) {
         throw new Error("VNPay secret key chưa được cấu hình");
     }
@@ -711,7 +710,7 @@ export const handleVnPayCallback = async (vnpParams) => {
 
     // Lấy orderId từ vnpTxnRef (format: orderId_HHmmss)
     const orderId = parseInt(vnpTxnRef.split('_')[0], 10);
-    
+
     if (!orderId || isNaN(orderId)) {
         throw new Error("Không tìm thấy Order ID từ callback");
     }
@@ -772,8 +771,8 @@ export const handleVnPayCallback = async (vnpParams) => {
             orderId: order.id,
             paymentStatus,
             orderStatus,
-            message: paymentStatus === 'completed' 
-                ? 'Thanh toán thành công' 
+            message: paymentStatus === 'completed'
+                ? 'Thanh toán thành công'
                 : `Thanh toán thất bại. Mã lỗi: ${vnpResponseCode}`
         };
     });

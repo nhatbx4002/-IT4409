@@ -1,14 +1,15 @@
 import express from 'express';
 import { authenticateToken } from '../middlewares/auth.js';
 import {
-    createOrder,
-    getMyOrders,
-    getOrderDetails,
-    getShippingFee,
-    cancelMyOrder,
-    checkPaymentStatus,
-    reorderMyOrder,
-    getReviewableItems
+        createOrder,
+        getMyOrders,
+        getOrderDetails,
+        getShippingFee,
+        cancelMyOrder,
+        checkPaymentStatus,
+        reorderMyOrder,
+        getReviewableItems,
+        vnPayCallback
 } from '../controllers/orderController.js';
 import { requireEmailVerified } from '../middlewares/requireEmailVerified.js';
 
