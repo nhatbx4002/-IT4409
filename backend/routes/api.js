@@ -26,6 +26,7 @@ api.use("/discounts", discountRoutes);
 api.use("/cart", cartRoutes);
 api.use("/orders", orderRoutes);
 api.use("/addresses", addressRoutes);
+api.use("/shipping-addresses", addressRoutes);
 api.use("/checkout", checkoutRoutes);
 api.use("/reviews", reviewRoutes);
 api.use("/collections", collectionRoutes);

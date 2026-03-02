@@ -126,6 +126,44 @@ router.post('/checkout', requireEmailVerified, createOrder);
 /**
  * @swagger
  * /orders:
+ *   post:
+ *     summary: Tạo đơn hàng
+ *     tags: [Orders]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - shippingAddressId
+ *               - paymentMethod
+ *             properties:
+ *               shippingAddressId:
+ *                 type: integer
+ *               paymentMethod:
+ *                 type: string
+ *                 enum: [COD, VNPAY]
+ *               shippingMethod:
+ *                 type: string
+ *                 enum: [standard, express]
+ *               notes:
+ *                 type: string
+ *               promotionCode:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Đặt hàng thành công
+ *       400:
+ *         description: Lỗi tạo đơn hàng
+ */
+router.post('/', requireEmailVerified, createOrder);
+
+/**
+ * @swagger
+ * /orders:
  *   get:
  *     summary: Xem danh sách đơn hàng của user
  *     tags: [Orders]
@@ -185,7 +223,7 @@ router.get('/:id', getOrderDetails);
 
 /**
  * @swagger
- * /{id}/reviewable-items:
+ * /orders/{id}/reviewable-items:
  *   get:
  *     summary: Danh sách sản phẩm trong đơn hàng mà user được phép đánh giá
  *     tags: [Orders]
@@ -203,31 +241,7 @@ router.get('/:id', getOrderDetails);
  *       400:
  *         description: Đơn hàng chưa được giao hoặc không hợp lệ
  *       404:
-         *         description: Không tìm thấy đơn hàng
- */
-router.get('/:id/reviewable-items', getReviewableItems);
-
-/**
- * @swagger
- * /{id}/reviewable-items:
- *   get:
- *     summary: Danh sách sản phẩm trong đơn hàng mà user được phép đánh giá
- *     tags: [Orders]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: integer
- *     responses:
- *       200:
- *         description: Danh sách sản phẩm có thể đánh giá
- *       400:
- *         description: Đơn hàng chưa được giao hoặc không hợp lệ
- *       404:
-         *         description: Không tìm thấy đơn hàng
+ *         description: Không tìm thấy đơn hàng
  */
 router.get('/:id/reviewable-items', getReviewableItems);
 
@@ -257,7 +271,7 @@ router.put('/:id/cancel', cancelMyOrder);
 
 /**
  * @swagger
- * /{id}/reorder:
+ * /orders/{id}/reorder:
  *   post:
  *     summary: Đặt lại đơn hàng (thêm lại các sản phẩm vào giỏ)
  *     tags: [Orders]

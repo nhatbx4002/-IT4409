@@ -119,18 +119,34 @@ router.put('/:cartItemId', updateItem);
 router.delete('/:cartItemId', removeItem);
 
 /**
- * Discount endpoints scoped dưới /cart để khớp với spec
- *
- * POST /api/cart/discount/validate
- * Body: { code: string, cart_items?: [...] }
- *
- * POST /api/cart/discount/apply
- * Body: { code?: string, orderDraft: { subtotal, shipping_fee, cart_items } }
- *
- * DELETE /api/cart/discount
- * Chỉ dùng cho FE xoá mã giảm giá khỏi cart (không thay đổi DB)
+ * @swagger
+ * /cart/discount/validate:
+ *   post:
+ *     summary: Kiểm tra mã giảm giá hợp lệ
+ *     tags: [Cart]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - code
+ *             properties:
+ *               code:
+ *                 type: string
+ *               cart_items:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *     responses:
+ *       200:
+ *         description: Mã giảm giá hợp lệ
+ *       400:
+ *         description: Mã giảm giá không hợp lệ
  */
-
 // Validate discount code cho cart hiện tại
 router.post('/discount/validate', (req, res) => {
   const { code, cart_items } = req.body || {};
@@ -147,11 +163,57 @@ router.post('/discount/validate', (req, res) => {
   return discountController.validateCode(req, res);
 });
 
+/**
+ * @swagger
+ * /cart/discount/apply:
+ *   post:
+ *     summary: Áp dụng mã giảm giá vào cart
+ *     tags: [Cart]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               code:
+ *                 type: string
+ *               orderDraft:
+ *                 type: object
+ *                 properties:
+ *                   subtotal:
+ *                     type: number
+ *                   shipping_fee:
+ *                     type: number
+ *                   cart_items:
+ *                     type: array
+ *                     items:
+ *                       type: object
+ *     responses:
+ *       200:
+ *         description: Áp dụng mã giảm giá thành công
+ *       400:
+ *         description: Không thể áp dụng mã giảm giá
+ */
 // Áp dụng mã giảm giá cho order draft
 router.post('/discount/apply', (req, res) => {
   return discountController.apply(req, res);
 });
 
+/**
+ * @swagger
+ * /cart/discount:
+ *   delete:
+ *     summary: Gỡ mã giảm giá khỏi cart
+ *     tags: [Cart]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Đã gỡ mã giảm giá khỏi cart
+ */
 // Xoá mã giảm giá khỏi cart (FE chỉ cần response OK để reset UI)
 router.delete('/discount', (req, res) => {
   return res.json({

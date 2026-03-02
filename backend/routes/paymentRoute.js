@@ -9,20 +9,69 @@ import {
 const router = Router();
 
 /**
- * POST /api/payment/create
- * Khởi tạo thanh toán online (VNPay, sau này có thể mở rộng)
+ * @swagger
+ * /payment/create:
+ *   post:
+ *     summary: Khởi tạo thanh toán online
+ *     tags: [Payment]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               orderId:
+ *                 type: integer
+ *               amount:
+ *                 type: number
+ *               paymentMethod:
+ *                 type: string
+ *                 example: VNPAY
+ *     responses:
+ *       200:
+ *         description: Khởi tạo thanh toán thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
  */
 router.post("/create", authenticateToken, createPaymentController);
 
 /**
- * POST /api/payment/webhook
- * Webhook từ cổng thanh toán (notify_url)
+ * @swagger
+ * /payment/webhook:
+ *   post:
+ *     summary: Webhook từ cổng thanh toán (notify_url)
+ *     tags: [Payment]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       200:
+ *         description: Webhook nhận thành công
+ *       400:
+ *         description: Webhook không hợp lệ
  */
 router.post("/webhook", paymentWebhookController);
 
 /**
- * GET /api/payment/callback
- * User return_url – chỉ redirect UI (không xử lý thanh toán)
+ * @swagger
+ * /payment/callback:
+ *   get:
+ *     summary: Redirect người dùng sau khi thanh toán
+ *     tags: [Payment]
+ *     parameters:
+ *       - in: query
+ *         name: vnp_ResponseCode
+ *         schema:
+ *           type: string
+ *     responses:
+ *       302:
+ *         description: Redirect về UI
  */
 router.get("/callback", paymentCallbackController);
 

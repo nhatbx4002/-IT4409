@@ -9,7 +9,7 @@ router.use(authenticateToken);
 
 /**
  * @swagger
- * /addresses:
+ * /shipping-addresses:
  *   get:
  *     summary: Lấy danh sách địa chỉ của user
  *     tags: [Addresses]
@@ -25,7 +25,7 @@ router.get('/', getMyAddresses);
 
 /**
  * @swagger
- * /addresses:
+ * /shipping-addresses:
  *   post:
  *     summary: Thêm địa chỉ mới
  *     tags: [Addresses]
@@ -69,7 +69,7 @@ router.post('/', addAddress);
 
 /**
  * @swagger
- * /addresses/{id}:
+ * /shipping-addresses/{id}:
  *   delete:
  *     summary: Xóa địa chỉ
  *     tags: [Addresses]
